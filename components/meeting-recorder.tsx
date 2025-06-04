@@ -223,28 +223,15 @@ export function MeetingRecorder({ onRecordingComplete }) {
     }
   }
 
-  // Configurar análisis de audio para visualización
+ // Configurar análisis de audio para visualización
   const setupAudioAnalysis = async () => {
     try {
       // Crear contexto de audio si no existe
       if (!audioContextRef.current) {
-        audioContextRef.current = new AudioContext()
+        audioContextRef.current = new AudioContext();
       }
 
-      const audioContext = audioContextRef.current
-
-      // Configurar analizador para audio del sistema
-      if (screenStreamRef.current && screenStreamRef.current.getAudioTracks().length > 0) {
-        const systemAnalyser = audioContext.createAnalyser()
-        systemAnalyser.fftSize = 256
-        systemAnalyserRef.current = systemAnalyser
-
-        const systemSource = audioContext.createMediaStreamSource(screenStreamRef.current)
-        systemSource.connect(systemAnalyser)
-
-        // Iniciar la animación del espectrograma del sistema
-        setAnimationActive(true)
-      }
+      const audioContext = audioContextRef.current;
 
       // Obtener acceso al micrófono si está habilitado
       if (micEnabled && !micStreamRef.current) {
@@ -255,183 +242,213 @@ export function MeetingRecorder({ onRecordingComplete }) {
               noiseSuppression: true,
               autoGainControl: true,
             },
-          })
-          micStreamRef.current = micStream
+          });
+          micStreamRef.current = micStream;
 
           // Configurar analizador para micrófono
-          const micAnalyser = audioContext.createAnalyser()
-          micAnalyser.fftSize = 256
-          micAnalyserRef.current = micAnalyser
+          const micAnalyser = audioContext.createAnalyser();
+          micAnalyser.fftSize = 256;
+          micAnalyserRef.current = micAnalyser;
 
-          const micSource = audioContext.createMediaStreamSource(micStream)
-          micSource.connect(micAnalyser)
+          const micSource = audioContext.createMediaStreamSource(micStream);
+          micSource.connect(micAnalyser);
 
           // Iniciar la animación del espectrograma del micrófono
-          setAnimationActive(true)
+          visualizeAudio(micCanvasRef, micAnalyserRef, micAnimationRef);
         } catch (micError) {
-          console.error("Error al acceder al micrófono:", micError)
-          setMicEnabled(false)
+          console.error("Error al acceder al micrófono:", micError);
+          setMicEnabled(false);
         }
       }
     } catch (error) {
-      console.error("Error al configurar análisis de audio:", error)
+      console.error("Error al configurar análisis de audio:", error);
     }
-  }
+  };
 
-  // Iniciar grabación de audio
-  const startRecording = async () => {
-    try {
-      setRecordingError(null)
+  // Función para visualizar el audio
+  const visualizeAudio = (canvasRef, analyserRef, animationFrameRef) => {
+    if (!canvasRef.current || !analyserRef.current) return;
 
-      // Si estamos en modo de vista previa, mostrar mensaje
-      if (isPreviewMode) {
-        setRecordingError("La grabación de audio del sistema no está disponible en este entorno de vista previa.")
-        return
-      }
+    const canvas = canvasRef.current;
+    const canvasCtx = canvas.getContext("2d");
+    if (!canvasCtx) return;
 
-      // Verificar si tenemos una fuente de audio seleccionada
-      if (!isSourceSelected && !screenStreamRef.current) {
-        setRecordingError("Primero debes seleccionar una fuente de audio.")
-        return
-      }
+    const analyser = analyserRef.current;
+    const bufferLength = analyser.frequencyBinCount;
+    const dataArray = new Uint8Array(bufferLength);
 
-      // Asegurarse de que el micrófono esté activado
-      if (!micEnabled) {
-        setMicEnabled(true)
-        // Mostrar notificación sobre el micrófono
-        setShowMicNotification(true)
-        // Ocultar la notificación después de 5 segundos
-        setTimeout(() => {
-          setShowMicNotification(false)
-        }, 5000)
-      }
-
-      // Crear contexto de audio para mezclar las fuentes
-      const audioContext = new AudioContext()
-      const destination = audioContext.createMediaStreamDestination()
-
-      let hasAudioSources = false
-
-      // Añadir audio del sistema si está disponible y habilitado
-      if (systemAudioEnabled && screenStreamRef.current && screenStreamRef.current.getAudioTracks().length > 0) {
-        const systemSource = audioContext.createMediaStreamSource(screenStreamRef.current)
-        systemSource.connect(destination)
-        hasAudioSources = true
-        console.log("Audio del sistema conectado a la mezcla")
-      }
-
-      // Añadir audio del micrófono (siempre habilitado al iniciar grabación)
-      // Si no tenemos acceso al micrófono, solicitarlo
-      if (!micStreamRef.current || micStreamRef.current.getAudioTracks().length === 0) {
-        try {
-          console.log("Solicitando acceso al micrófono...")
-          const micStream = await navigator.mediaDevices.getUserMedia({
-            audio: {
-              echoCancellation: true,
-              noiseSuppression: true,
-              autoGainControl: true,
-            },
-          })
-
-          console.log("Micrófono conectado:", micStream.getAudioTracks().length, "pistas")
-          micStreamRef.current = micStream
-
-          // Asegurarse de que todas las pistas estén habilitadas
-          micStream.getAudioTracks().forEach((track) => {
-            track.enabled = true
-            console.log(`Pista de micrófono: ${track.label}, habilitada: ${track.enabled}`)
-          })
-
-          // Actualizar análisis de audio
-          if (audioContextRef.current) {
-            const micAnalyser = audioContextRef.current.createAnalyser()
-            micAnalyser.fftSize = 256
-            micAnalyserRef.current = micAnalyser
-
-            const micSource = audioContextRef.current.createMediaStreamSource(micStream)
-            micSource.connect(micAnalyser)
-
-            // Activar la animación del espectrograma
-            setAnimationActive(true)
-          }
-        } catch (micError) {
-          console.error("Error al acceder al micrófono:", micError)
-          setRecordingError("No se pudo acceder al micrófono. Verifica los permisos del navegador.")
-          return
+    const draw = () => {
+      if (!isRecording) {
+        if (animationFrameRef.current) {
+          cancelAnimationFrame(animationFrameRef.current);
+          animationFrameRef.current = null;
         }
+        return;
       }
 
-      if (micStreamRef.current && micStreamRef.current.getAudioTracks().length > 0) {
-        // Asegurarse de que las pistas de audio del micrófono estén habilitadas
-        micStreamRef.current.getAudioTracks().forEach((track) => {
-          track.enabled = true
-          console.log(`Conectando pista de micrófono a la mezcla: ${track.label}, habilitada: ${track.enabled}`)
-        })
+      animationFrameRef.current = requestAnimationFrame(draw);
 
-        const micSource = audioContext.createMediaStreamSource(micStreamRef.current)
-        micSource.connect(destination)
-        hasAudioSources = true
-        console.log("Audio del micrófono conectado a la mezcla")
-      } else {
-        console.warn("No se encontraron pistas de audio en el micrófono")
+      analyser.getByteFrequencyData(dataArray);
+
+      canvasCtx.fillStyle = "rgb(20, 30, 60)";
+      canvasCtx.fillRect(0, 0, canvas.width, canvas.height);
+
+      const barWidth = (canvas.width / bufferLength) * 2.5;
+      let x = 0;
+
+      for (let i = 0; i < bufferLength; i++) {
+        const barHeight = dataArray[i] / 2;
+        const hue = 220 - (dataArray[i] / 255) * 60; // Azul a celeste
+        canvasCtx.fillStyle = `hsla(${hue}, 100%, 60%, 0.8)`;
+        canvasCtx.fillRect(x, canvas.height - barHeight, barWidth, barHeight);
+        x += barWidth + 1;
       }
+    };
 
-      // Verificar si tenemos fuentes de audio para grabar
-      if (!hasAudioSources) {
-        setRecordingError("No se detectaron fuentes de audio para grabar. Verifica la configuración.")
-        return
-      }
+    draw();
+  };
 
-      // Usar el stream combinado del destino de audio
-      const combinedStream = destination.stream
-      combinedStreamRef.current = combinedStream
+// Iniciar grabación de audio
+const startRecording = async () => {
+  try {
+    setRecordingError(null);
 
-      console.log(`Pistas de audio combinadas: ${combinedStream.getAudioTracks().length}`)
-      combinedStream.getAudioTracks().forEach((track, i) => {
-        console.log(`Pista ${i}: ${track.label}, habilitada: ${track.enabled}`)
-      })
-
-      // Iniciar un nuevo segmento
-      startNewSegment(combinedStream)
-
-      // Iniciar temporizador para la duración total
-      timerRef.current = setInterval(() => {
-        setRecordingTime((prev) => {
-          // Verificar si hemos alcanzado la duración máxima
-          if (prev + 1 >= maxDuration) {
-            stopRecording()
-            return prev
-          }
-          return prev + 1
-        })
-      }, 1000)
-
-      // Iniciar temporizador para la duración del segmento
-      segmentDurationTimerRef.current = setInterval(() => {
-        setSegmentDuration((prev) => prev + 1)
-      }, 1000)
-
-      // Iniciar verificador de tamaño del segmento
-      segmentSizeCheckerRef.current = setInterval(() => {
-        if (recordedChunks.length > 0) {
-          const currentSize = recordedChunks.reduce((total, chunk) => total + chunk.size, 0) / (1024 * 1024)
-          setSegmentSize(currentSize)
-        }
-      }, 5000)
-
-      setIsRecording(true)
-      setIsPaused(false)
-      setSegmentationActive(true)
-      setRecordedChunks([])
-      setSegments([])
-      setCurrentSegmentNumber(1)
-      setSegmentDuration(0)
-      setTotalSize(0)
-    } catch (error) {
-      console.error("Error al iniciar grabación:", error)
-      setRecordingError(`Error al iniciar la grabación: ${error instanceof Error ? error.message : "Desconocido"}`)
+    // Si estamos en modo de vista previa, mostrar mensaje
+    if (isPreviewMode) {
+      setRecordingError("La grabación de audio del sistema no está disponible en este entorno de vista previa.");
+      return;
     }
+
+    // Verificar si tenemos una fuente de audio seleccionada
+    if (!isSourceSelected && !screenStreamRef.current) {
+      setRecordingError("Primero debes seleccionar una fuente de audio.");
+      return;
+    }
+
+    // Asegurarse de que el micrófono esté activado
+    if (!micEnabled) {
+      setMicEnabled(true);
+      // Mostrar notificación sobre el micrófono
+      setShowMicNotification(true);
+      // Ocultar la notificación después de 5 segundos
+      setTimeout(() => {
+        setShowMicNotification(false);
+      }, 5000);
+    }
+
+    // Crear contexto de audio para mezclar las fuentes
+    const audioContext = new AudioContext();
+    const destination = audioContext.createMediaStreamDestination();
+
+    let hasAudioSources = false;
+
+    // Añadir audio del sistema si está disponible y habilitado
+    if (systemAudioEnabled && screenStreamRef.current && screenStreamRef.current.getAudioTracks().length > 0) {
+      const systemSource = audioContext.createMediaStreamSource(screenStreamRef.current);
+      systemSource.connect(destination);
+      hasAudioSources = true;
+      console.log("Audio del sistema conectado a la mezcla");
+    }
+
+    // Añadir audio del micrófono (siempre habilitado al iniciar grabación)
+    if (!micStreamRef.current || micStreamRef.current.getAudioTracks().length === 0) {
+      try {
+        console.log("Solicitando acceso al micrófono...");
+        const micStream = await navigator.mediaDevices.getUserMedia({
+          audio: {
+            echoCancellation: true,
+            noiseSuppression: true,
+            autoGainControl: true,
+          },
+        });
+
+        console.log("Micrófono conectado:", micStream.getAudioTracks().length, "pistas");
+        micStreamRef.current = micStream;
+
+        // Asegurarse de que todas las pistas estén habilitadas
+        micStream.getAudioTracks().forEach((track) => {
+          track.enabled = true;
+          console.log(`Pista de micrófono: ${track.label}, habilitada: ${track.enabled}`);
+        });
+
+        // Actualizar análisis de audio
+        if (audioContextRef.current) {
+          const micAnalyser = audioContextRef.current.createAnalyser();
+          micAnalyser.fftSize = 256;
+          micAnalyserRef.current = micAnalyser;
+
+          const micSource = audioContextRef.current.createMediaStreamSource(micStream);
+          micSource.connect(micAnalyser);
+
+          // Activar la animación del espectrograma
+          setAnimationActive(true);
+          visualizeAudio(micCanvasRef, micAnalyserRef, micAnimationRef); // Asegúrate de iniciar la animación aquí
+        }
+      } catch (micError) {
+        console.error("Error al acceder al micrófono:", micError);
+        setRecordingError("No se pudo acceder al micrófono. Verifica los permisos del navegador.");
+        return;
+      }
+    }
+
+    if (micStreamRef.current && micStreamRef.current.getAudioTracks().length > 0) {
+      const micSource = audioContext.createMediaStreamSource(micStreamRef.current);
+      micSource.connect(destination);
+      hasAudioSources = true;
+      console.log("Audio del micrófono conectado a la mezcla");
+    } else {
+      console.warn("No se encontraron pistas de audio en el micrófono");
+    }
+
+    if (!hasAudioSources) {
+      setRecordingError("No se detectaron fuentes de audio para grabar. Verifica la configuración.");
+      return;
+    }
+
+    const combinedStream = destination.stream;
+    combinedStreamRef.current = combinedStream;
+
+    console.log(`Pistas de audio combinadas: ${combinedStream.getAudioTracks().length}`);
+    combinedStream.getAudioTracks().forEach((track, i) => {
+      console.log(`Pista ${i}: ${track.label}, habilitada: ${track.enabled}`);
+    });
+
+    startNewSegment(combinedStream);
+
+    timerRef.current = setInterval(() => {
+      setRecordingTime((prev) => {
+        if (prev + 1 >= maxDuration) {
+          stopRecording();
+          return prev;
+        }
+        return prev + 1;
+      });
+    }, 1000);
+
+    segmentDurationTimerRef.current = setInterval(() => {
+      setSegmentDuration((prev) => prev + 1);
+    }, 1000);
+
+    segmentSizeCheckerRef.current = setInterval(() => {
+      if (recordedChunks.length > 0) {
+        const currentSize = recordedChunks.reduce((total, chunk) => total + chunk.size, 0) / (1024 * 1024);
+        setSegmentSize(currentSize);
+      }
+    }, 5000);
+
+    setIsRecording(true);
+    setIsPaused(false);
+    setSegmentationActive(true);
+    setRecordedChunks([]);
+    setSegments([]);
+    setCurrentSegmentNumber(1);
+    setSegmentDuration(0);
+    setTotalSize(0);
+  } catch (error) {
+    console.error("Error al iniciar grabación:", error);
+    setRecordingError(`Error al iniciar la grabación: ${error instanceof Error ? error.message : "Desconocido"}`);
   }
+};
 
   const startNewSegment = (stream: MediaStream) => {
     // Crear y configurar MediaRecorder con opciones de fallback
@@ -505,6 +522,7 @@ export function MeetingRecorder({ onRecordingComplete }) {
     }
   }
 
+  // Pausar grabación
   const pauseRecording = () => {
     if (mediaRecorderRef.current && mediaRecorderRef.current.state === "recording") {
       mediaRecorderRef.current.pause()
@@ -514,9 +532,21 @@ export function MeetingRecorder({ onRecordingComplete }) {
         clearInterval(timerRef.current)
         timerRef.current = null
       }
+
+      // Cancelar la animación del espectrograma
+      if (micAnimationRef.current) {
+        cancelAnimationFrame(micAnimationRef.current)
+        micAnimationRef.current = null
+      }
+
+      if (systemAnimationRef.current) {
+        cancelAnimationFrame(systemAnimationRef.current)
+        systemAnimationRef.current = null
+      }
     }
   }
 
+  // Reanudar grabación
   const resumeRecording = () => {
     if (mediaRecorderRef.current && mediaRecorderRef.current.state === "paused") {
       mediaRecorderRef.current.resume()
@@ -525,9 +555,14 @@ export function MeetingRecorder({ onRecordingComplete }) {
       timerRef.current = setInterval(() => {
         setRecordingTime((prev) => prev + 1)
       }, 1000)
+
+      // Reiniciar la animación del espectrograma
+      visualizeAudio(micAnimationRef, micAnalyserRef, micAnimationRef)
+      visualizeAudio(systemAnimationRef, systemAnalyserRef, systemAnimationRef)
     }
   }
 
+  // Detener grabación
   const stopRecording = () => {
     if (mediaRecorderRef.current && mediaRecorderRef.current.state !== "inactive") {
       mediaRecorderRef.current.stop()
@@ -555,6 +590,37 @@ export function MeetingRecorder({ onRecordingComplete }) {
     }
 
     setSegmentationActive(false)
+
+    // Cancelar la animación del espectrograma
+    if (micAnimationRef.current) {
+      cancelAnimationFrame(micAnimationRef.current)
+      micAnimationRef.current = null
+    }
+
+    if (systemAnimationRef.current) {
+      cancelAnimationFrame(systemAnimationRef.current)
+      systemAnimationRef.current = null
+    }
+
+    // Limpiar el canvas
+    const systemCanvas = document.querySelector('canvas[data-spectrum="system"]') as HTMLCanvasElement
+    const micCanvas = document.querySelector('canvas[data-spectrum="mic"]') as HTMLCanvasElement
+
+    if (systemCanvas) {
+      const ctx = systemCanvas.getContext("2d")
+      if (ctx) {
+        ctx.fillStyle = "rgb(20, 30, 60)"
+        ctx.fillRect(0, 0, systemCanvas.width, systemCanvas.height)
+      }
+    }
+
+    if (micCanvas) {
+      const ctx = micCanvas.getContext("2d")
+      if (ctx) {
+        ctx.fillStyle = "rgb(20, 30, 60)"
+        ctx.fillRect(0, 0, micCanvas.width, micCanvas.height)
+      }
+    }
 
     // Actualizar el estado de grabación
     setIsRecording(false)

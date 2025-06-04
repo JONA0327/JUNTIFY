@@ -76,7 +76,7 @@ const ConversationCard = ({ conversation, onClick, onDeleteClick }) => {
       <div className="flex items-center text-blue-200/70 text-sm">
         <Users className="h-4 w-4 mr-1" />
         <span>
-          {participantCount} {participantCount === 1 ? "participant" : "participants"}
+          {participantCount} {participantCount === 1 ? "participante" : "participantes"}
         </span>
       </div>
       <Button
@@ -84,7 +84,7 @@ const ConversationCard = ({ conversation, onClick, onDeleteClick }) => {
         size="icon"
         className="absolute top-2 right-2 h-8 w-8 text-blue-300 hover:text-red-400 hover:bg-blue-800/50"
         onClick={handleDeleteClick}
-        aria-label="Delete conversation"
+        aria-label="Eliminar conversación"
       >
         <Trash2 className="h-4 w-4" />
       </Button>
@@ -133,7 +133,7 @@ const ConversationDetail = ({ conversation, onClose }) => {
               <span className="mr-3">{conversation.duration || "00:00"}</span>
               <Users className="h-4 w-4 mr-1" />
               <span>
-                {participantCount} {participantCount === 1 ? "participant" : "participants"}
+                {participantCount} {participantCount === 1 ? "participante" : "participantes"}
               </span>
             </div>
           </div>
@@ -154,21 +154,21 @@ const ConversationDetail = ({ conversation, onClose }) => {
               <TabsList className="grid grid-cols-5 gap-1 bg-blue-800/30 w-full min-w-[500px]">
                 <TabsTrigger value="summary" className="data-[state=active]:bg-blue-600 text-white text-xs">
                   <FileText className="h-4 w-4 mr-1 sm:mr-2" />
-                  <span className="hidden sm:inline">Summary</span>
-                  <span className="sm:hidden">Sum.</span>
+                  <span className="hidden sm:inline">Resumen</span>
+                  <span className="sm:hidden">Res.</span>
                 </TabsTrigger>
                 <TabsTrigger value="key-points" className="data-[state=active]:bg-blue-600 text-white text-xs">
                   <List className="h-4 w-4 mr-1 sm:mr-2" />
-                  <span className="hidden sm:inline">Key Points</span>
-                  <span className="sm:hidden">Points</span>
+                  <span className="hidden sm:inline">Puntos Clave</span>
+                  <span className="sm:hidden">Puntos</span>
                 </TabsTrigger>
                 <TabsTrigger value="tasks" className="data-[state=active]:bg-blue-600 text-white text-xs">
                   <CheckSquare className="h-4 w-4 mr-1 sm:mr-2" />
-                  <span>Tasks</span>
+                  <span>Tareas</span>
                 </TabsTrigger>
                 <TabsTrigger value="transcript" className="data-[state=active]:bg-blue-600 text-white text-xs">
                   <FileText className="h-4 w-4 mr-1 sm:mr-2" />
-                  <span className="hidden sm:inline">Transcript</span>
+                  <span className="hidden sm:inline">Transcripción</span>
                   <span className="sm:hidden">Trans.</span>
                 </TabsTrigger>
                 <TabsTrigger value="audio" className="data-[state=active]:bg-blue-600 text-white text-xs">
@@ -186,7 +186,7 @@ const ConversationDetail = ({ conversation, onClose }) => {
                   <p className="text-blue-100">{conversation.summary}</p>
                 ) : (
                   <div className="text-center py-8">
-                    <p className="text-blue-100">No summary available for this meeting.</p>
+                    <p className="text-blue-100">No hay resumen disponible para esta reunión.</p>
                   </div>
                 )}
               </div>
@@ -207,7 +207,7 @@ const ConversationDetail = ({ conversation, onClose }) => {
                   </ul>
                 ) : (
                   <div className="text-center py-8">
-                    <p className="text-blue-100">No key points available for this meeting.</p>
+                    <p className="text-blue-100">No hay puntos clave disponibles para esta reunión.</p>
                   </div>
                 )}
               </div>
@@ -231,7 +231,7 @@ const ConversationDetail = ({ conversation, onClose }) => {
                           {task.description && <p className="text-blue-200 text-sm mt-1">{task.description}</p>}
                           <div className="flex flex-wrap items-center text-sm text-blue-200/70 mt-2 gap-x-4 gap-y-1">
                             <span>
-                              <span className="text-blue-300">Priority:</span>{" "}
+                              <span className="text-blue-300">Prioridad:</span>{" "}
                               <span
                                 className={
                                   task.priority === "alta"
@@ -245,16 +245,16 @@ const ConversationDetail = ({ conversation, onClose }) => {
                               </span>
                             </span>
                             <span>
-                              <span className="text-blue-300">Assigned to:</span> {task.assignee || "Unassigned"}
+                              <span className="text-blue-300">Asignado a:</span> {task.assignee || "Sin asignar"}
                             </span>
                             {task.due_date && (
                               <span>
-                                <span className="text-blue-300">Due:</span>{" "}
+                                <span className="text-blue-300">Fecha límite:</span>{" "}
                                 {format(new Date(task.due_date), "dd MMM yyyy", { locale: es })}
                               </span>
                             )}
                             <span>
-                              <span className="text-blue-300">Progress:</span> {task.progress || 0}%
+                              <span className="text-blue-300">Progreso:</span> {task.progress || 0}%
                             </span>
                           </div>
                         </div>
@@ -263,14 +263,14 @@ const ConversationDetail = ({ conversation, onClose }) => {
                   </ul>
                 ) : (
                   <div className="text-center py-8">
-                    <p className="text-blue-100">No tasks available for this meeting.</p>
+                    <p className="text-blue-100">No hay tareas disponibles para esta reunión.</p>
                     <Button
                       variant="outline"
                       className="mt-4 border-blue-500 text-blue-300 hover:bg-blue-800/50"
                       onClick={() => router.push(`/tasks?meeting=${conversation.id}`)}
                     >
                       <Plus className="h-4 w-4 mr-2" />
-                      Create task for this meeting
+                      Crear tarea para esta reunión
                     </Button>
                   </div>
                 )}
@@ -287,7 +287,7 @@ const ConversationDetail = ({ conversation, onClose }) => {
                           <div className="text-sm text-blue-300">{item.time || "--:--"}</div>
                         </div>
                         <div className="flex-1">
-                          <div className="font-medium text-white mb-1">{item.speaker || "Speaker"}</div>
+                          <div className="font-medium text-white mb-1">{item.speaker || "Interlocutor"}</div>
                           <div className="text-blue-100">{item.text}</div>
                         </div>
                       </div>
@@ -295,7 +295,7 @@ const ConversationDetail = ({ conversation, onClose }) => {
                   </div>
                 ) : (
                   <div className="text-center py-8">
-                    <p className="text-blue-100">No transcript available for this meeting.</p>
+                    <p className="text-blue-100">No hay transcripción disponible para esta reunión.</p>
                   </div>
                 )}
               </div>
@@ -337,9 +337,9 @@ const DeleteConfirmationModal = ({ conversation, onConfirm, onCancel }) => {
               <Trash2 className="h-6 w-6 text-red-400" />
             </div>
           </div>
-          <h2 className="text-xl font-bold text-white text-center mb-2">Delete Conversation</h2>
+          <h2 className="text-xl font-bold text-white text-center mb-2">Eliminar Conversación</h2>
           <p className="text-blue-200 text-center mb-6">
-            Are you sure you want to delete "{conversation.title}"? This action cannot be undone.
+            ¿Estás seguro de que deseas eliminar "{conversation.title}"? Esta acción no se puede deshacer.
           </p>
           <div className="flex gap-3">
             <Button
@@ -347,14 +347,14 @@ const DeleteConfirmationModal = ({ conversation, onConfirm, onCancel }) => {
               className="flex-1 border-blue-600/50 text-blue-300 hover:bg-blue-800/50"
               onClick={onCancel}
             >
-              Cancel
+              Cancelar
             </Button>
             <Button
               variant="destructive"
               className="flex-1 bg-red-600 hover:bg-red-700"
               onClick={() => onConfirm(conversation.id)}
             >
-              Delete
+              Eliminar
             </Button>
           </div>
         </div>
@@ -373,7 +373,7 @@ const LoadingOverlay = () => (
   >
     <div className="text-center">
       <div className="inline-block h-16 w-16 animate-spin rounded-full border-4 border-solid border-blue-400 border-r-transparent align-[-0.125em] motion-reduce:animate-[spin_1.5s_linear_infinite]"></div>
-      <p className="mt-4 text-xl text-white">Loading conversation...</p>
+      <p className="mt-4 text-xl text-white">Cargando Conversación...</p>
     </div>
   </motion.div>
 )
@@ -424,7 +424,7 @@ const UsageIndicator = () => {
       <div className="bg-blue-800/30 border border-blue-700/30 rounded-lg p-3">
         <div className="flex items-center justify-center">
           <Loader2 className="h-4 w-4 text-blue-300 animate-spin mr-2" />
-          <span className="text-blue-200 text-sm">Loading usage data...</span>
+          <span className="text-blue-200 text-sm">Cargando datos de uso...</span>
         </div>
       </div>
     )
@@ -436,8 +436,8 @@ const UsageIndicator = () => {
         <div className="flex items-center">
           <div className="w-full">
             <div className="flex items-center justify-between mb-1">
-              <span className="text-blue-200 text-sm">Monthly analyses</span>
-              <span className="text-blue-200 text-sm">Unknown</span>
+              <span className="text-blue-200 text-sm">Análisis mensuales</span>
+              <span className="text-blue-200 text-sm">Desconocido</span>
             </div>
             <div className="h-2 bg-blue-700/50 rounded-full overflow-hidden">
               <div className="h-full bg-blue-400 w-0 rounded-full"></div>
@@ -456,8 +456,8 @@ const UsageIndicator = () => {
       <div className="flex items-center">
         <div className="w-full">
           <div className="flex items-center justify-between mb-1">
-            <span className="text-blue-200 text-sm">Monthly analyses</span>
-            <span className="text-blue-200 text-sm">{usage.remaining} remaining</span>
+            <span className="text-blue-200 text-sm">Análisis mensuales</span>
+            <span className="text-blue-200 text-sm">{usage.remaining} restantes</span>
           </div>
           <div className="h-2 bg-blue-700/50 rounded-full overflow-hidden">
             <div className={`h-full ${indicatorColor} rounded-full`} style={{ width: `${percentage}%` }}></div>
@@ -698,12 +698,12 @@ export default function DashboardPage() {
           <div className="max-w-md w-full">
             <Alert variant="destructive" className="mb-6 bg-red-900/50 border-red-700 text-white">
               <AlertCircle className="h-4 w-4" />
-              <AlertTitle>Authentication Error</AlertTitle>
-              <AlertDescription>You need to be logged in to view your conversations.</AlertDescription>
+              <AlertTitle>Error de Autenticación</AlertTitle>
+              <AlertDescription>Necesitas estar registrado para ver tus conversaciones.</AlertDescription>
             </Alert>
 
             <Button className="w-full bg-blue-600 hover:bg-blue-700" onClick={handleLogin}>
-              Log In
+              Iniciar Sesión
             </Button>
           </div>
         </main>
@@ -717,7 +717,7 @@ export default function DashboardPage() {
       <main className="container mx-auto px-4 pb-24 pt-8">
         <div className="max-w-7xl mx-auto">
           <div className="flex flex-col md:flex-row md:justify-between md:items-center mb-8">
-            <h1 className="text-3xl font-bold text-white mb-4 md:mb-0 glow-text">My Conversations</h1>
+            <h1 className="text-3xl font-bold text-white mb-4 md:mb-0 glow-text">Mis Conversaciones</h1>
 
             {/* Usage indicator */}
             <div className="w-full md:w-64">
@@ -731,7 +731,7 @@ export default function DashboardPage() {
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-blue-300" />
               <input
                 type="text"
-                placeholder="Search conversations..."
+                placeholder="Buscar conversaciones..."
                 className="pl-10 w-full bg-blue-800/30 border border-blue-700/30 text-white rounded-lg p-3 focus:outline-none focus:ring-2 focus:ring-blue-500"
                 value={searchTerm}
                 onChange={(e) => {
@@ -746,7 +746,7 @@ export default function DashboardPage() {
           {isLoading ? (
             <div className="flex justify-center items-center py-20">
               <Loader2 className="h-8 w-8 text-blue-400 animate-spin" />
-              <span className="ml-3 text-blue-200">Loading conversations...</span>
+              <span className="ml-3 text-blue-200">Cargando Conversaciones...</span>
             </div>
           ) : (
             <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3 sm:gap-4 mb-8">
@@ -764,13 +764,13 @@ export default function DashboardPage() {
                   <div className="rounded-full bg-blue-800/40 p-4 mb-4">
                     <MessageSquare className="h-10 w-10 text-blue-300" />
                   </div>
-                  <h3 className="text-xl font-medium text-white mb-2">No conversations</h3>
+                  <h3 className="text-xl font-medium text-white mb-2">No hay conversaciones</h3>
                   <p className="text-blue-300/70 max-w-md">
-                    Conversations and transcriptions from your meetings will appear here when you create them.
+                    Las conversaciones y transcripciones de tus reuniones aparecerán aquí cuando las crees.
                   </p>
                   <Button className="mt-4 bg-blue-600 hover:bg-blue-700" onClick={() => router.push("/new-meeting")}>
                     <Plus className="mr-2 h-4 w-4" />
-                    New meeting
+                    Nueva reunión
                   </Button>
                 </div>
               )}
@@ -787,11 +787,11 @@ export default function DashboardPage() {
                   onClick={() => setCurrentPage((prev) => Math.max(prev - 1, 1))}
                   disabled={currentPage === 1}
                 >
-                  Previous
+                  Anterior
                 </Button>
 
                 <div className="flex items-center px-4 bg-blue-800/30 rounded-md text-white">
-                  Page {currentPage} of {totalPages}
+                  Página {currentPage} de {totalPages}
                 </div>
 
                 <Button
@@ -800,7 +800,7 @@ export default function DashboardPage() {
                   onClick={() => setCurrentPage((prev) => Math.min(prev + 1, totalPages))}
                   disabled={currentPage === totalPages}
                 >
-                  Next
+                  Siguiente
                 </Button>
               </div>
             </div>
@@ -830,7 +830,7 @@ export default function DashboardPage() {
           >
             <div className="text-center">
               <div className="inline-block h-16 w-16 animate-spin rounded-full border-4 border-solid border-blue-400 border-r-transparent align-[-0.125em] motion-reduce:animate-[spin_1.5s_linear_infinite]"></div>
-              <p className="mt-4 text-xl text-white">Deleting conversation...</p>
+              <p className="mt-4 text-xl text-white">Eliminando conversación...</p>
             </div>
           </motion.div>
         )}
