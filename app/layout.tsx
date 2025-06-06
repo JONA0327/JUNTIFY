@@ -2,11 +2,13 @@ import type React from "react"
 import type { Metadata } from "next"
 import ClientLayout from "./client-layout"
 import Script from "next/script"
+import { FeedbackButton } from "@/components/FeedbackButton"
+import './globals.css'
 
 export const metadata: Metadata = {
   title: "Juntify - Reuniones Organizadas Inteligentes",
   description: "Eficiencia • Simplicidad • Organización",
-    generator: 'v0.dev'
+  generator: 'v0.dev'
 }
 
 export default function RootLayout({
@@ -43,10 +45,12 @@ export default function RootLayout({
         </noscript>
         {/* End Meta Pixel Code */}
       </head>
-      <ClientLayout>{children}</ClientLayout>
+      <body>
+        <ClientLayout>
+          {children}
+        </ClientLayout>
+        <FeedbackButton />
+      </body>
     </html>
   )
 }
-
-
-import './globals.css'

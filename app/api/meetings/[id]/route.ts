@@ -1,7 +1,8 @@
 import { type NextRequest, NextResponse } from "next/server"
 import { meetingService } from "@/services/meetingService"
+import { google } from "googleapis"
 import { query } from "@/utils/mysql"
-
+import { getUsernameFromRequest } from "@/utils/user-helpers";
 export async function GET(request: NextRequest, { params }: { params: { id: string } }) {
   try {
     // Obtener el ID de la reunión de los parámetros
@@ -88,31 +89,212 @@ export async function PUT(request: NextRequest, { params }: { params: { id: stri
   }
 }
 
-export async function DELETE(request: NextRequest, { params }: { params: { id: string } }) {
+export async function DELETE(request: Request, { params }: { params: any }) {
+  const { id } = await params;
+  const meetingId = id;
   try {
-    // Obtener el ID de la reunión de los parámetros
-    const meetingId = Number.parseInt(params.id)
-    if (isNaN(meetingId)) {
-      return NextResponse.json({ error: "ID de reunión inválido" }, { status: 400 })
-    }
-
-    // Obtener el nombre de usuario de la solicitud
-    const username = request.headers.get("X-Username")
-
+    // 1. Obtén el username del request
+    const username = await getUsernameFromRequest(request);
     if (!username) {
-      return NextResponse.json({ error: "Usuario no autenticado" }, { status: 401 })
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    // Eliminar la reunión
-    const success = await meetingService.deleteMeeting(meetingId, username)
-    if (!success) {
-      return NextResponse.json({ error: "No se pudo eliminar la reunión" }, { status: 400 })
+    // 2. Obtén la info actual de la reunión
+    const [meeting] = await query("SELECT * FROM meetings WHERE id = ?", [meetingId]);
+    if (!meeting) {
+      return NextResponse.json({ error: "Meeting not found" }, { status: 404 });
+    }
+    const oldTitle = meeting.title;
+
+    // 3. Obtén el folderId de la carpeta de Drive del usuario
+    const folderResult = await query(
+      "SELECT recordings_folder_id FROM google_tokens WHERE username = ? AND recordings_folder_id IS NOT NULL",
+      [username]
+    );
+    if (!folderResult || folderResult.length === 0) {
+      return NextResponse.json({ error: "No recordings folder found for user" }, { status: 404 });
+    }
+    const userFolderId = folderResult[0].recordings_folder_id;
+
+    // 4. Funciones de limpieza de nombre
+    function cleanTitleNoAccents(title: string): string {
+      return title
+        .normalize("NFD")
+        .replace(/[\u0300-\u036f]/g, "")
+        .replace(/[^a-zA-Z0-9]/g, "_")
+        .replace(/_+/g, "_")
+        .replace(/^_+|_+$/g, "");
+    }
+    function cleanTitleWithUnderscores(title: string): string {
+      return title
+        .replace(/[áÁàÀäÄâÂãÃåÅ]/g, "_")
+        .replace(/[éÉèÈëËêÊ]/g, "_")
+        .replace(/[íÍìÌïÏîÎ]/g, "_")
+        .replace(/[óÓòÒöÖôÔõÕøØ]/g, "_")
+        .replace(/[úÚùÙüÜûÛ]/g, "_")
+        .replace(/[ñÑ]/g, "_")
+        .replace(/[^a-zA-Z0-9]/g, "_")
+        .replace(/_+/g, "_")
+        .replace(/^_+|_+$/g, "");
     }
 
-    // Devolver éxito
-    return NextResponse.json({ success: true })
+    const oldFileNameNoAccents = `${meetingId}_${cleanTitleNoAccents(oldTitle)}.aac`;
+    const oldFileNameWithUnderscores = `${meetingId}_${cleanTitleWithUnderscores(oldTitle)}.aac`;
+
+    // 5. Autenticación Google Drive
+    const auth = new google.auth.JWT({
+      email: process.env.GOOGLE_SERVICE_ACCOUNT_CLIENT_EMAIL,
+      key: process.env.GOOGLE_SERVICE_ACCOUNT_PRIVATE_KEY.replace(/\\n/g, "\n"),
+      scopes: ["https://www.googleapis.com/auth/drive"],
+    });
+
+    const drive = google.drive({ version: "v3", auth });
+
+    // 6. Buscar el archivo en Drive (primero sin acentos)
+    let response = await drive.files.list({
+      q: `name = '${oldFileNameNoAccents}' and '${userFolderId}' in parents and trashed = false`,
+      fields: "files(id, name)",
+    });
+
+    if (!response.data.files || response.data.files.length !== 1) {
+      // Si no lo encuentra, busca con guiones bajos
+      response = await drive.files.list({
+        q: `name = '${oldFileNameWithUnderscores}' and '${userFolderId}' in parents and trashed = false`,
+        fields: "files(id, name)",
+      });
+    }
+
+    // 7. Si lo encuentra, elimina el archivo de Drive
+    if (response.data.files && response.data.files.length === 1) {
+      const fileId = response.data.files[0].id;
+      await drive.files.delete({ fileId });
+      console.log("Archivo de Drive eliminado:", response.data.files[0].name);
+    } else {
+      console.warn("No se encontró archivo de Drive para eliminar.");
+    }
+
+    // 8. Elimina la conversación de la base de datos
+    await query("DELETE FROM meetings WHERE id = ?", [meetingId]);
+
+    return NextResponse.json({ success: true });
   } catch (error) {
-    console.error("Error al eliminar la reunión:", error)
-    return NextResponse.json({ error: "Error al eliminar la reunión" }, { status: 500 })
+    console.error("Error en DELETE /api/meetings/[id]:", error);
+    return NextResponse.json({ error: String(error) }, { status: 500 });
+  }
+}
+
+
+
+
+export async function PATCH(request: Request, { params }: { params: any }) {
+  const { id } = await params;
+  const meetingId = id;
+  try {
+    const { newTitle } = await request.json();
+
+    // 1. Obtén el username del request
+    const username = await getUsernameFromRequest(request);
+    if (!username) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
+    // 2. Obtén la info actual de la reunión (antes de actualizar el título)
+    const [meeting] = await query("SELECT * FROM meetings WHERE id = ?", [meetingId]);
+    if (!meeting) {
+      return NextResponse.json({ error: "Meeting not found" }, { status: 404 });
+    }
+    const oldTitle = meeting.title;
+
+    // 3. Obtén el folderId de la carpeta de Drive del usuario
+    const folderResult = await query(
+      "SELECT recordings_folder_id FROM google_tokens WHERE username = ? AND recordings_folder_id IS NOT NULL",
+      [username]
+    );
+    if (!folderResult || folderResult.length === 0) {
+      return NextResponse.json({ error: "No recordings folder found for user" }, { status: 404 });
+    }
+    const userFolderId = folderResult[0].recordings_folder_id;
+
+    // 4. Funciones de limpieza
+    function cleanTitleNoAccents(title: string): string {
+      return title
+        .normalize("NFD")
+        .replace(/[\u0300-\u036f]/g, "")
+        .replace(/[^a-zA-Z0-9]/g, "_")
+        .replace(/_+/g, "_")
+        .replace(/^_+|_+$/g, "");
+    }
+    function cleanTitleWithUnderscores(title: string): string {
+      return title
+        .replace(/[áÁàÀäÄâÂãÃåÅ]/g, "_")
+        .replace(/[éÉèÈëËêÊ]/g, "_")
+        .replace(/[íÍìÌïÏîÎ]/g, "_")
+        .replace(/[óÓòÒöÖôÔõÕøØ]/g, "_")
+        .replace(/[úÚùÙüÜûÛ]/g, "_")
+        .replace(/[ñÑ]/g, "_")
+        .replace(/[^a-zA-Z0-9]/g, "_")
+        .replace(/_+/g, "_")
+        .replace(/^_+|_+$/g, "");
+    }
+
+    // 5. Aplica limpieza a ambos títulos
+    const cleanOldTitleNoAccents = cleanTitleNoAccents(oldTitle);
+    const cleanOldTitleWithUnderscores = cleanTitleWithUnderscores(oldTitle);
+    const cleanNewTitleWithUnderscores = cleanTitleWithUnderscores(newTitle);
+
+    const oldFileNameNoAccents = `${meetingId}_${cleanOldTitleNoAccents}.aac`;
+    const oldFileNameWithUnderscores = `${meetingId}_${cleanOldTitleWithUnderscores}.aac`;
+    const newFileName = `${meetingId}_${cleanNewTitleWithUnderscores}.aac`;
+
+    // 6. Autenticación Google Drive
+    const auth = new google.auth.JWT({
+      email: process.env.GOOGLE_SERVICE_ACCOUNT_CLIENT_EMAIL,
+      key: process.env.GOOGLE_SERVICE_ACCOUNT_PRIVATE_KEY.replace(/\\n/g, "\n"),
+      scopes: ["https://www.googleapis.com/auth/drive"],
+    });
+
+    const drive = google.drive({ version: "v3", auth });
+
+    // 7. Buscar el archivo por el nombre VIEJO y carpeta (primero sin acentos)
+    console.log("Buscando archivo (sin acentos):", oldFileNameNoAccents, "en carpeta:", userFolderId);
+    let response = await drive.files.list({
+      q: `name = '${oldFileNameNoAccents}' and '${userFolderId}' in parents and trashed = false`,
+      fields: "files(id, name)",
+    });
+    console.log("Archivos encontrados (sin acentos):", response.data.files);
+
+    if (!response.data.files || response.data.files.length !== 1) {
+      // Si no lo encuentra, busca con guiones bajos
+      console.log("No encontrado, buscando archivo (con guiones bajos):", oldFileNameWithUnderscores, "en carpeta:", userFolderId);
+      response = await drive.files.list({
+        q: `name = '${oldFileNameWithUnderscores}' and '${userFolderId}' in parents and trashed = false`,
+        fields: "files(id, name)",
+      });
+      console.log("Archivos encontrados (con guiones bajos):", response.data.files);
+    }
+
+    if (response.data.files && response.data.files.length === 1) {
+      const fileId = response.data.files[0].id;
+      // 8. Renombrar el archivo
+      await drive.files.update({
+        fileId,
+        requestBody: { name: newFileName },
+      });
+      console.log("Archivo renombrado:", newFileName);
+    } else {
+      // Si no se encuentra el archivo, puedes decidir si lanzar error o solo actualizar la BD
+      console.warn("No se encontró un archivo único para renombrar en Drive.");
+    }
+
+    // 9. Ahora sí, actualiza el título en la BD
+    await query(
+      "UPDATE meetings SET title = ? WHERE id = ?",
+      [newTitle, meetingId]
+    );
+
+    return NextResponse.json({ success: true });
+  } catch (error) {
+    console.error("Error en PATCH /api/meetings/[id]:", error);
+    return NextResponse.json({ error: String(error) }, { status: 500 });
   }
 }

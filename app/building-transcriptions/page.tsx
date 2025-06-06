@@ -764,11 +764,11 @@ export default function BuildingTranscriptionPage() {
             <div className="mb-4">
               <Button
                 variant="outline"
-                onClick={() => router.push("/transcriptions")}
+                onClick={() => router.push("/dashboard")}
                 className="border-blue-700/30 text-blue-300"
               >
                 <ChevronLeft className="h-4 w-4 mr-2" />
-                Volver a transcripciones
+                Volver a Reuniones
               </Button>
             </div>
           )}

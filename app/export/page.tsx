@@ -310,14 +310,14 @@ const ExportModal = ({ meeting, onClose, onExport }) => {
                 </label>
               </div>
 
-              <div className="flex items-center space-x-3">
+               <div className="flex items-center space-x-3">
                 <Checkbox
                   id="taskList"
                   checked={selectedOptions.taskList}
                   onCheckedChange={() => handleOptionChange("taskList")}
                   className="border-blue-500 data-[state=checked]:bg-blue-600"
                 />
-                <label htmlFor="taskList" className="text-white cursor-pointer text-sm sm:text-base">
+               <label htmlFor="taskList" className="text-white cursor-pointer text-sm sm:text-base">
                   Lista de Tareas
                 </label>
               </div>
@@ -867,15 +867,26 @@ export default function ExportPage() {
 
       // Tabla de tareas
       const taskTableData = meeting.tasks.map((task) => {
-        const status = task.completed ? "✓ Completada" : "○ Pendiente"
-        const assignee = task.assignee ? task.assignee : "-"
-        const dueDate = task.due_date ? task.due_date : "-"
-        return [task.text, status, assignee, dueDate]
-      })
+        const status = task.completed ? "Completada": task.inProgress ? "En curso": "Pendiente";
+
+        const assignee = task.assignee ? task.assignee : "-";
+        const dueDate = task.due_date ? task.due_date : "-";
+        // Asegura que el progreso sea un número y termina en %
+        let progress = 0;
+        if (typeof task.progress === "number") {
+          progress = task.progress;
+        } else if (typeof task.progress === "string" && !isNaN(parseInt(task.progress))) {
+          progress = parseInt(task.progress, 10);
+        }
+        const progressText = `${progress}%`;
+        return [task.text, status, assignee, dueDate, progressText];
+      });
+
 
       autoTable(doc, {
         startY: yPos,
-        head: [["Tarea", "Estado", "Asignado a", "Fecha límite"]],
+        head: [["Tarea", "Estado", "Asignado a", "Fecha límite", "Progreso"]],
+
         body: taskTableData,
         theme: "grid",
         styles: {
@@ -1095,8 +1106,8 @@ export default function ExportPage() {
               </div>
 
               {/* Filtros */}
-              <div className="flex flex-wrap gap-3">
-                {/* Filtro por palabras clave */}
+            {/*  <div className="flex flex-wrap gap-3">
+         
                 <Popover>
                   <PopoverTrigger asChild>
                     <Button
@@ -1138,7 +1149,7 @@ export default function ExportPage() {
                   </PopoverContent>
                 </Popover>
 
-                {/* Filtro por fecha */}
+
                 <Popover>
                   <PopoverTrigger asChild>
                     <Button
@@ -1163,7 +1174,7 @@ export default function ExportPage() {
                     )}
                   </PopoverContent>
                 </Popover>
-              </div>
+              </div>*/}
             </div>
           </div>
 

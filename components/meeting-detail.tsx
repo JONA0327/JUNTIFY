@@ -6,6 +6,8 @@ import { es } from "date-fns/locale"
 import { X, FileText, List, MessageSquare, Headphones } from "lucide-react"
 import FixedAudioPlayer from "./fixed-audio-player"
 import DirectDownloadPlayer from "./direct-download-player"
+import router, { useRouter } from "next/router"
+import { Button } from "./ui/button"
 
 interface Meeting {
   id: number
@@ -129,7 +131,9 @@ export default function MeetingDetail({ meeting, onClose }: MeetingDetailProps) 
 
           {activeTab === "transcript" && (
             <div className="text-gray-300">
+            
               {meeting.transcription ? (
+                
                 <p className="whitespace-pre-line">{meeting.transcription}</p>
               ) : (
                 <p className="text-gray-500 italic">No hay transcripción disponible para esta reunión.</p>

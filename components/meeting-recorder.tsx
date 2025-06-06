@@ -56,6 +56,8 @@ export function MeetingRecorder({ onRecordingComplete }) {
   const segmentDurationTimerRef = useRef<NodeJS.Timeout | null>(null)
   const segmentSizeCheckerRef = useRef<NodeJS.Timeout | null>(null)
   const MAX_SEGMENT_DURATION = 10 * 60 * 1000 // 10 minutos por segmento
+  const SPECTRUM_BARS = 32
+
 
   // Detectar si estamos en un entorno que no permite getDisplayMedia
   useEffect(() => {
@@ -223,15 +225,28 @@ export function MeetingRecorder({ onRecordingComplete }) {
     }
   }
 
- // Configurar análisis de audio para visualización
+  // Configurar análisis de audio para visualización
   const setupAudioAnalysis = async () => {
     try {
       // Crear contexto de audio si no existe
       if (!audioContextRef.current) {
-        audioContextRef.current = new AudioContext();
+        audioContextRef.current = new AudioContext()
       }
 
-      const audioContext = audioContextRef.current;
+      const audioContext = audioContextRef.current
+
+      // Configurar analizador para audio del sistema
+      if (screenStreamRef.current && screenStreamRef.current.getAudioTracks().length > 0) {
+        const systemAnalyser = audioContext.createAnalyser()
+        systemAnalyser.fftSize = 256
+        systemAnalyserRef.current = systemAnalyser
+
+        const systemSource = audioContext.createMediaStreamSource(screenStreamRef.current)
+        systemSource.connect(systemAnalyser)
+
+        // Iniciar la animación del espectrograma del sistema
+        setAnimationActive(true)
+      }
 
       // Obtener acceso al micrófono si está habilitado
       if (micEnabled && !micStreamRef.current) {
@@ -242,213 +257,237 @@ export function MeetingRecorder({ onRecordingComplete }) {
               noiseSuppression: true,
               autoGainControl: true,
             },
-          });
-          micStreamRef.current = micStream;
+          })
+          micStreamRef.current = micStream
 
           // Configurar analizador para micrófono
-          const micAnalyser = audioContext.createAnalyser();
-          micAnalyser.fftSize = 256;
-          micAnalyserRef.current = micAnalyser;
+          const micAnalyser = audioContext.createAnalyser()
+          micAnalyser.fftSize = 256
+          micAnalyserRef.current = micAnalyser
 
-          const micSource = audioContext.createMediaStreamSource(micStream);
-          micSource.connect(micAnalyser);
+          const micSource = audioContext.createMediaStreamSource(micStream)
+          micSource.connect(micAnalyser)
 
           // Iniciar la animación del espectrograma del micrófono
-          visualizeAudio(micCanvasRef, micAnalyserRef, micAnimationRef);
+          setAnimationActive(true)
         } catch (micError) {
-          console.error("Error al acceder al micrófono:", micError);
-          setMicEnabled(false);
+          console.error("Error al acceder al micrófono:", micError)
+          setMicEnabled(false)
         }
       }
     } catch (error) {
-      console.error("Error al configurar análisis de audio:", error);
+      console.error("Error al configurar análisis de audio:", error)
     }
-  };
-
-  // Función para visualizar el audio
-  const visualizeAudio = (canvasRef, analyserRef, animationFrameRef) => {
-    if (!canvasRef.current || !analyserRef.current) return;
-
-    const canvas = canvasRef.current;
-    const canvasCtx = canvas.getContext("2d");
-    if (!canvasCtx) return;
-
-    const analyser = analyserRef.current;
-    const bufferLength = analyser.frequencyBinCount;
-    const dataArray = new Uint8Array(bufferLength);
-
-    const draw = () => {
-      if (!isRecording) {
-        if (animationFrameRef.current) {
-          cancelAnimationFrame(animationFrameRef.current);
-          animationFrameRef.current = null;
-        }
-        return;
-      }
-
-      animationFrameRef.current = requestAnimationFrame(draw);
-
-      analyser.getByteFrequencyData(dataArray);
-
-      canvasCtx.fillStyle = "rgb(20, 30, 60)";
-      canvasCtx.fillRect(0, 0, canvas.width, canvas.height);
-
-      const barWidth = (canvas.width / bufferLength) * 2.5;
-      let x = 0;
-
-      for (let i = 0; i < bufferLength; i++) {
-        const barHeight = dataArray[i] / 2;
-        const hue = 220 - (dataArray[i] / 255) * 60; // Azul a celeste
-        canvasCtx.fillStyle = `hsla(${hue}, 100%, 60%, 0.8)`;
-        canvasCtx.fillRect(x, canvas.height - barHeight, barWidth, barHeight);
-        x += barWidth + 1;
-      }
-    };
-
-    draw();
-  };
-
-// Iniciar grabación de audio
-const startRecording = async () => {
-  try {
-    setRecordingError(null);
-
-    // Si estamos en modo de vista previa, mostrar mensaje
-    if (isPreviewMode) {
-      setRecordingError("La grabación de audio del sistema no está disponible en este entorno de vista previa.");
-      return;
-    }
-
-    // Verificar si tenemos una fuente de audio seleccionada
-    if (!isSourceSelected && !screenStreamRef.current) {
-      setRecordingError("Primero debes seleccionar una fuente de audio.");
-      return;
-    }
-
-    // Asegurarse de que el micrófono esté activado
-    if (!micEnabled) {
-      setMicEnabled(true);
-      // Mostrar notificación sobre el micrófono
-      setShowMicNotification(true);
-      // Ocultar la notificación después de 5 segundos
-      setTimeout(() => {
-        setShowMicNotification(false);
-      }, 5000);
-    }
-
-    // Crear contexto de audio para mezclar las fuentes
-    const audioContext = new AudioContext();
-    const destination = audioContext.createMediaStreamDestination();
-
-    let hasAudioSources = false;
-
-    // Añadir audio del sistema si está disponible y habilitado
-    if (systemAudioEnabled && screenStreamRef.current && screenStreamRef.current.getAudioTracks().length > 0) {
-      const systemSource = audioContext.createMediaStreamSource(screenStreamRef.current);
-      systemSource.connect(destination);
-      hasAudioSources = true;
-      console.log("Audio del sistema conectado a la mezcla");
-    }
-
-    // Añadir audio del micrófono (siempre habilitado al iniciar grabación)
-    if (!micStreamRef.current || micStreamRef.current.getAudioTracks().length === 0) {
-      try {
-        console.log("Solicitando acceso al micrófono...");
-        const micStream = await navigator.mediaDevices.getUserMedia({
-          audio: {
-            echoCancellation: true,
-            noiseSuppression: true,
-            autoGainControl: true,
-          },
-        });
-
-        console.log("Micrófono conectado:", micStream.getAudioTracks().length, "pistas");
-        micStreamRef.current = micStream;
-
-        // Asegurarse de que todas las pistas estén habilitadas
-        micStream.getAudioTracks().forEach((track) => {
-          track.enabled = true;
-          console.log(`Pista de micrófono: ${track.label}, habilitada: ${track.enabled}`);
-        });
-
-        // Actualizar análisis de audio
-        if (audioContextRef.current) {
-          const micAnalyser = audioContextRef.current.createAnalyser();
-          micAnalyser.fftSize = 256;
-          micAnalyserRef.current = micAnalyser;
-
-          const micSource = audioContextRef.current.createMediaStreamSource(micStream);
-          micSource.connect(micAnalyser);
-
-          // Activar la animación del espectrograma
-          setAnimationActive(true);
-          visualizeAudio(micCanvasRef, micAnalyserRef, micAnimationRef); // Asegúrate de iniciar la animación aquí
-        }
-      } catch (micError) {
-        console.error("Error al acceder al micrófono:", micError);
-        setRecordingError("No se pudo acceder al micrófono. Verifica los permisos del navegador.");
-        return;
-      }
-    }
-
-    if (micStreamRef.current && micStreamRef.current.getAudioTracks().length > 0) {
-      const micSource = audioContext.createMediaStreamSource(micStreamRef.current);
-      micSource.connect(destination);
-      hasAudioSources = true;
-      console.log("Audio del micrófono conectado a la mezcla");
-    } else {
-      console.warn("No se encontraron pistas de audio en el micrófono");
-    }
-
-    if (!hasAudioSources) {
-      setRecordingError("No se detectaron fuentes de audio para grabar. Verifica la configuración.");
-      return;
-    }
-
-    const combinedStream = destination.stream;
-    combinedStreamRef.current = combinedStream;
-
-    console.log(`Pistas de audio combinadas: ${combinedStream.getAudioTracks().length}`);
-    combinedStream.getAudioTracks().forEach((track, i) => {
-      console.log(`Pista ${i}: ${track.label}, habilitada: ${track.enabled}`);
-    });
-
-    startNewSegment(combinedStream);
-
-    timerRef.current = setInterval(() => {
-      setRecordingTime((prev) => {
-        if (prev + 1 >= maxDuration) {
-          stopRecording();
-          return prev;
-        }
-        return prev + 1;
-      });
-    }, 1000);
-
-    segmentDurationTimerRef.current = setInterval(() => {
-      setSegmentDuration((prev) => prev + 1);
-    }, 1000);
-
-    segmentSizeCheckerRef.current = setInterval(() => {
-      if (recordedChunks.length > 0) {
-        const currentSize = recordedChunks.reduce((total, chunk) => total + chunk.size, 0) / (1024 * 1024);
-        setSegmentSize(currentSize);
-      }
-    }, 5000);
-
-    setIsRecording(true);
-    setIsPaused(false);
-    setSegmentationActive(true);
-    setRecordedChunks([]);
-    setSegments([]);
-    setCurrentSegmentNumber(1);
-    setSegmentDuration(0);
-    setTotalSize(0);
-  } catch (error) {
-    console.error("Error al iniciar grabación:", error);
-    setRecordingError(`Error al iniciar la grabación: ${error instanceof Error ? error.message : "Desconocido"}`);
   }
-};
+function drawSimpleSpectrum({
+  canvas,
+  analyser,
+  animationRef,
+  setLevel,
+}: {
+  canvas: HTMLCanvasElement
+  analyser: AnalyserNode
+  animationRef: React.MutableRefObject<number | null>
+  setLevel: (level: number) => void
+}) {
+  const ctx = canvas.getContext("2d")
+  if (!ctx) return
+
+  const WIDTH = canvas.width
+  const HEIGHT = canvas.height
+  const bufferLength = analyser.frequencyBinCount
+  const dataArray = new Uint8Array(bufferLength)
+
+  function draw() {
+    if (!analyser) return
+
+    animationRef.current = requestAnimationFrame(draw)
+    analyser.getByteFrequencyData(dataArray)
+
+    ctx.clearRect(0, 0, WIDTH, HEIGHT)
+    ctx.fillStyle = "rgb(20, 30, 60)"
+    ctx.fillRect(0, 0, WIDTH, HEIGHT)
+
+    const bars = SPECTRUM_BARS
+    const barWidth = WIDTH / bars
+    let x = 0
+    let maxLevel = 0
+
+    for (let i = 0; i < bars; i++) {
+      const start = Math.floor((i * bufferLength) / bars)
+      const end = Math.floor(((i + 1) * bufferLength) / bars)
+      let sum = 0
+      for (let j = start; j < end; j++) sum += dataArray[j]
+      const avg = sum / (end - start)
+      const barHeight = (avg / 255) * HEIGHT
+
+      ctx.fillStyle = "#66b2ff"
+      ctx.fillRect(x, HEIGHT - barHeight, barWidth - 2, barHeight)
+
+      if (avg > maxLevel) maxLevel = avg
+      x += barWidth
+    }
+
+    setLevel((maxLevel / 255) * 100)
+  }
+
+  draw()
+}
+
+  // Iniciar grabación de audio
+  const startRecording = async () => {
+    try {
+      setRecordingError(null)
+
+      // Si estamos en modo de vista previa, mostrar mensaje
+      if (isPreviewMode) {
+        setRecordingError("La grabación de audio del sistema no está disponible en este entorno de vista previa.")
+        return
+      }
+
+      // Verificar si tenemos una fuente de audio seleccionada
+      if (!isSourceSelected && !screenStreamRef.current) {
+        setRecordingError("Primero debes seleccionar una fuente de audio.")
+        return
+      }
+
+      // Asegurarse de que el micrófono esté activado
+      if (!micEnabled) {
+        setMicEnabled(true)
+        // Mostrar notificación sobre el micrófono
+        setShowMicNotification(true)
+        // Ocultar la notificación después de 5 segundos
+        setTimeout(() => {
+          setShowMicNotification(false)
+        }, 5000)
+      }
+
+      // Crear contexto de audio para mezclar las fuentes
+      const audioContext = new AudioContext()
+      const destination = audioContext.createMediaStreamDestination()
+
+      let hasAudioSources = false
+
+      // Añadir audio del sistema si está disponible y habilitado
+      if (systemAudioEnabled && screenStreamRef.current && screenStreamRef.current.getAudioTracks().length > 0) {
+        const systemSource = audioContext.createMediaStreamSource(screenStreamRef.current)
+        systemSource.connect(destination)
+        hasAudioSources = true
+        console.log("Audio del sistema conectado a la mezcla")
+      }
+
+      // Añadir audio del micrófono (siempre habilitado al iniciar grabación)
+      // Si no tenemos acceso al micrófono, solicitarlo
+      if (!micStreamRef.current || micStreamRef.current.getAudioTracks().length === 0) {
+        try {
+          console.log("Solicitando acceso al micrófono...")
+          const micStream = await navigator.mediaDevices.getUserMedia({
+            audio: {
+              echoCancellation: true,
+              noiseSuppression: true,
+              autoGainControl: true,
+            },
+          })
+
+          console.log("Micrófono conectado:", micStream.getAudioTracks().length, "pistas")
+          micStreamRef.current = micStream
+
+          // Asegurarse de que todas las pistas estén habilitadas
+          micStream.getAudioTracks().forEach((track) => {
+            track.enabled = true
+            console.log(`Pista de micrófono: ${track.label}, habilitada: ${track.enabled}`)
+          })
+
+          // Actualizar análisis de audio
+          if (audioContextRef.current) {
+            const micAnalyser = audioContextRef.current.createAnalyser()
+            micAnalyser.fftSize = 256
+            micAnalyserRef.current = micAnalyser
+
+            const micSource = audioContextRef.current.createMediaStreamSource(micStream)
+            micSource.connect(micAnalyser)
+
+            // Activar la animación del espectrograma
+            setAnimationActive(true)
+          }
+        } catch (micError) {
+          console.error("Error al acceder al micrófono:", micError)
+          setRecordingError("No se pudo acceder al micrófono. Verifica los permisos del navegador.")
+          return
+        }
+      }
+
+      if (micStreamRef.current && micStreamRef.current.getAudioTracks().length > 0) {
+        // Asegurarse de que las pistas de audio del micrófono estén habilitadas
+        micStreamRef.current.getAudioTracks().forEach((track) => {
+          track.enabled = true
+          console.log(`Conectando pista de micrófono a la mezcla: ${track.label}, habilitada: ${track.enabled}`)
+        })
+
+        const micSource = audioContext.createMediaStreamSource(micStreamRef.current)
+        micSource.connect(destination)
+        hasAudioSources = true
+        console.log("Audio del micrófono conectado a la mezcla")
+      } else {
+        console.warn("No se encontraron pistas de audio en el micrófono")
+      }
+
+      // Verificar si tenemos fuentes de audio para grabar
+      if (!hasAudioSources) {
+        setRecordingError("No se detectaron fuentes de audio para grabar. Verifica la configuración.")
+        return
+      }
+
+      // Usar el stream combinado del destino de audio
+      const combinedStream = destination.stream
+      combinedStreamRef.current = combinedStream
+
+      console.log(`Pistas de audio combinadas: ${combinedStream.getAudioTracks().length}`)
+      combinedStream.getAudioTracks().forEach((track, i) => {
+        console.log(`Pista ${i}: ${track.label}, habilitada: ${track.enabled}`)
+      })
+
+      // Iniciar un nuevo segmento
+      startNewSegment(combinedStream)
+
+      // Iniciar temporizador para la duración total
+      timerRef.current = setInterval(() => {
+        setRecordingTime((prev) => {
+          // Verificar si hemos alcanzado la duración máxima
+          if (prev + 1 >= maxDuration) {
+            stopRecording()
+            return prev
+          }
+          return prev + 1
+        })
+      }, 1000)
+
+      // Iniciar temporizador para la duración del segmento
+      segmentDurationTimerRef.current = setInterval(() => {
+        setSegmentDuration((prev) => prev + 1)
+      }, 1000)
+
+      // Iniciar verificador de tamaño del segmento
+      segmentSizeCheckerRef.current = setInterval(() => {
+        if (recordedChunks.length > 0) {
+          const currentSize = recordedChunks.reduce((total, chunk) => total + chunk.size, 0) / (1024 * 1024)
+          setSegmentSize(currentSize)
+        }
+      }, 5000)
+
+      setIsRecording(true)
+      setIsPaused(false)
+      setSegmentationActive(true)
+      setRecordedChunks([])
+      setSegments([])
+      setCurrentSegmentNumber(1)
+      setSegmentDuration(0)
+      setTotalSize(0)
+    } catch (error) {
+      console.error("Error al iniciar grabación:", error)
+      setRecordingError(`Error al iniciar la grabación: ${error instanceof Error ? error.message : "Desconocido"}`)
+    }
+  }
 
   const startNewSegment = (stream: MediaStream) => {
     // Crear y configurar MediaRecorder con opciones de fallback
@@ -522,7 +561,6 @@ const startRecording = async () => {
     }
   }
 
-  // Pausar grabación
   const pauseRecording = () => {
     if (mediaRecorderRef.current && mediaRecorderRef.current.state === "recording") {
       mediaRecorderRef.current.pause()
@@ -532,21 +570,9 @@ const startRecording = async () => {
         clearInterval(timerRef.current)
         timerRef.current = null
       }
-
-      // Cancelar la animación del espectrograma
-      if (micAnimationRef.current) {
-        cancelAnimationFrame(micAnimationRef.current)
-        micAnimationRef.current = null
-      }
-
-      if (systemAnimationRef.current) {
-        cancelAnimationFrame(systemAnimationRef.current)
-        systemAnimationRef.current = null
-      }
     }
   }
 
-  // Reanudar grabación
   const resumeRecording = () => {
     if (mediaRecorderRef.current && mediaRecorderRef.current.state === "paused") {
       mediaRecorderRef.current.resume()
@@ -555,14 +581,9 @@ const startRecording = async () => {
       timerRef.current = setInterval(() => {
         setRecordingTime((prev) => prev + 1)
       }, 1000)
-
-      // Reiniciar la animación del espectrograma
-      visualizeAudio(micAnimationRef, micAnalyserRef, micAnimationRef)
-      visualizeAudio(systemAnimationRef, systemAnalyserRef, systemAnimationRef)
     }
   }
 
-  // Detener grabación
   const stopRecording = () => {
     if (mediaRecorderRef.current && mediaRecorderRef.current.state !== "inactive") {
       mediaRecorderRef.current.stop()
@@ -590,37 +611,6 @@ const startRecording = async () => {
     }
 
     setSegmentationActive(false)
-
-    // Cancelar la animación del espectrograma
-    if (micAnimationRef.current) {
-      cancelAnimationFrame(micAnimationRef.current)
-      micAnimationRef.current = null
-    }
-
-    if (systemAnimationRef.current) {
-      cancelAnimationFrame(systemAnimationRef.current)
-      systemAnimationRef.current = null
-    }
-
-    // Limpiar el canvas
-    const systemCanvas = document.querySelector('canvas[data-spectrum="system"]') as HTMLCanvasElement
-    const micCanvas = document.querySelector('canvas[data-spectrum="mic"]') as HTMLCanvasElement
-
-    if (systemCanvas) {
-      const ctx = systemCanvas.getContext("2d")
-      if (ctx) {
-        ctx.fillStyle = "rgb(20, 30, 60)"
-        ctx.fillRect(0, 0, systemCanvas.width, systemCanvas.height)
-      }
-    }
-
-    if (micCanvas) {
-      const ctx = micCanvas.getContext("2d")
-      if (ctx) {
-        ctx.fillStyle = "rgb(20, 30, 60)"
-        ctx.fillRect(0, 0, micCanvas.width, micCanvas.height)
-      }
-    }
 
     // Actualizar el estado de grabación
     setIsRecording(false)
@@ -1013,75 +1003,17 @@ const startRecording = async () => {
             <canvas
               data-spectrum="system"
               ref={(canvas) => {
-                if (canvas) {
-                  // Asegurar que el canvas tenga el tamaño correcto
+                if (canvas && systemAnalyserRef.current && animationActive) {
                   if (canvas.width !== canvas.clientWidth || canvas.height !== canvas.clientHeight) {
                     canvas.width = canvas.clientWidth
                     canvas.height = canvas.clientHeight
                   }
-
-                  // Inicializar el canvas con un fondo vacío
-                  initializeCanvas(canvas)
-
-                  const canvasRef = canvas
-                  const canvasCtx = canvasRef.getContext("2d")
-
-                  if (canvasCtx && systemAnalyserRef.current && animationActive) {
-                    const WIDTH = canvasRef.width
-                    const HEIGHT = canvasRef.height
-                    const analyser = systemAnalyserRef.current
-                    const bufferLength = analyser.frequencyBinCount
-                    const dataArray = new Uint8Array(bufferLength)
-
-                    const drawSystemSpectrum = () => {
-                      // Verificar si la animación está activa y si tenemos un analizador
-                      if (!animationActive || !systemAnalyserRef.current) {
-                        // Limpiar el canvas una última vez
-                        canvasCtx.fillStyle = "rgb(20, 30, 60)"
-                        canvasCtx.fillRect(0, 0, WIDTH, HEIGHT)
-                        setSystemAudioLevel(0)
-                        return
-                      }
-
-                      systemAnimationRef.current = requestAnimationFrame(drawSystemSpectrum)
-
-                      try {
-                        analyser.getByteFrequencyData(dataArray)
-
-                        canvasCtx.fillStyle = "rgb(20, 30, 60)"
-                        canvasCtx.fillRect(0, 0, WIDTH, HEIGHT)
-
-                        const barWidth = (WIDTH / bufferLength) * 2.5
-                        let x = 0
-
-                        for (let i = 0; i < bufferLength; i++) {
-                          const barHeight = dataArray[i] / 2
-
-                          // Gradiente de color basado en la intensidad
-                          const hue = 220 - (dataArray[i] / 255) * 60 // Azul a celeste
-                          canvasCtx.fillStyle = `hsla(${hue}, 100%, 60%, 0.8)`
-
-                          canvasCtx.fillRect(x, HEIGHT - barHeight, barWidth, barHeight)
-                          x += barWidth + 1
-                        }
-
-                        // Calcular nivel de audio para otras funciones
-                        let sum = 0
-                        for (let i = 0; i < bufferLength; i++) {
-                          sum += dataArray[i]
-                        }
-                        const average = sum / bufferLength
-                        setSystemAudioLevel((average / 255) * 100)
-                      } catch (error) {
-                        console.error("Error al dibujar espectrograma del sistema:", error)
-                        cancelAnimationFrame(systemAnimationRef.current)
-                        systemAnimationRef.current = null
-                      }
-                    }
-
-                    // Iniciar la animación
-                    drawSystemSpectrum()
-                  }
+                  drawSimpleSpectrum({
+                    canvas,
+                    analyser: systemAnalyserRef.current,
+                    animationRef: systemAnimationRef,
+                    setLevel: setSystemAudioLevel,
+                  })
                 }
               }}
               width="600"
@@ -1101,77 +1033,20 @@ const startRecording = async () => {
             <canvas
               data-spectrum="mic"
               ref={(canvas) => {
-                if (canvas) {
-                  // Asegurar que el canvas tenga el tamaño correcto
+                if (canvas && micAnalyserRef.current && animationActive) {
                   if (canvas.width !== canvas.clientWidth || canvas.height !== canvas.clientHeight) {
                     canvas.width = canvas.clientWidth
                     canvas.height = canvas.clientHeight
                   }
-
-                  // Inicializar el canvas con un fondo vacío
-                  initializeCanvas(canvas)
-
-                  const canvasRef = canvas
-                  const canvasCtx = canvasRef.getContext("2d")
-
-                  if (canvasCtx && micAnalyserRef.current && animationActive) {
-                    const WIDTH = canvasRef.width
-                    const HEIGHT = canvasRef.height
-                    const analyser = micAnalyserRef.current
-                    const bufferLength = analyser.frequencyBinCount
-                    const dataArray = new Uint8Array(bufferLength)
-
-                    const drawMicSpectrum = () => {
-                      // Verificar si la animación está activa y si tenemos un analizador
-                      if (!animationActive || !micAnalyserRef.current) {
-                        // Limpiar el canvas una última vez
-                        canvasCtx.fillStyle = "rgb(20, 30, 60)"
-                        canvasCtx.fillRect(0, 0, WIDTH, HEIGHT)
-                        setMicAudioLevel(0)
-                        return
-                      }
-
-                      micAnimationRef.current = requestAnimationFrame(drawMicSpectrum)
-
-                      try {
-                        analyser.getByteFrequencyData(dataArray)
-
-                        canvasCtx.fillStyle = "rgb(20, 30, 60)"
-                        canvasCtx.fillRect(0, 0, WIDTH, HEIGHT)
-
-                        const barWidth = (WIDTH / bufferLength) * 2.5
-                        let x = 0
-
-                        for (let i = 0; i < bufferLength; i++) {
-                          const barHeight = dataArray[i] / 2
-
-                          // Gradiente de color basado en la intensidad
-                          const hue = 220 - (dataArray[i] / 255) * 60 // Azul a celeste
-                          canvasCtx.fillStyle = `hsla(${hue}, 100%, 60%, 0.8)`
-
-                          canvasCtx.fillRect(x, HEIGHT - barHeight, barWidth, barHeight)
-                          x += barWidth + 1
-                        }
-
-                        // Calcular nivel de audio para otras funciones
-                        let sum = 0
-                        for (let i = 0; i < bufferLength; i++) {
-                          sum += dataArray[i]
-                        }
-                        const average = sum / bufferLength
-                        setMicAudioLevel((average / 255) * 100)
-                      } catch (error) {
-                        console.error("Error al dibujar espectrograma del micrófono:", error)
-                        cancelAnimationFrame(micAnimationRef.current)
-                        micAnimationRef.current = null
-                      }
-                    }
-
-                    // Iniciar la animación
-                    drawMicSpectrum()
-                  }
+                  drawSimpleSpectrum({
+                    canvas,
+                    analyser: micAnalyserRef.current,
+                    animationRef: micAnimationRef,
+                    setLevel: setMicAudioLevel,
+                  })
                 }
               }}
+
               width="600"
               height="60"
               className="w-full h-15 rounded-lg bg-blue-900/50"
@@ -1322,9 +1197,11 @@ const startRecording = async () => {
           <DialogHeader>
             <DialogTitle>Seleccionando fuente de audio</DialogTitle>
             <DialogDescription>
-              Selecciona la ventana, pestaña o aplicación de la que quieres capturar el audio.
+              <span>
+                Selecciona la ventana, pestaña o aplicación de la que quieres capturar el audio.
+              </span>
               <div className="mt-2 p-2 bg-muted rounded-md">
-                <p className="text-sm font-medium">Consejos:</p>
+                <span className="text-sm font-medium">Consejos:</span>
                 <ul className="text-sm list-disc pl-5 mt-1">
                   <li>Asegúrate de marcar "Compartir audio" en el selector del navegador</li>
                   <li>Para reuniones, selecciona la ventana de la aplicación de videoconferencia</li>
@@ -1332,6 +1209,7 @@ const startRecording = async () => {
                 </ul>
               </div>
             </DialogDescription>
+
           </DialogHeader>
         </DialogContent>
       </Dialog>

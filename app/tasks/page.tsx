@@ -759,7 +759,7 @@ export default function TasksPage() {
                     <User className="h-4 w-4 mr-2" />
                     Mis Tareas
                   </Button>
-                  <Button
+                  {/*<Button
                     variant={viewMode === "organization-tasks" ? "default" : "outline"}
                     className={
                       viewMode === "organization-tasks"
@@ -771,6 +771,9 @@ export default function TasksPage() {
                     <Users className="h-4 w-4 mr-2" />
                     Tareas de Miembros
                   </Button>
+                  <Users className="h-4 w-4 mr-2" />
+                    Tareas de la Organización
+                  </Button>*/}
                 </div>
               </div>
             </div>
@@ -807,13 +810,13 @@ export default function TasksPage() {
                 </Select>
               </div>
 
-              <Button
+              {/*<Button
                 className="bg-blue-600 hover:bg-blue-700 text-white w-full sm:w-auto"
                 onClick={() => setShowNewTaskModal(true)}
               >
                 <Plus className="h-5 w-5 mr-2" />
                 Nueva tarea
-              </Button>
+              </Button>*/}
             </div>
           </div>
 

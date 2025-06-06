@@ -1,6 +1,7 @@
 "use client"
 
-import { useState, useRef, useEffect } from "react"
+import { useState, useRef, useEffect, useMemo } from "react"
+
 import { NewNavbar } from "@/components/new-navbar"
 import {
   Mic,
@@ -29,7 +30,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Slider } from "@/components/ui/slider"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion"
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog"
+import { Dialog, DialogContent, DialogDescription,DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { Progress } from "@/components/ui/progress"
 import { format } from "date-fns"
 import { es } from "date-fns/locale"
@@ -39,6 +40,9 @@ import { useMobile } from "@/hooks/use-mobile"
 import { LongAudioRecorder } from "@/components/long-audio-recorder"
 import AnalyzerTypeSelector from "@/components/analyzer-type-selector"
 import type { AnalyzerType } from "@/utils/analyzers"
+import { Input } from "@/components/ui/input";
+import { Badge } from "@/components/ui/badge";
+import { Edit2 } from "lucide-react";
 
 // Lista de idiomas soportados
 const supportedLanguages = [
@@ -962,250 +966,137 @@ const ProcessingSteps = ({ currentStep, progress }) => {
 }
 
 // Componente para la transcripción
-const TranscriptionView = ({ transcription, onAnalyze, onCancel }) => {
-  const [editableTranscription, setEditableTranscription] = useState(transcription || [])
-  const [isEditing, setIsEditing] = useState(false)
-  const [selectedSpeakerId, setSelectedSpeakerId] = useState(null)
-  const [hoveredSegment, setHoveredSegment] = useState(null)
-  const isMobile = useMobile()
-  const [newSpeakerName, setNewSpeakerName] = useState("")
-  const [customSpeakers, setCustomSpeakers] = useState([])
-  // Nuevo estado para el tipo de analizador
-  const [selectedAnalyzerType, setSelectedAnalyzerType] = useState<AnalyzerType>("standard")
+// Define el tipo de cada segmento de transcripción
+// Define el tipo de cada segmento de transcripción
+interface Segment {
+  time: string;
+  speaker: string;
+  text: string;
+}
 
+interface TranscriptionViewProps {
+  transcription: Segment[];
+  onAnalyze: (editedTranscription: Segment[], speakerMap: Record<string, string>, analyzerType?: string) => void;
+  onCancel: () => void;
+}
+
+export function TranscriptionView({
+  transcription,
+  onAnalyze,
+  onCancel,
+}: TranscriptionViewProps) {
+  // Estado para el speakerMap global
+  const [speakerMap, setSpeakerMap] = useState<Record<string, string>>({});
+  // Estado para el diálogo de edición
+  const [editingSpeakerKey, setEditingSpeakerKey] = useState<string>("");
+  const [speakerName, setSpeakerName] = useState("");
+  const [showSpeakerDialog, setShowSpeakerDialog] = useState(false);
+  // Estado para el tipo de análisis
+  const [selectedAnalyzerType, setSelectedAnalyzerType] = useState("standard");
+
+  // Inicializar el speakerMap al cargar la transcripción
   useEffect(() => {
-    setEditableTranscription(transcription || [])
-  }, [transcription])
-
-  if (!editableTranscription || editableTranscription.length === 0) {
-    return (
-      <div className="space-y-4">
-        <div
-          className="bg-blue-800/30 border border-blue-700/30 rounded-lg flex flex-col items-center justify-center p-4 sm:p-6 text-center"
-          style={{ minHeight: isMobile ? "200px" : "300px" }}
-        >
-          <div className="rounded-full bg-blue-800/40 p-3 mb-4">
-            <MessageSquare className="h-5 w-5 sm:h-6 sm:w-6 text-blue-300" />
-          </div>
-          <h3 className="text-base sm:text-lg font-medium text-white mb-1">No hay transcripción disponible</h3>
-          <p className="text-sm text-blue-300/70">
-            No se ha generado ninguna transcripción. Intenta grabar una nueva reunión.
-          </p>
-        </div>
-
-        <div className="flex justify-end gap-3">
-          <Button
-            variant="outline"
-            className="border-blue-600/50 text-blue-300 hover:bg-blue-800/30"
-            onClick={onCancel}
-          >
-            Cancelar
-          </Button>
-          <Button className="bg-blue-600 hover:bg-blue-700 text-white" onClick={onCancel}>
-            Volver
-          </Button>
-        </div>
-      </div>
-    )
-  }
-
-  // Agrupar por hablante para mostrar colores consistentes
-  const speakers = [...new Set(editableTranscription.map((item) => item.speaker))]
-  const speakerColors = {
-    "Speaker 1": "bg-blue-500",
-    "Speaker 2": "bg-green-500",
-    "Speaker 3": "bg-purple-500",
-    "Speaker 4": "bg-yellow-500",
-    "Speaker 5": "bg-red-500",
-    "Speaker 6": "bg-pink-500",
-  }
-
-  // Asignar colores a hablantes no identificados
-  speakers.forEach((speaker, index) => {
-    if (!speakerColors[speaker]) {
-      const colorKeys = Object.keys(speakerColors)
-      speakerColors[speaker] = speakerColors[colorKeys[index % colorKeys.length]]
+    if (transcription && transcription.length > 0) {
+      const initialMap: Record<string, string> = {};
+      transcription.forEach(seg => {
+        if (seg.speaker && !initialMap[seg.speaker]) {
+          initialMap[seg.speaker] = seg.speaker;
+        }
+      });
+      setSpeakerMap(initialMap);
     }
-  })
+  }, [transcription]);
 
-  const handleSpeakerChange = (index, newSpeaker) => {
-    const updatedTranscription = [...editableTranscription]
-    updatedTranscription[index].speaker = newSpeaker
-    setEditableTranscription(updatedTranscription)
-  }
+  // Obtener todos los IDs de hablantes únicos
+  const allSpeakers = Object.keys(speakerMap);
 
-  const handleBulkSpeakerChange = () => {
-    if (!selectedSpeakerId) return
+  // Colores para los badges (opcional)
+  const palette = [
+    "bg-blue-500",
+    "bg-green-500",
+    "bg-purple-500",
+    "bg-yellow-500",
+    "bg-pink-500",
+    "bg-orange-500",
+    "bg-gray-500",
+  ];
+  const speakerColors: Record<string, string> = {};
+  allSpeakers.forEach((s, idx) => {
+    speakerColors[s] = palette[idx % palette.length];
+  });
 
-    const updatedTranscription = editableTranscription.map((item, idx) => {
-      if (
-        hoveredSegment === idx ||
-        (hoveredSegment !== null && item.speaker === editableTranscription[hoveredSegment].speaker)
-      ) {
-        return { ...item, speaker: selectedSpeakerId }
-      }
-      return item
-    })
+   
+  // Abrir el diálogo de edición
+  const handleEditSpeaker = (speakerId: string) => {
+    setEditingSpeakerKey(speakerId);
+    setSpeakerName(speakerMap[speakerId] || speakerId);
+    setShowSpeakerDialog(true);
+  };
 
-    setEditableTranscription(updatedTranscription)
-    setSelectedSpeakerId(null)
-    setHoveredSegment(null)
-  }
+  // Guardar el nombre editado
+  const handleSaveSpeaker = () => {
+    if (!speakerName.trim() || !editingSpeakerKey) return;
+    setSpeakerMap(prev => ({ ...prev, [editingSpeakerKey]: speakerName.trim() }));
+    setShowSpeakerDialog(false);
+  };
 
-  return (
+  // Al analizar, se pasa la transcripción original y el speakerMap
+const handleAnalyze = () => {
+  // Aplica el speakerMap a cada segmento
+  const mappedTranscription = transcription.map(seg => ({
+    ...seg,
+    speaker: speakerMap[seg.speaker] || seg.speaker,
+  }));
+  onAnalyze(mappedTranscription, speakerMap, selectedAnalyzerType);
+};
+
+return (
     <div className="space-y-4">
-      <div className={`flex ${isMobile ? "flex-col" : "justify-between"} items-start sm:items-center mb-4 gap-2`}>
+      <div className="flex justify-between items-center mb-4">
         <h3 className="text-lg font-medium text-white">Transcripción</h3>
-        <div className="flex gap-2">
-          <Button
-            variant="outline"
-            size="sm"
-            className={`${isEditing ? "bg-blue-700/50" : "bg-transparent"} border-blue-600/50 text-blue-300`}
-            onClick={() => setIsEditing(!isEditing)}
-          >
-            <Settings className="h-4 w-4 mr-2" />
-            {isEditing ? "Finalizar" : "Editar"}
-          </Button>
-        </div>
       </div>
 
-      {isEditing && (
-        <div className="bg-blue-800/40 p-3 sm:p-4 rounded-lg mb-4 border border-blue-700/50">
-          <h4 className="text-sm font-medium text-white mb-2">Modo de edición de hablantes</h4>
-          <p className="text-xs text-blue-300/70 mb-2 sm:mb-3">
-            Puedes corregir la asignación de hablantes de dos formas:
-          </p>
-          <ol className="text-xs text-blue-300/70 list-decimal pl-4 space-y-1 mb-2 sm:mb-3">
-            <li>Haz clic en el nombre del hablante para cambiarlo individualmente.</li>
-            <li>
-              O selecciona un hablante abajo y luego haz clic en un segmento para reasignar todos los segmentos
-              similares.
-            </li>
-          </ol>
-
-          {/* Formulario para añadir hablante personalizado */}
-          <div className="flex items-center gap-2 mt-3 mb-3">
-            <input
-              type="text"
-              value={newSpeakerName}
-              onChange={(e) => setNewSpeakerName(e.target.value)}
-              placeholder="Nuevo hablante..."
-              className="bg-blue-800/50 border border-blue-700/50 text-white rounded text-xs sm:text-sm py-1 px-2 flex-1"
-            />
+      {/* Lista de hablantes para editar */}
+      <div className="mb-4 flex flex-wrap gap-2">
+        {allSpeakers.map((speakerId) => (
+          <Badge
+            key={speakerId}
+            className={`text-white ${speakerColors[speakerId]} flex items-center`}
+          >
+            {speakerMap[speakerId]}
             <Button
               size="sm"
-              className="bg-blue-600 hover:bg-blue-700 text-white"
-              onClick={() => {
-                if (newSpeakerName.trim() === "") return
-                // Verificar que el nombre no exista ya
-                if (!speakers.includes(newSpeakerName) && !customSpeakers.includes(newSpeakerName)) {
-                  setCustomSpeakers([...customSpeakers, newSpeakerName])
-                  setSelectedSpeakerId(newSpeakerName)
-                  setNewSpeakerName("")
-                }
-              }}
+              variant="ghost"
+              className="h-6 w-6 p-0 ml-2 text-blue-200"
+              onClick={() => handleEditSpeaker(speakerId)}
             >
-              Añadir
+              <Edit2 className="h-3 w-3" />
             </Button>
-          </div>
+          </Badge>
+        ))}
+      </div>
 
-          <div className="flex flex-wrap gap-2 mt-2 sm:mt-3">
-            {/* Hablantes originales */}
-            {speakers.map((speaker) => (
-              <Button
-                key={speaker}
-                size="sm"
-                variant="outline"
-                className={`border-blue-600/50 ${selectedSpeakerId === speaker ? "bg-blue-700/50" : "bg-transparent"}`}
-                onClick={() => setSelectedSpeakerId(speaker)}
-              >
-                <div className={`w-3 h-3 rounded-full ${speakerColors[speaker]} mr-2`}></div>
-                {speaker}
-              </Button>
-            ))}
-
-            {/* Hablantes personalizados */}
-            {customSpeakers.map((speaker) => (
-              <Button
-                key={speaker}
-                size="sm"
-                variant="outline"
-                className={`border-blue-600/50 ${selectedSpeakerId === speaker ? "bg-blue-700/50" : "bg-transparent"}`}
-                onClick={() => setSelectedSpeakerId(speaker)}
-              >
-                <div className={`w-3 h-3 rounded-full ${speakerColors[speaker] || "bg-gray-500"} mr-2`}></div>
-                {speaker}
-              </Button>
-            ))}
-
-            {selectedSpeakerId && (
-              <Button
-                size="sm"
-                className="bg-blue-600 hover:bg-blue-700 text-white ml-auto"
-                onClick={handleBulkSpeakerChange}
-              >
-                Aplicar cambios
-              </Button>
-            )}
-          </div>
-        </div>
-      )}
-
+      {/* Lista de segmentos */}
       <div className="bg-blue-800/30 border border-blue-700/30 rounded-lg p-3 sm:p-4 max-h-[300px] sm:max-h-[400px] overflow-y-auto">
         <div className="space-y-4 sm:space-y-6">
-          {editableTranscription.map((item, index) => (
+          {transcription.map((item, index) => (
             <div
               key={index}
-              className={`flex ${hoveredSegment === index ? "bg-blue-700/30" : ""} p-2 rounded-lg transition-colors`}
-              onMouseEnter={() => (isEditing ? setHoveredSegment(index) : null)}
-              onMouseLeave={() => (isEditing ? setHoveredSegment(null) : null)}
-              onClick={() => {
-                if (isEditing && selectedSpeakerId) {
-                  handleSpeakerChange(index, selectedSpeakerId)
-                }
-              }}
+              className="flex p-2 rounded-lg transition-colors"
             >
               <div className="w-16 sm:w-24 flex-shrink-0">
-                <div className="text-xs sm:text-sm text-blue-300">{item.time}</div>
+                <div className="text-xs sm:text-sm text-blue-300">
+                  {item.time}
+                </div>
               </div>
               <div className="flex-1">
                 <div className="flex items-center font-medium text-white mb-1">
-                  {isEditing ? (
-                    <div className="flex items-center cursor-pointer">
-                      <div
-                        className={`w-3 h-3 rounded-full ${speakerColors[item.speaker] || "bg-gray-500"} mr-2`}
-                      ></div>
-                      <select
-                        value={item.speaker}
-                        onChange={(e) => handleSpeakerChange(index, e.target.value)}
-                        className="bg-blue-800/50 border border-blue-700/50 rounded text-xs sm:text-sm py-0 px-1"
-                      >
-                        {/* Hablantes originales */}
-                        {speakers.map((speaker) => (
-                          <option key={speaker} value={speaker}>
-                            {speaker}
-                          </option>
-                        ))}
-
-                        {/* Separador si hay hablantes personalizados */}
-                        {customSpeakers.length > 0 && <option disabled>──────────</option>}
-
-                        {/* Hablantes personalizados */}
-                        {customSpeakers.map((speaker) => (
-                          <option key={speaker} value={speaker}>
-                            {speaker}
-                          </option>
-                        ))}
-                      </select>
-                    </div>
-                  ) : (
-                    <>
-                      <div
-                        className={`w-3 h-3 rounded-full ${speakerColors[item.speaker] || "bg-gray-500"} mr-2`}
-                      ></div>
-                      {item.speaker}
-                    </>
-                  )}
+                  <div
+                    className={`w-3 h-3 rounded-full ${
+                      speakerColors[item.speaker] || "bg-gray-500"
+                    } mr-2`}
+                  ></div>
+                  {speakerMap[item.speaker] || item.speaker}
                 </div>
                 <div className="text-sm text-blue-100">{item.text}</div>
               </div>
@@ -1214,34 +1105,62 @@ const TranscriptionView = ({ transcription, onAnalyze, onCancel }) => {
         </div>
       </div>
 
-      {/* Selector de tipo de analizador */}
+      {/* Selector de tipo de analizador y botones */}
       <div className="mt-6 mb-4">
-        <h3 className="text-lg font-medium text-white mb-3">Selecciona el tipo de análisis</h3>
-        <AnalyzerTypeSelector onSelect={setSelectedAnalyzerType} defaultValue="standard" disabled={false} />
+        <h3 className="text-lg font-medium text-white mb-3">
+          Selecciona el tipo de análisis
+        </h3>
+        <AnalyzerTypeSelector
+          onSelect={setSelectedAnalyzerType}
+          defaultValue="standard"
+          disabled={false}
+        />
       </div>
 
-      <div className={`flex ${isMobile ? "flex-col" : "justify-end"} gap-3`}>
+      <div className="flex justify-end gap-3">
         <Button
           variant="outline"
-          className={`border-blue-600/50 text-blue-300 hover:bg-blue-800/30 ${isMobile ? "w-full" : ""}`}
+          className="border-blue-600/50 text-blue-300 hover:bg-blue-800/30"
           onClick={onCancel}
         >
           Cancelar
         </Button>
         <Button
-          className={`bg-blue-600 hover:bg-blue-700 text-white ${isMobile ? "w-full" : ""}`}
-          onClick={() => {
-            // Pasar la transcripción editada y el tipo de analizador
-            onAnalyze(editableTranscription, selectedAnalyzerType)
-          }}
+          className="bg-blue-600 hover:bg-blue-700 text-white"
+          onClick={handleAnalyze}
         >
           Analizar
         </Button>
       </div>
-    </div>
-  )
-}
 
+      {/* Diálogo de edición de hablante */}
+      <Dialog open={showSpeakerDialog} onOpenChange={setShowSpeakerDialog}>
+        <DialogContent className="bg-blue-800 border-blue-700 text-white">
+          <DialogHeader>
+            <DialogTitle>Editar nombre de hablante</DialogTitle>
+          </DialogHeader>
+          <div className="py-4">
+            <Input
+              value={speakerName}
+              onChange={(e) => setSpeakerName(e.target.value)}
+              placeholder="Nombre del hablante"
+              className="bg-blue-700/40 border-blue-600/50 text-white"
+              autoFocus
+            />
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setShowSpeakerDialog(false)}>
+              Cancelar
+            </Button>
+            <Button onClick={handleSaveSpeaker} disabled={!speakerName.trim()}>
+              Guardar
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+    </div>
+  );
+}
 // Componente para el análisis de la reunión
 const MeetingAnalysis = ({ analysis, onSave, onCancel, driveFileInfo }) => {
   const [activeTab, setActiveTab] = useState("summary")
@@ -1327,6 +1246,9 @@ const MeetingAnalysis = ({ analysis, onSave, onCancel, driveFileInfo }) => {
           </TabsTrigger>
           <TabsTrigger value="tasks" className="data-[state=active]:bg-blue-600 text-white text-xs sm:text-sm">
             Tareas
+          </TabsTrigger>
+          <TabsTrigger value="action-items" className="data-[state=active]:bg-blue-600 text-white text-xs sm:text-sm">
+            Acciones
           </TabsTrigger>
         </TabsList>
 
@@ -2206,6 +2128,15 @@ export default function NewMeetingPage() {
 
   return (
     <div className="min-h-screen bg-blue-900">
+      {isSaving && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-blue-900/80">
+          <div className="flex flex-col items-center">
+            <Loader className="h-12 w-12 text-blue-300 mb-4 animate-spin" />
+            <span className="text-white text-lg font-semibold">Guardando reunión...</span>
+          </div>
+        </div>
+      )}
+
       <main className="container mx-auto px-4 pb-24 pt-8">
         <div className="max-w-7xl mx-auto">
           <h1 className="text-3xl font-bold text-white mb-8 glow-text">Crear una nueva reunión</h1>

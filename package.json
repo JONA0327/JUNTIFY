@@ -3,10 +3,12 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "dev": "next dev",
-    "build": "next build",
-    "start": "next start",
-    "lint": "next lint"
+  "dev": "cross-env NODE_OPTIONS=--openssl-legacy-provider next dev",
+  "build": "next build",
+  "start": "cross-env NODE_OPTIONS=--openssl-legacy-provider next start",
+  "lint": "next lint",
+    "test": "jest"
+
   },
   "dependencies": {
     "@ai-sdk/openai": "latest",

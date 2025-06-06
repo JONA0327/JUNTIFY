@@ -5,19 +5,73 @@ import { useRouter } from "next/navigation"
 import { NewNavbar } from "@/components/new-navbar"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
-import { User, Settings, CloudUpload, AlertCircle, Mail, Building, LogOut } from "lucide-react"
+import {
+  User, Settings, CloudUpload, AlertCircle, Mail, LogOut,
+  Award, Gem, Crown, Star, Shield, Code, UserCog, ChevronRight
+} from "lucide-react"
 import { GoogleDriveSetup } from "@/components/google-drive-setup"
 import { getUsername, storeUsername } from "@/utils/user-helpers"
 import { getSupabaseClient } from "@/utils/supabase"
+
+const roleInfo: Record<string, { label: string; color: string; icon: JSX.Element }> = {
+  free: {
+    label: "Free",
+    // #F4E8F8 (muy claro) → texto oscuro
+    color: "bg-[#F4E8F8] text-gray-900 border-[#F4E8F8]",
+    icon: <Award className="h-4 w-4 mr-1 text-gray-700" />,
+  },
+  basic: {
+    label: "Basic",
+    // #D2D9E6 (claro) → texto oscuro
+    color: "bg-[#D2D9E6] text-gray-900 border-[#D2D9E6]",
+    icon: <Star className="h-4 w-4 mr-1 text-gray-700" />,
+  },
+  business: {
+    label: "Business",
+    // #93E1D8 (claro) → texto oscuro
+    color: "bg-[#93E1D8] text-gray-900 border-[#93E1D8]",
+    icon: <Crown className="h-4 w-4 mr-1 text-gray-700" />,
+  },
+  enterprise: {
+    label: "Enterprise",
+    // #61A9C2 (medio-oscuro) → texto blanco
+    color: "bg-[#61A9C2] text-white border-[#61A9C2]",
+    icon: <Gem className="h-4 w-4 mr-1 text-white" />,
+  },
+  founder: {
+    label: "Founder",
+    // #6E2A84 (oscuro) → texto blanco
+    color: "bg-[#6E2A84] text-white border-[#6E2A84]",
+    icon: <Shield className="h-4 w-4 mr-1 text-white" />,
+  },
+  developer: {
+    label: "Developer",
+    // #3F826D (muy oscuro) → texto blanco
+    color: "bg-[#3F826D] text-white border-[#3F826D]",
+    icon: <Code className="h-4 w-4 mr-1 text-white" />,
+  },
+  superadmin: {
+    label: "Superadmin",
+    // #00916E (oscuro) → texto blanco
+    color: "bg-[#00916E] text-white border-[#00916E]",
+    icon: <UserCog className="h-4 w-4 mr-1 text-white" />,
+  },
+};
+
+const sidebarItems = [
+  { id: "account", label: "Mi Cuenta", icon: User },
+  { id: "storage", label: "Almacenamiento", icon: CloudUpload },
+  { id: "settings", label: "Configuración", icon: Settings },
+]
 
 export default function ProfilePage() {
   const [username, setUsername] = useState("")
   const [fullName, setFullName] = useState("")
   const [email, setEmail] = useState("")
+  const [role, setRole] = useState("free")
   const [error, setError] = useState<string | null>(null)
   const [success, setSuccess] = useState<string | null>(null)
   const [activeTab, setActiveTab] = useState("account")
@@ -29,13 +83,11 @@ export default function ProfilePage() {
     const fetchUserData = async () => {
       setLoading(true)
       try {
-        // Obtener el username almacenado localmente
         const storedUsername = getUsername()
         if (storedUsername) {
           setUsername(storedUsername)
         }
 
-        // Obtener datos del usuario desde Supabase
         const supabase = getSupabaseClient()
         const {
           data: { user },
@@ -43,10 +95,17 @@ export default function ProfilePage() {
 
         if (user) {
           setEmail(user.email || "")
-
-          // Obtener metadatos adicionales si existen
           const metadata = user.user_metadata || {}
           setFullName(metadata.full_name || "")
+
+          const { data: profile } = await supabase
+            .from("profiles")
+            .select("role")
+            .eq("id", user.id)
+            .single()
+          setRole(profile?.role)
+          console.log("Perfil obtenido:", profile)
+          console.log("Rol obtenido:", profile?.role)
         }
       } catch (err) {
         console.error("Error al cargar datos del usuario:", err)
@@ -66,10 +125,7 @@ export default function ProfilePage() {
     }
 
     try {
-      // Guardar username localmente
       storeUsername(username.trim())
-
-      // Actualizar metadatos en Supabase
       const supabase = getSupabaseClient()
       const { error: updateError } = await supabase.auth.updateUser({
         data: {
@@ -82,7 +138,6 @@ export default function ProfilePage() {
       setSuccess("Perfil actualizado correctamente")
       setError(null)
 
-      // Limpiar mensaje de éxito después de 3 segundos
       setTimeout(() => {
         setSuccess(null)
       }, 3000)
@@ -95,15 +150,12 @@ export default function ProfilePage() {
   const handleLogout = async () => {
     setLoggingOut(true)
     try {
-      // Cerrar sesión en Supabase
       const supabase = getSupabaseClient()
       await supabase.auth.signOut()
 
-      // Limpiar datos locales
       localStorage.removeItem("juntify_username")
       localStorage.removeItem("juntify_token")
 
-      // Redireccionar al login
       router.push("/login")
     } catch (err) {
       console.error("Error al cerrar sesión:", err)
@@ -112,60 +164,49 @@ export default function ProfilePage() {
     }
   }
 
-  return (
-    <div className="min-h-screen bg-blue-900">
-      <main className="container mx-auto px-4 pb-24 pt-8">
-        <div className="max-w-4xl mx-auto">
-          <h1 className="text-3xl font-bold text-white mb-8 glow-text">Perfil de Usuario</h1>
+  const renderContent = () => {
+    switch (activeTab) {
+      case "account":
+        return (
+          <div className="space-y-6">
+            <div>
+              <h2 className="text-2xl font-bold text-white mb-2">Información de la cuenta</h2>
+              <p className="text-blue-300">Actualiza tu información personal y preferencias</p>
+            </div>
 
-          <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-            <TabsList className="bg-blue-800/30 w-full mb-8">
-              <TabsTrigger value="account" className="data-[state=active]:bg-blue-600 text-white">
-                <User className="h-4 w-4 mr-2" />
-                Cuenta
-              </TabsTrigger>
-              <TabsTrigger value="storage" className="data-[state=active]:bg-blue-600 text-white">
-                <CloudUpload className="h-4 w-4 mr-2" />
-                Almacenamiento
-              </TabsTrigger>
-              <TabsTrigger value="settings" className="data-[state=active]:bg-blue-600 text-white">
-                <Settings className="h-4 w-4 mr-2" />
-                Configuración
-              </TabsTrigger>
-            </TabsList>
+            {error && (
+              <Alert variant="destructive" className="bg-red-900/50 border-red-800 text-white">
+                <AlertCircle className="h-4 w-4" />
+                <AlertTitle>Error</AlertTitle>
+                <AlertDescription>{error}</AlertDescription>
+              </Alert>
+            )}
 
-            <TabsContent value="account" className="mt-0">
-              <Card className="bg-blue-800/30 border border-blue-700/30">
-                <CardHeader>
-                  <CardTitle className="text-white">Información de la cuenta</CardTitle>
-                  <CardDescription className="text-blue-300">
-                    Actualiza tu información personal y preferencias
-                  </CardDescription>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  {error && (
-                    <Alert variant="destructive" className="bg-red-900/50 border-red-800 text-white">
-                      <AlertCircle className="h-4 w-4" />
-                      <AlertTitle>Error</AlertTitle>
-                      <AlertDescription>{error}</AlertDescription>
-                    </Alert>
-                  )}
+            {success && (
+              <Alert className="bg-green-900/50 border-green-800 text-white">
+                <AlertCircle className="h-4 w-4" />
+                <AlertTitle>Éxito</AlertTitle>
+                <AlertDescription>{success}</AlertDescription>
+              </Alert>
+            )}
 
-                  {success && (
-                    <Alert className="bg-green-900/50 border-green-800 text-white">
-                      <AlertCircle className="h-4 w-4" />
-                      <AlertTitle>Éxito</AlertTitle>
-                      <AlertDescription>{success}</AlertDescription>
-                    </Alert>
-                  )}
-
-                  {loading ? (
-                    <div className="text-center py-4">
-                      <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-white mx-auto"></div>
-                      <p className="mt-2 text-blue-200">Cargando información...</p>
-                    </div>
-                  ) : (
-                    <>
+            {loading ? (
+              <div className="text-center py-12">
+                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-white mx-auto"></div>
+                <p className="mt-4 text-blue-200">Cargando información...</p>
+              </div>
+            ) : (
+              <div className="grid gap-6">
+                {/* Tarjeta de información del usuario */}
+                <Card className="bg-blue-800/30 border border-blue-700/30">
+                  <CardHeader>
+                    <CardTitle className="text-white flex items-center">
+                      <User className="h-5 w-5 mr-2" />
+                      Información Personal
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent className="space-y-6">
+                    <div className="grid md:grid-cols-2 gap-6">
                       <div className="space-y-2">
                         <Label htmlFor="username" className="text-blue-200 flex items-center">
                           <User className="h-4 w-4 mr-2" />
@@ -180,6 +221,18 @@ export default function ProfilePage() {
                         <p className="text-xs text-blue-300/70">El nombre de usuario no se puede modificar</p>
                       </div>
 
+                      <div className="space-y-2">
+                        <Label className="text-blue-200 flex items-center">
+                          Rol
+                        </Label>
+                        <div className={`inline-flex items-center px-4 py-2 rounded-full border text-sm font-semibold shadow-lg ${roleInfo[role]?.color || roleInfo["free"].color}`}>
+                          {roleInfo[role]?.icon }
+                          {roleInfo[role]?.label }
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="grid md:grid-cols-2 gap-6">
                       <div className="space-y-2">
                         <Label htmlFor="fullName" className="text-blue-200 flex items-center">
                           <User className="h-4 w-4 mr-2" />
@@ -206,64 +259,136 @@ export default function ProfilePage() {
                         />
                         <p className="text-xs text-blue-300/70">El correo electrónico no se puede modificar</p>
                       </div>
-                    </>
-                  )}
-                </CardContent>
-                <CardFooter className="flex flex-col space-y-4 sm:flex-row sm:justify-between sm:space-y-0">
-                  <Button
-                    className="bg-blue-600 hover:bg-blue-700 text-white w-full sm:w-auto"
-                    onClick={handleSaveProfile}
-                    disabled={loading}
-                  >
-                    Guardar cambios
-                  </Button>
-                  <Button
-                    className="bg-purple-600 hover:bg-purple-700 text-white w-full sm:w-auto"
-                    onClick={() => router.push("/organization")}
-                  >
-                    <Building className="h-4 w-4 mr-2" />
-                    Gestionar organización
-                  </Button>
-                  <Button
-                    variant="destructive"
-                    className="bg-red-600 hover:bg-red-700 text-white w-full sm:w-auto"
-                    onClick={handleLogout}
-                    disabled={loggingOut}
-                  >
-                    {loggingOut ? (
-                      <div className="flex items-center">
-                        <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
-                        Cerrando sesión...
-                      </div>
-                    ) : (
-                      <div className="flex items-center">
-                        <LogOut className="h-4 w-4 mr-2" />
-                        Cerrar sesión
-                      </div>
-                    )}
-                  </Button>
-                </CardFooter>
-              </Card>
-            </TabsContent>
+                    </div>
+                  </CardContent>
+                  <CardFooter className="flex flex-col sm:flex-row gap-4">
+                    <Button
+                      className="bg-blue-600 hover:bg-blue-700 text-white flex-1 sm:flex-none"
+                      onClick={handleSaveProfile}
+                      disabled={loading}
+                    >
+                      Guardar cambios
+                    </Button>
+                    <Button
+                      variant="destructive"
+                      className="bg-red-600 hover:bg-red-700 text-white flex-1 sm:flex-none"
+                      onClick={handleLogout}
+                      disabled={loggingOut}
+                    >
+                      {loggingOut ? (
+                        <div className="flex items-center">
+                          <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                          Cerrando sesión...
+                        </div>
+                      ) : (
+                        <div className="flex items-center">
+                          <LogOut className="h-4 w-4 mr-2" />
+                          Cerrar sesión
+                        </div>
+                      )}
+                    </Button>
+                  </CardFooter>
+                </Card>
+              </div>
+            )}
+          </div>
+        )
 
-            <TabsContent value="storage" className="mt-0">
-              <GoogleDriveSetup />
-            </TabsContent>
+      case "storage":
+        return (
+          <div className="space-y-6">
+            <div>
+              <h2 className="text-2xl font-bold text-white mb-2">Almacenamiento</h2>
+              <p className="text-blue-300">Configura tu almacenamiento en la nube</p>
+            </div>
+            <GoogleDriveSetup />
+          </div>
+        )
 
-            <TabsContent value="settings" className="mt-0">
-              <Card className="bg-blue-800/30 border border-blue-700/30">
+      case "settings":
+        return (
+          <div className="space-y-6">
+            <div>
+              <h2 className="text-2xl font-bold text-white mb-2">Configuración</h2>
+              <p className="text-blue-300">Personaliza tu experiencia en la aplicación</p>
+            </div>
+            <Card className="bg-blue-800/30 border border-blue-700/30">
+              <CardHeader>
+                <CardTitle className="text-white flex items-center">
+                  <Settings className="h-5 w-5 mr-2" />
+                  Preferencias
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <p className="text-blue-200">Próximamente más opciones de configuración...</p>
+              </CardContent>
+            </Card>
+          </div>
+        )
+
+      default:
+        return null
+    }
+  }
+
+  return (
+    <div className="min-h-screen bg-blue-900">
+      <main className="container mx-auto px-4 pb-24 pt-8">
+        <div className="max-w-7xl mx-auto">
+          {/* Header */}
+          <div className="mb-8">
+            <h1 className="text-3xl font-bold text-white mb-2 glow-text">Perfil de Usuario</h1>
+            <p className="text-blue-300">Gestiona tu cuenta y preferencias</p>
+          </div>
+
+          <div className="grid lg:grid-cols-4 gap-8">
+            {/* Sidebar */}
+            <div className="lg:col-span-1">
+              <Card className="bg-blue-800/30 border border-blue-700/30 sticky top-8 flex flex-col h-full">
                 <CardHeader>
-                  <CardTitle className="text-white">Preferencias</CardTitle>
-                  <CardDescription className="text-blue-300">
-                    Personaliza tu experiencia en la aplicación
-                  </CardDescription>
+                  <CardTitle className="text-white text-lg">Configuración</CardTitle>
                 </CardHeader>
-                <CardContent>
-                  <p className="text-blue-200">Próximamente más opciones de configuración...</p>
+                <CardContent className="p-0 flex-1 flex flex-col">
+                  <nav className="space-y-1 flex-1">
+                    {sidebarItems.map((item) => {
+                      const Icon = item.icon
+                      const isActive = activeTab === item.id
+                      return (
+                        <button
+                          key={item.id}
+                          onClick={() => setActiveTab(item.id)}
+                          className={`w-full flex items-center justify-between px-4 py-3 text-left transition-all duration-200 ${
+                            isActive
+                              ? "bg-blue-600/50 text-white border-r-2 border-blue-400"
+                              : "text-blue-200 hover:bg-blue-700/30 hover:text-white"
+                          }`}
+                        >
+                          <div className="flex items-center">
+                            <Icon className="h-4 w-4 mr-3" />
+                            <span className="font-medium">{item.label}</span>
+                          </div>
+                          {isActive && <ChevronRight className="h-4 w-4" />}
+                        </button>
+                      )
+                    })}
+                  </nav>
+                  {/* Versión al final, centrada */}
+                  <div className="mt-auto py-4 flex justify-center">
+                    <span className="text-xs text-blue-300 font-mono text-center opacity-80">
+                      Juntify v0.1.0-Demo
+                    </span>
+                  </div>
                 </CardContent>
               </Card>
-            </TabsContent>
-          </Tabs>
+            </div>
+
+            {/* Main Content */}
+            <div className="lg:col-span-3">
+              <div className="min-h-[600px]">
+                {renderContent()}
+              </div>
+            </div>
+          </div>
         </div>
       </main>
 

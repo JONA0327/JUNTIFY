@@ -5,6 +5,8 @@ import { formatDistanceToNow } from "date-fns"
 import { es } from "date-fns/locale"
 import { X, FileText, List, MessageSquare, Headphones } from "lucide-react"
 import DynamicAudioPlayer from "./dynamic-audio-player"
+import { Button } from "./ui/button"
+import { useRouter } from "next/router"
 
 interface Meeting {
   id: number
@@ -29,7 +31,7 @@ interface MeetingDetailProps {
 export default function MeetingDetailDynamic({ meeting, onClose }: MeetingDetailProps) {
   const [activeTab, setActiveTab] = useState("summary")
   const [username, setUsername] = useState<string>("")
-
+ 
   useEffect(() => {
     // Obtener el nombre de usuario del localStorage o de la sesión
     const storedUsername = localStorage.getItem("username") || ""

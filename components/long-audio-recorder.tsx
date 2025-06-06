@@ -46,7 +46,7 @@ export function LongAudioRecorder({
   const analyserRef = useRef<AnalyserNode | null>(null)
   const streamRef = useRef<MediaStream | null>(null)
   const timerRef = useRef<NodeJS.Timeout | null>(null)
-
+  const SPECTRUM_BARS = 32;
   // Calcular el tiempo máximo en segundos
   const maxDurationSeconds = maxDurationHours * 60 * 60
 
@@ -142,56 +142,73 @@ export function LongAudioRecorder({
     }
   }
 
-  // Función para visualizar el audio
-  const visualizeAudio = () => {
-    if (!canvasRef.current || !analyserRef.current) return
+ const visualizeAudio = () => {
+  if (!canvasRef.current || !analyserRef.current) return;
 
-    const canvas = canvasRef.current
-    const canvasCtx = canvas.getContext("2d")
-    if (!canvasCtx) return
+  drawSimpleSpectrum({
+    canvas: canvasRef.current,
+    analyser: analyserRef.current,
+    animationRef: animationFrameRef,
+    setLevel: setAudioLevel,
+  });
+};
 
-    const analyser = analyserRef.current
-    const bufferLength = analyser.frequencyBinCount
-    const dataArray = new Uint8Array(bufferLength)
 
-    const draw = () => {
-      if (!isRecording) {
-        if (animationFrameRef.current) {
-          cancelAnimationFrame(animationFrameRef.current)
-          animationFrameRef.current = null
-        }
-        return
-      }
 
-      animationFrameRef.current = requestAnimationFrame(draw)
+function drawSimpleSpectrum({
+  canvas,
+  analyser,
+  animationRef,
+  setLevel,
+}: {
+  canvas: HTMLCanvasElement
+  analyser: AnalyserNode
+  animationRef: React.MutableRefObject<number | null>
+  setLevel: (level: number) => void
+}) {
+  const ctx = canvas.getContext("2d");
+  if (!ctx) return;
 
-      analyser.getByteFrequencyData(dataArray)
+  const WIDTH = canvas.width;
+  const HEIGHT = canvas.height;
+  const bufferLength = analyser.frequencyBinCount;
+  const dataArray = new Uint8Array(bufferLength);
 
-      canvasCtx.fillStyle = "rgb(20, 30, 60)"
-      canvasCtx.fillRect(0, 0, canvas.width, canvas.height)
+  function draw() {
+    if (!analyser) return;
 
-      const barWidth = (canvas.width / bufferLength) * 2.5
-      let x = 0
+    animationRef.current = requestAnimationFrame(draw);
+    analyser.getByteFrequencyData(dataArray);
 
-      // Calcular nivel de audio promedio
-      let sum = 0
-      for (let i = 0; i < bufferLength; i++) {
-        sum += dataArray[i]
+    ctx.clearRect(0, 0, WIDTH, HEIGHT);
+    ctx.fillStyle = "rgb(20, 30, 60)";
+    ctx.fillRect(0, 0, WIDTH, HEIGHT);
 
-        // Dibujar barras
-        const barHeight = dataArray[i] / 2
-        const hue = 220 - (dataArray[i] / 255) * 60 // Azul a celeste
-        canvasCtx.fillStyle = `hsla(${hue}, 100%, 60%, 0.8)`
-        canvasCtx.fillRect(x, canvas.height - barHeight, barWidth, barHeight)
-        x += barWidth + 1
-      }
+    const bars = SPECTRUM_BARS;
+    const barWidth = WIDTH / bars;
+    let x = 0;
+    let maxLevel = 0;
 
-      const average = sum / bufferLength
-      setAudioLevel(average / 255)
+    for (let i = 0; i < bars; i++) {
+      const start = Math.floor((i * bufferLength) / bars);
+      const end = Math.floor(((i + 1) * bufferLength) / bars);
+      let sum = 0;
+      for (let j = start; j < end; j++) sum += dataArray[j];
+      const avg = sum / (end - start);
+      const barHeight = (avg / 255) * HEIGHT;
+
+      ctx.fillStyle = "#66b2ff";
+      ctx.fillRect(x, HEIGHT - barHeight, barWidth - 2, barHeight);
+
+      if (avg > maxLevel) maxLevel = avg;
+      x += barWidth;
     }
 
-    draw()
+    setLevel((maxLevel / 255) * 100);
   }
+
+  draw();
+}
 
   // Iniciar grabación
   const startRecording = async () => {
@@ -408,9 +425,10 @@ export function LongAudioRecorder({
             style={{
               boxShadow:
                 isRecording && !isPaused && audioLevel > 0.05
-                  ? `0 0 ${20 + audioLevel * 30}px ${audioLevel * 15}px rgba(239, 68, 68, ${audioLevel * 0.5})`
+                  ? `0 0 ${Math.min(24 + audioLevel * 8, 40)}px 4px rgba(239, 68, 68, ${Math.min(audioLevel * 0.15, 0.25)})`
                   : "none",
             }}
+
           >
             <Mic
               className={`h-12 w-12 sm:h-16 sm:w-16 ${
@@ -450,7 +468,13 @@ export function LongAudioRecorder({
 
         {/* Canvas para el espectrograma */}
         <div className="w-full">
-          <canvas ref={canvasRef} width="600" height="100" className="w-full h-16 sm:h-24 rounded-lg bg-blue-900/50" />
+        <canvas
+          ref={canvasRef}
+          width="600"
+          height="100"
+          className="w-full h-16 sm:h-24 rounded-lg bg-blue-900/50"
+        />
+
         </div>
 
         {/* Progreso total de la grabación */}

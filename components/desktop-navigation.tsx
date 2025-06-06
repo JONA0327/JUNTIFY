@@ -3,34 +3,40 @@
 import { useState, useEffect } from "react"
 import Link from "next/link"
 import { usePathname } from "next/navigation"
-import { Home, Calendar, FileText, User, PlusCircle, Download, MessageSquare, CheckSquare, Menu, X } from "lucide-react"
-
+import { Home, Calendar, FileText, User, PlusCircle, Download, MessageSquare, CheckSquare, Menu, X, Sparkles } from "lucide-react"
+import { getUsername } from "@/utils/user-helpers";
 export function DesktopNavigation() {
   const [scrolled, setScrolled] = useState(false)
   const [menuOpen, setMenuOpen] = useState(false)
   const pathname = usePathname()
-
+  const username = typeof window !== "undefined" ? getUsername() : null;
+  const isAuthenticated = !!username;
   useEffect(() => {
     const handleScroll = () => {
       setScrolled(window.scrollY > 10)
     }
-
+ 
     window.addEventListener("scroll", handleScroll)
     return () => window.removeEventListener("scroll", handleScroll)
   }, [])
+  // Si está autenticado, oculta "Inicio"
 
   // Lista completa de elementos de navegación
   const navItems = [
     { name: "Inicio", href: "/", icon: <Home size={20} /> },
     { name: "Reuniones", href: "/dashboard", icon: <Calendar size={20} /> },
-    { name: "Transcripciones", href: "/transcriptions", icon: <FileText size={20} /> },
+    //{ name: "Transcripciones", href: "/transcriptions", icon: <FileText size={20} /> },
     { name: "Nueva Reunión", href: "/new-meeting", icon: <PlusCircle size={20} /> },
     { name: "Tareas", href: "/tasks", icon: <CheckSquare size={20} /> },
     { name: "Exportar", href: "/export", icon: <Download size={20} /> },
     { name: "Asistente IA", href: "/ai-assistant", icon: <MessageSquare size={20} /> },
     { name: "Perfil", href: "/profile", icon: <User size={20} /> },
-  ]
+    
 
+  ]
+    const filteredNavItems = isAuthenticated
+  ? navItems.filter(item => item.name !== "Inicio")
+  : [];
   // No mostrar en la página de login
   if (pathname === "/login") {
     return null
@@ -51,7 +57,7 @@ export function DesktopNavigation() {
 
           {/* Desktop Navigation */}
           <nav className="hidden md:flex items-center space-x-4">
-            {navItems.map((item) => {
+            {filteredNavItems.map((item) => {
               const isActive = pathname === item.href
               return (
                 <Link

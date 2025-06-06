@@ -29,12 +29,13 @@ import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
 import { getUsername, storeUsername } from "@/utils/user-helpers"
 import { TemporaryAudioPlayer } from "@/components/temporary-audio-player"
 
+
 // Función para contar hablantes únicos en una transcripción
 const countUniqueParticipants = (transcription) => {
   if (!transcription || !Array.isArray(transcription) || transcription.length === 0) {
     return 0
   }
-
+  
   // Crear un conjunto de hablantes únicos (ignorando valores nulos o vacíos)
   const uniqueSpeakers = new Set()
 
@@ -97,7 +98,34 @@ const ConversationDetail = ({ conversation, onClose }) => {
   const [activeTab, setActiveTab] = useState("summary")
   const router = useRouter()
   const username = getUsername()
+  const [editedTitle, setEditedTitle] = useState(conversation.title);
+  const [isEditingTitle, setIsEditingTitle] = useState(false);
+  const [isSavingTitle, setIsSavingTitle] = useState(false);
+  const handleSaveTitle = async () => {
+    setIsSavingTitle(true);
+    const response = await fetch(`/api/meetings/${conversation.id}`, {
+      method: "PATCH",
+      headers: {
+        "Content-Type": "application/json",
+        "X-Username": username,
+      },
+      body: JSON.stringify({ newTitle: editedTitle }),
+    });
+    setIsSavingTitle(false);
+    setIsEditingTitle(false);
 
+    if (response.ok) {
+      // Actualiza el título localmente para que se refleje el cambio
+      setEditedTitle(editedTitle);
+      // Si tienes un estado de conversación, actualízalo también:
+      conversation.title = editedTitle;
+
+    }
+  };
+
+  const handleViewTranscription = (id: number) => {
+      router.push(`/building-transcriptions?id=${id}&view=transcription-only`);
+  };
   // Calcular el número de participantes basado en la transcripción
   const participantCount = conversation.transcription
     ? countUniqueParticipants(conversation.transcription)
@@ -125,7 +153,48 @@ const ConversationDetail = ({ conversation, onClose }) => {
         {/* Header */}
         <div className="p-6 border-b border-blue-700/30 flex justify-between items-center">
           <div>
-            <h2 className="text-2xl font-bold text-white">{conversation.title}</h2>
+           <div className="flex items-center gap-2">
+              {isEditingTitle ? (
+                <>
+                  <input
+                    className="text-2xl font-bold text-white bg-blue-800/30 border border-blue-700/30 rounded px-2 py-1"
+                    value={editedTitle}
+                    onChange={e => setEditedTitle(e.target.value)}
+                    disabled={isSavingTitle}
+                  />
+                  <Button
+                    size="sm"
+                    onClick={handleSaveTitle}
+                    disabled={isSavingTitle || !editedTitle.trim()}
+                  >
+                    {isSavingTitle ? "Guardando..." : "Guardar"}
+                  </Button>
+                  <Button
+                    size="sm"
+                    variant="ghost"
+                    onClick={() => {
+                      setIsEditingTitle(false);
+                      setEditedTitle(conversation.title);
+                    }}
+                    disabled={isSavingTitle}
+                  >
+                    Cancelar
+                  </Button>
+                </>
+              ) : (
+                <>
+                  <h2 className="text-2xl font-bold text-white">{conversation.title}</h2>
+                  <Button
+                    size="sm"
+                    variant="ghost"
+                    onClick={() => setIsEditingTitle(true)}
+                  >
+                    Editar
+                  </Button>
+                </>
+              )}
+            </div>
+
             <div className="flex items-center text-blue-200/70 text-sm mt-1">
               <Calendar className="h-4 w-4 mr-1" />
               <span className="mr-3">{format(new Date(conversation.date), "dd MMM yyyy", { locale: es })}</span>
@@ -213,7 +282,7 @@ const ConversationDetail = ({ conversation, onClose }) => {
               </div>
             </TabsContent>
 
-            <TabsContent value="tasks" className="mt-0">
+           <TabsContent value="tasks" className="mt-0">
               <div className="bg-blue-800/20 p-4 rounded-lg">
                 {hasTasks ? (
                   <ul className="space-y-4">
@@ -279,6 +348,13 @@ const ConversationDetail = ({ conversation, onClose }) => {
 
             <TabsContent value="transcript" className="mt-0">
               <div className="bg-blue-800/20 p-4 rounded-lg">
+                <Button
+                  onClick={() => handleViewTranscription(conversation.id)}
+                  className="bg-blue-600 hover:bg-blue-700 mb-4" // <-- Aquí el espacio
+                >
+                  Ver transcripción con Audio
+                </Button>
+
                 {hasTranscription ? (
                   <div className="space-y-6">
                     {conversation.transcription.map((item, index) => (
@@ -484,126 +560,124 @@ export default function DashboardPage() {
   const [conversationToDelete, setConversationToDelete] = useState(null)
   const [deletingConversation, setDeletingConversation] = useState(false)
 
-  // Check authentication status and get username
+
+   // 1. Checa autenticación y obtiene username
   useEffect(() => {
     const checkAuth = async () => {
       try {
-        // First check if we have a username in localStorage
-        const storedUsername = getUsername()
-
+        // Primero intenta obtener el username de localStorage
+        const storedUsername = getUsername();
         if (storedUsername) {
-          setUsername(storedUsername)
-          setAuthError(false)
-          return
+          setUsername(storedUsername);
+          setAuthError(false);
+          return;
         }
 
-        // If no username in localStorage, try to get it from Supabase session
-        const supabase = getSupabaseClient()
-        const { data, error } = await supabase.auth.getSession()
+        // Si no hay username en localStorage, intenta obtenerlo de Supabase
+        const supabase = getSupabaseClient();
+        const { data, error } = await supabase.auth.getSession();
 
         if (error || !data.session) {
-          console.error("Auth error:", error)
-          setAuthError(true)
-          return
+          console.error("Auth error:", error);
+          setAuthError(true);
+          return;
         }
 
-        // Get username from profile
+        // Obtiene el username del perfil
         const { data: profileData } = await supabase
           .from("profiles")
           .select("username")
           .eq("id", data.session.user.id)
-          .single()
+          .single();
 
         if (profileData?.username) {
-          // Store username in localStorage for future use
-          storeUsername(profileData.username)
-          setUsername(profileData.username)
-          setAuthError(false)
+          storeUsername(profileData.username);
+          setUsername(profileData.username);
+          setAuthError(false);
         } else {
-          setAuthError(true)
+          setAuthError(true);
         }
       } catch (error) {
-        console.error("Error checking auth:", error)
-        setAuthError(true)
+        console.error("Error checking auth:", error);
+        setAuthError(true);
       }
+    };
+
+    checkAuth();
+  }, []);
+
+  // 2. Define fetchConversations fuera del useEffect
+  const fetchConversations = async (usernameToUse?: string) => {
+    const user = usernameToUse ?? username;
+    console.log("fetchConversations user:", user);
+    if (!user) {
+      setIsLoading(false);
+      return;
     }
 
-    checkAuth()
-  }, [])
+    try {
+      setIsLoading(true);
 
-  // Fetch conversations when username is available
-  useEffect(() => {
-    async function fetchConversations() {
-      if (!username) {
-        setIsLoading(false)
-        return
+      const response = await fetch("/api/meetings", {
+        headers: {
+          "X-Username": user,
+        },
+      });
+
+      if (!response.ok) {
+        if (response.status === 401) {
+          setAuthError(true);
+          return;
+        }
+        throw new Error("Failed to fetch conversations");
       }
 
-      try {
-        setIsLoading(true)
+      const data = await response.json();
 
-        const response = await fetch("/api/meetings", {
-          headers: {
-            "X-Username": username,
-          },
-        })
-
-        if (!response.ok) {
-          if (response.status === 401) {
-            setAuthError(true)
-            return
+      // Procesar los datos para contar participantes
+      const processedData = await Promise.all(
+        data.map(async (conversation) => {
+          if (conversation.transcription && Array.isArray(conversation.transcription)) {
+            const participantCount = countUniqueParticipants(conversation.transcription);
+            return { ...conversation, participants: participantCount };
           }
-          throw new Error("Failed to fetch conversations")
-        }
+          if (conversation.id && !conversation.transcription) {
+            try {
+              const detailResponse = await fetch(`/api/meetings/${conversation.id}/transcription`, {
+                headers: {
+                  "X-Username": user,
+                },
+              });
 
-        const data = await response.json()
-
-        // Procesar los datos para contar participantes
-        const processedData = await Promise.all(
-          data.map(async (conversation) => {
-            // Si ya tenemos la transcripción, contamos los hablantes
-            if (conversation.transcription && Array.isArray(conversation.transcription)) {
-              const participantCount = countUniqueParticipants(conversation.transcription)
-              return { ...conversation, participants: participantCount }
-            }
-
-            // Si no tenemos la transcripción pero tenemos ID, intentamos obtenerla
-            if (conversation.id && !conversation.transcription) {
-              try {
-                const detailResponse = await fetch(`/api/meetings/${conversation.id}/transcription`, {
-                  headers: {
-                    "X-Username": username,
-                  },
-                })
-
-                if (detailResponse.ok) {
-                  const transcriptionData = await detailResponse.json()
-                  if (transcriptionData && Array.isArray(transcriptionData)) {
-                    const participantCount = countUniqueParticipants(transcriptionData)
-                    return { ...conversation, participants: participantCount }
-                  }
+              if (detailResponse.ok) {
+                const transcriptionData = await detailResponse.json();
+                if (transcriptionData && Array.isArray(transcriptionData)) {
+                  const participantCount = countUniqueParticipants(transcriptionData);
+                  return { ...conversation, participants: participantCount };
                 }
-              } catch (error) {
-                console.error(`Error fetching transcription for meeting ${conversation.id}:`, error)
               }
+            } catch (error) {
+              console.error(`Error fetching transcription for meeting ${conversation.id}:`, error);
             }
+          }
+          return conversation;
+        }),
+      );
 
-            return conversation
-          }),
-        )
-
-        setConversations(processedData)
-      } catch (error) {
-        console.error("Error fetching conversations:", error)
-        setConversations([])
-      } finally {
-        setIsLoading(false)
-      }
+      setConversations(processedData);
+    } catch (error) {
+      console.error("Error fetching conversations:", error);
+      setConversations([]);
+    } finally {
+      setIsLoading(false);
     }
+  };
 
-    fetchConversations()
-  }, [username])
-
+  // 3. Llama a fetchConversations en useEffect cuando cambie username
+  useEffect(() => {
+    console.log("username en useEffect:", username);
+    fetchConversations();
+  }, [username]);
   // Filter conversations by search term
   const filteredConversations = conversations.filter((conv) =>
     conv.title.toLowerCase().includes(searchTerm.toLowerCase()),
@@ -842,7 +916,9 @@ export default function DashboardPage() {
       {/* Conversation detail modal */}
       <AnimatePresence>
         {selectedConversation && !loadingConversation && (
-          <ConversationDetail conversation={selectedConversation} onClose={() => setSelectedConversation(null)} />
+          <ConversationDetail conversation={selectedConversation} onClose={() => {
+            setSelectedConversation(null)
+            fetchConversations()}} />
         )}
       </AnimatePresence>
 
@@ -850,4 +926,97 @@ export default function DashboardPage() {
       <NewNavbar />
     </div>
   )
+}
+export async function DELETE(request: Request, { params }: { params: any }) {
+  const { id } = await params;
+  const meetingId = id;
+  try {
+    // 1. Obtén el username del request
+    const username = await getUsernameFromRequest(request);
+    if (!username) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
+    // 2. Obtén la info actual de la reunión
+    const [meeting] = await query("SELECT * FROM meetings WHERE id = ?", [meetingId]);
+    if (!meeting) {
+      return NextResponse.json({ error: "Meeting not found" }, { status: 404 });
+    }
+    const oldTitle = meeting.title;
+
+    // 3. Obtén el folderId de la carpeta de Drive del usuario
+    const folderResult = await query(
+      "SELECT recordings_folder_id FROM google_tokens WHERE username = ? AND recordings_folder_id IS NOT NULL",
+      [username]
+    );
+    if (!folderResult || folderResult.length === 0) {
+      return NextResponse.json({ error: "No recordings folder found for user" }, { status: 404 });
+    }
+    const userFolderId = folderResult[0].recordings_folder_id;
+
+    // 4. Funciones de limpieza de nombre
+    function cleanTitleNoAccents(title: string): string {
+      return title
+        .normalize("NFD")
+        .replace(/[\u0300-\u036f]/g, "")
+        .replace(/[^a-zA-Z0-9]/g, "_")
+        .replace(/_+/g, "_")
+        .replace(/^_+|_+$/g, "");
+    }
+    function cleanTitleWithUnderscores(title: string): string {
+      return title
+        .replace(/[áÁàÀäÄâÂãÃåÅ]/g, "_")
+        .replace(/[éÉèÈëËêÊ]/g, "_")
+        .replace(/[íÍìÌïÏîÎ]/g, "_")
+        .replace(/[óÓòÒöÖôÔõÕøØ]/g, "_")
+        .replace(/[úÚùÙüÜûÛ]/g, "_")
+        .replace(/[ñÑ]/g, "_")
+        .replace(/[^a-zA-Z0-9]/g, "_")
+        .replace(/_+/g, "_")
+        .replace(/^_+|_+$/g, "");
+    }
+
+    const oldFileNameNoAccents = `${meetingId}_${cleanTitleNoAccents(oldTitle)}.aac`;
+    const oldFileNameWithUnderscores = `${meetingId}_${cleanTitleWithUnderscores(oldTitle)}.aac`;
+
+    // 5. Autenticación Google Drive
+    const auth = new google.auth.JWT({
+      email: process.env.GOOGLE_SERVICE_ACCOUNT_CLIENT_EMAIL,
+      key: process.env.GOOGLE_SERVICE_ACCOUNT_PRIVATE_KEY.replace(/\\n/g, "\n"),
+      scopes: ["https://www.googleapis.com/auth/drive"],
+    });
+
+    const drive = google.drive({ version: "v3", auth });
+
+    // 6. Buscar el archivo en Drive (primero sin acentos)
+    let response = await drive.files.list({
+      q: `name = '${oldFileNameNoAccents}' and '${userFolderId}' in parents and trashed = false`,
+      fields: "files(id, name)",
+    });
+
+    if (!response.data.files || response.data.files.length !== 1) {
+      // Si no lo encuentra, busca con guiones bajos
+      response = await drive.files.list({
+        q: `name = '${oldFileNameWithUnderscores}' and '${userFolderId}' in parents and trashed = false`,
+        fields: "files(id, name)",
+      });
+    }
+
+    // 7. Si lo encuentra, elimina el archivo de Drive
+    if (response.data.files && response.data.files.length === 1) {
+      const fileId = response.data.files[0].id;
+      await drive.files.delete({ fileId });
+      console.log("Archivo de Drive eliminado:", response.data.files[0].name);
+    } else {
+      console.warn("No se encontró archivo de Drive para eliminar.");
+    }
+
+    // 8. Elimina la conversación de la base de datos
+    await query("DELETE FROM meetings WHERE id = ?", [meetingId]);
+
+    return NextResponse.json({ success: true });
+  } catch (error) {
+    console.error("Error en DELETE /api/meetings/[id]:", error);
+    return NextResponse.json({ error: String(error) }, { status: 500 });
+  }
 }
