@@ -165,8 +165,7 @@ export default function LoginPage() {
 
     if (isLogin) {
       // Proceso de inicio de sesión
-      if (validateLoginForm()) {
-        // <<< INICIO: Integración de Facebook Pixel al hacer clic en Login >>>
+      // <<< INICIO: Integración de Facebook Pixel al hacer clic en Login >>>
         if (typeof window !== 'undefined' && window.fbq) {
           window.fbq('track', 'StartTrial', {
             value: 0.00,
@@ -177,6 +176,7 @@ export default function LoginPage() {
           console.warn("Facebook Pixel (fbq) not found. Make sure the base code is loaded.");
         }
         // <<< FIN: Integración de Facebook Pixel al hacer clic en Login >>>
+      if (validateLoginForm()) {
 
         setIsSubmitting(true)
 
