@@ -132,6 +132,7 @@ export default function LoginPage() {
     }
 
     setErrors(newErrors)
+
     return isValid
   }
 
@@ -190,6 +191,16 @@ export default function LoginPage() {
             // Guardar el username en localStorage
             localStorage.setItem("juntify_username", profileData.username)
             console.log("Username guardado en localStorage:", profileData.username)
+
+            if (typeof window !== 'undefined' && window.fbq) {
+              window.fbq('track', 'StartTrial', {
+                value: 0.00,
+                currency: 'USD'
+              });
+              console.log("Facebook Pixel: StartTrial event triggered");
+            } else {
+              console.warn("Facebook Pixel (fbq) not found. Make sure the base code is loaded.");
+            }
           }
 
           setSuccess("¡Inicio de sesión exitoso!")
@@ -207,7 +218,6 @@ export default function LoginPage() {
       // Proceso de registro
       if (validateRegisterForm()) {
         setIsSubmitting(true)
-
         try {
           // Primero verificamos si el username ya existe
           const { data: existingUser, error: usernameCheckError } = await supabase
@@ -361,6 +371,7 @@ export default function LoginPage() {
           } else {
             setErrors({ general: error.message || "Error al crear la cuenta. Inténtalo de nuevo más tarde." })
           }
+
         } finally {
           setIsSubmitting(false)
         }

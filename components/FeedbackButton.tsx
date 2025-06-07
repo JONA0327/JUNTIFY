@@ -1,4 +1,3 @@
-# File: JUNTIFY/components/FeedbackButton.tsx
 "use client"
 
 import { useState } from "react"
