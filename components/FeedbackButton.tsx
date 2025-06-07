@@ -51,15 +51,21 @@ export function FeedbackButton() {
 
   return (
     <>
-      {/* Botón flotante */}
-      <button
-        className="fixed z-50 bottom-6 right-6 bg-yellow-400 hover:bg-yellow-300 rounded-full shadow-lg p-4 flex items-center justify-center animate-pulse"
+        <button
+        className="
+            fixed z-50
+            bottom-6 right-6
+            sm:bottom-6 sm:right-6
+            bottom-20 right-4
+            bg-yellow-400 hover:bg-yellow-300 rounded-full shadow-lg p-4 flex items-center justify-center animate-pulse
+        "
         style={{ boxShadow: "0 4px 24px 0 rgba(0,0,0,0.25)" }}
         onClick={() => setOpen(true)}
         aria-label="Enviar feedback"
-      >
+        >
         <Sparkles className="h-7 w-7 text-blue-900 drop-shadow-glow" />
-      </button>
+        </button>
+
 
       {/* Modal de feedback */}
       {open && (

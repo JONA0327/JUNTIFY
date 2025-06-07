@@ -1,4 +1,5 @@
 "use client"
+import * as React from "react";
 
 import { useState, useRef, useEffect, useMemo } from "react"
 
@@ -976,26 +977,31 @@ interface Segment {
 
 interface TranscriptionViewProps {
   transcription: Segment[];
-  onAnalyze: (editedTranscription: Segment[], speakerMap: Record<string, string>, analyzerType?: string) => void;
+  onAnalyze: (
+    editedTranscription: Segment[],
+    speakerMap: Record<string, string>,
+    analyzerType: AnalyzerType
+  ) => void;
   onCancel: () => void;
+  selectedAnalyzerType: AnalyzerType;
+  setSelectedAnalyzerType: (type: AnalyzerType) => void;
 }
-
 export function TranscriptionView({
   transcription,
   onAnalyze,
   onCancel,
+  selectedAnalyzerType,
+  setSelectedAnalyzerType,
 }: TranscriptionViewProps) {
   // Estado para el speakerMap global
-  const [speakerMap, setSpeakerMap] = useState<Record<string, string>>({});
+  const [speakerMap, setSpeakerMap] = React.useState<Record<string, string>>({});
   // Estado para el diálogo de edición
-  const [editingSpeakerKey, setEditingSpeakerKey] = useState<string>("");
-  const [speakerName, setSpeakerName] = useState("");
-  const [showSpeakerDialog, setShowSpeakerDialog] = useState(false);
-  // Estado para el tipo de análisis
-  const [selectedAnalyzerType, setSelectedAnalyzerType] = useState("standard");
+  const [editingSpeakerKey, setEditingSpeakerKey] = React.useState<string>("");
+  const [speakerName, setSpeakerName] = React.useState("");
+  const [showSpeakerDialog, setShowSpeakerDialog] = React.useState(false);
 
   // Inicializar el speakerMap al cargar la transcripción
-  useEffect(() => {
+  React.useEffect(() => {
     if (transcription && transcription.length > 0) {
       const initialMap: Record<string, string> = {};
       transcription.forEach(seg => {
@@ -1025,7 +1031,6 @@ export function TranscriptionView({
     speakerColors[s] = palette[idx % palette.length];
   });
 
-   
   // Abrir el diálogo de edición
   const handleEditSpeaker = (speakerId: string) => {
     setEditingSpeakerKey(speakerId);
@@ -1041,19 +1046,17 @@ export function TranscriptionView({
   };
 
   // Al analizar, se pasa la transcripción original y el speakerMap
-const handleAnalyze = () => {
-  // Aplica el speakerMap a cada segmento
-  const mappedTranscription = transcription.map(seg => ({
-    ...seg,
-    speaker: speakerMap[seg.speaker] || seg.speaker,
-  }));
-  onAnalyze(mappedTranscription, speakerMap, selectedAnalyzerType);
-};
+  const handleAnalyze = () => {
+    const mappedTranscription = transcription.map(seg => ({
+      ...seg,
+      speaker: speakerMap[seg.speaker] || seg.speaker,
+    }));
+    onAnalyze(mappedTranscription, speakerMap, selectedAnalyzerType);
+  };
 
-return (
+  return (
     <div className="space-y-4">
       <div className="flex justify-between items-center mb-4">
-        <h3 className="text-lg font-medium text-white">Transcripción</h3>
       </div>
 
       {/* Lista de hablantes para editar */}
@@ -1112,7 +1115,7 @@ return (
         </h3>
         <AnalyzerTypeSelector
           onSelect={setSelectedAnalyzerType}
-          defaultValue="standard"
+          defaultValue={selectedAnalyzerType}
           disabled={false}
         />
       </div>
@@ -1161,6 +1164,7 @@ return (
     </div>
   );
 }
+
 // Componente para el análisis de la reunión
 const MeetingAnalysis = ({ analysis, onSave, onCancel, driveFileInfo }) => {
   const [activeTab, setActiveTab] = useState("summary")
@@ -1171,14 +1175,14 @@ const MeetingAnalysis = ({ analysis, onSave, onCancel, driveFileInfo }) => {
   // Obtener el tipo de analizador de los metadatos
   const analyzerType = analysis.metadata?.analysisType || "standard"
 
-  // Mapeo de tipos de analizador a nombres legibles
-  const analyzerNames = {
-    standard: "Análisis Estándar",
-    business: "Análisis Empresarial",
-    academic: "Análisis Académico",
-    legal: "Análisis Legal",
-    medical: "Análisis Médico",
-  }
+  const analyzerNames: Record<AnalyzerType, string> = {
+    standard:   "Análisis Estándar",
+    business:   "Análisis Empresarial",
+    academic:   "Análisis Académico",
+    legal:      "Análisis Legal",
+    medical:    "Análisis Médico",
+    psychology: "Análisis Psicológico",   // ← añadido
+  };
 
   const noContentMessage = (
     <div className="flex flex-col items-center justify-center p-4 sm:p-6 text-center">
@@ -1247,9 +1251,7 @@ const MeetingAnalysis = ({ analysis, onSave, onCancel, driveFileInfo }) => {
           <TabsTrigger value="tasks" className="data-[state=active]:bg-blue-600 text-white text-xs sm:text-sm">
             Tareas
           </TabsTrigger>
-          <TabsTrigger value="action-items" className="data-[state=active]:bg-blue-600 text-white text-xs sm:text-sm">
-            Acciones
-          </TabsTrigger>
+
         </TabsList>
 
         <div className="mt-4">
@@ -1483,6 +1485,7 @@ export default function NewMeetingPage() {
   const [audioUrl, setAudioUrl] = useState(null)
   const [driveUploadSuccess, setDriveUploadSuccess] = useState(false)
   const [audioFile, setAudioFile] = useState(null)
+  const [selectedAnalyzerType, setSelectedAnalyzerType] = useState("standard");
   const [error, setError] = useState(null)
   const [transcription, setTranscription] = useState([])
   const [analysisResults, setAnalysisResults] = useState({
@@ -1768,7 +1771,7 @@ export default function NewMeetingPage() {
   }
 
   // Manejar el análisis de la transcripción
-  const handleAnalyze = async (editedTranscription, analyzerType = "standard") => {
+  const handleAnalyze = async (editedTranscription, speakerMap, analyzerType = selectedAnalyzerType) => {
     // Usar la transcripción editada si está disponible, de lo contrario usar la original
     const finalTranscription = editedTranscription || transcription
     setTranscription(finalTranscription) // Actualizar la transcripción con las ediciones
@@ -1839,9 +1842,10 @@ export default function NewMeetingPage() {
       setAnalysisResults({
         ...analysisResult,
         metadata: {
-          analysisType: analyzerType,
+          analysisType: analyzerType, // <-- aquí debe ir el valor correcto
         },
-      })
+      });
+
       setProcessingState("completed")
       setShowAnalysis(true)
     } catch (err) {
@@ -2374,7 +2378,13 @@ export default function NewMeetingPage() {
                 </div>
               )}
 
-              <TranscriptionView transcription={transcription} onAnalyze={handleAnalyze} onCancel={resetProcess} />
+              <TranscriptionView
+                transcription={transcription}
+                onAnalyze={handleAnalyze}
+                onCancel={resetProcess}
+                selectedAnalyzerType={selectedAnalyzerType}
+                setSelectedAnalyzerType={setSelectedAnalyzerType}
+              />
             </div>
           )}
 
