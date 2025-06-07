@@ -1538,7 +1538,7 @@ export default function NewMeetingPage() {
 
         if (!username) {
           console.error("No username found in localStorage")
-          setUsageData({ used: 0, limit: 50, remaining: 50 })
+          setUsageData({ used: 0, limit: 10, remaining: 10 })
           return
         }
 
@@ -1558,7 +1558,7 @@ export default function NewMeetingPage() {
       } catch (err) {
         console.error("Error fetching usage data:", err)
         // Set default values
-        setUsageData({ used: 0, limit: 50, remaining: 50 })
+        setUsageData({ used: 0, limit: 10, remaining: 10 })
       } finally {
         setUsageLoading(false)
       }

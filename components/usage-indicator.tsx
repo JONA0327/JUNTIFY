@@ -21,7 +21,7 @@ export function UsageIndicator() {
         } = await supabase.auth.getSession()
 
         if (!session) {
-          setUsageData({ used: 0, limit: 50, remaining: 50 })
+          setUsageData({ used: 0, limit: 10, remaining: 10 })
           return
         }
 
@@ -38,7 +38,7 @@ export function UsageIndicator() {
         console.error("Error fetching usage data:", err)
         setError("Could not load usage data")
         // Set default values
-        setUsageData({ used: 0, limit: 50, remaining: 50 })
+        setUsageData({ used: 0, limit: 10, remaining: 10 })
       } finally {
         setLoading(false)
       }

@@ -15,6 +15,7 @@ import {
 import { GoogleDriveSetup } from "@/components/google-drive-setup"
 import { getUsername, storeUsername } from "@/utils/user-helpers"
 import { getSupabaseClient } from "@/utils/supabase"
+import { UserBadge } from "@/components/user-badge"
 
 const roleInfo: Record<string, { label: string; color: string; icon: JSX.Element }> = {
   free: {
@@ -203,6 +204,8 @@ export default function ProfilePage() {
                     <CardTitle className="text-white flex items-center">
                       <User className="h-5 w-5 mr-2" />
                       Información Personal
+                                              <UserBadge type={role} size={120} />
+
                     </CardTitle>
                   </CardHeader>
                   <CardContent className="space-y-6">

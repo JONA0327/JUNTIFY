@@ -24,7 +24,7 @@ export async function GET(request: Request) {
     )
 
     const used = usageRecords[0]?.count || 0
-    const limit = 50 // Límite de 50 análisis mensuales
+    const limit = 10 // Límite de 50 análisis mensuales
     const remaining = Math.max(0, limit - used)
 
     return NextResponse.json({

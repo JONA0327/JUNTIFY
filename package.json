@@ -3,12 +3,11 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-  "dev": "cross-env NODE_OPTIONS=--openssl-legacy-provider next dev",
-  "build": "next build",
-  "start": "cross-env NODE_OPTIONS=--openssl-legacy-provider next start",
-  "lint": "next lint",
+    "dev": "cross-env NODE_OPTIONS=--openssl-legacy-provider next dev",
+    "build": "next build",
+    "start": "cross-env NODE_OPTIONS=--openssl-legacy-provider next start",
+    "lint": "next lint",
     "test": "jest"
-
   },
   "dependencies": {
     "@ai-sdk/openai": "latest",
@@ -49,6 +48,7 @@
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
     "cmdk": "1.0.4",
+    "cross-env": "^7.0.3",
     "crypto": "latest",
     "date-fns": "latest",
     "embla-carousel-react": "8.5.1",
