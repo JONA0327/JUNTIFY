@@ -166,6 +166,18 @@ export default function LoginPage() {
     if (isLogin) {
       // Proceso de inicio de sesión
       if (validateLoginForm()) {
+        // <<< INICIO: Integración de Facebook Pixel al hacer clic en Login >>>
+        if (typeof window !== 'undefined' && window.fbq) {
+          window.fbq('track', 'StartTrial', {
+            value: 0.00,
+            currency: 'USD'
+          });
+          console.log("Facebook Pixel: StartTrial event triggered on login button click");
+        } else {
+          console.warn("Facebook Pixel (fbq) not found. Make sure the base code is loaded.");
+        }
+        // <<< FIN: Integración de Facebook Pixel al hacer clic en Login >>>
+
         setIsSubmitting(true)
 
         try {
@@ -191,16 +203,7 @@ export default function LoginPage() {
             // Guardar el username en localStorage
             localStorage.setItem("juntify_username", profileData.username)
             console.log("Username guardado en localStorage:", profileData.username)
-
-            if (typeof window !== 'undefined' && window.fbq) {
-              window.fbq('track', 'StartTrial', {
-                value: 0.00,
-                currency: 'USD'
-              });
-              console.log("Facebook Pixel: StartTrial event triggered");
-            } else {
-              console.warn("Facebook Pixel (fbq) not found. Make sure the base code is loaded.");
-            }
+            // El pixel ya se disparó al hacer clic, por lo que se elimina de aquí.
           }
 
           setSuccess("¡Inicio de sesión exitoso!")
@@ -219,6 +222,7 @@ export default function LoginPage() {
       if (validateRegisterForm()) {
         setIsSubmitting(true)
         try {
+          // ... (lógica de registro existente, incluyendo el pixel de registro si lo deseas)
           // Primero verificamos si el username ya existe
           const { data: existingUser, error: usernameCheckError } = await supabase
             .from("profiles")
@@ -349,6 +353,17 @@ export default function LoginPage() {
             // 5. Guardar el username en localStorage
             localStorage.setItem("juntify_username", username)
             console.log("Username guardado en localStorage:", username)
+            
+            // Si también quieres el pixel en el registro, iría aquí.
+            // if (typeof window !== 'undefined' && window.fbq) {
+            //   window.fbq('track', 'StartTrial', {
+            //     value: 0.00,
+            //     currency: 'USD'
+            //   });
+            //   console.log("Facebook Pixel: StartTrial event triggered on registration");
+            // } else {
+            //   console.warn("Facebook Pixel (fbq) not found. Make sure the base code is loaded.");
+            // }
           }
 
           setSuccess("¡Cuenta creada exitosamente! Ahora puedes iniciar sesión.")
@@ -378,6 +393,7 @@ export default function LoginPage() {
       }
     }
   }
+
 
   const toggleForm = () => {
     setIsLogin(!isLogin)
