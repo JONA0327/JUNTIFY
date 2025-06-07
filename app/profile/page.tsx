@@ -204,8 +204,7 @@ export default function ProfilePage() {
                     <CardTitle className="text-white flex items-center">
                       <User className="h-5 w-5 mr-2" />
                       Información Personal
-                                              <UserBadge type={role} size={120} />
-
+                      <UserBadge type={role} size={120} />
                     </CardTitle>
                   </CardHeader>
                   <CardContent className="space-y-6">

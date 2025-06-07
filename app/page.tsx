@@ -8,6 +8,7 @@ import { PricingSection } from "@/components/pricing-section"
 
 export default function Home() {
   return (
+    
     <main className="bg-black">
       <ParallaxHero />
       <PresentationSection />
@@ -17,5 +18,6 @@ export default function Home() {
       <AIContextSection />
       <PricingSection />
     </main>
+    
   )
 }

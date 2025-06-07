@@ -1,3 +1,4 @@
+# File: JUNTIFY/components/FeedbackButton.tsx
 "use client"
 
 import { useState } from "react"
@@ -54,9 +55,8 @@ export function FeedbackButton() {
         <button
         className="
             fixed z-50
-            bottom-6 right-6
-            sm:bottom-6 sm:right-6
-            bottom-20 right-4
+            bottom-28 right-4
+            sm:bottom-14 sm:right-6
             bg-yellow-400 hover:bg-yellow-300 rounded-full shadow-lg p-4 flex items-center justify-center animate-pulse
         "
         style={{ boxShadow: "0 4px 24px 0 rgba(0,0,0,0.25)" }}
