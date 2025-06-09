@@ -285,7 +285,6 @@ export default function TasksPage() {
   );
   const [tasks, setTasks] = useState<Task[]>([]);
   const [meetings, setMeetings] = useState<Meeting[]>([]);
-  const [selectedMeeting, setSelectedMeeting] = useState<string>("all");
   const [searchTerm, setSearchTerm] = useState("");
   const [showNewTaskModal, setShowNewTaskModal] = useState(false);
   const [showEditTaskModal, setShowEditTaskModal] = useState(false);
@@ -376,8 +375,6 @@ export default function TasksPage() {
       let url = "/api/tasks";
 
       // Añadir el parámetro de meetingId solo si está seleccionado
-      if (selectedMeeting && selectedMeeting !== "all") {
-        url += `?meetingId=${selectedMeeting}`;
       }
 
       console.log("Fetching tasks from URL:", url);
@@ -490,8 +487,6 @@ export default function TasksPage() {
           // No establecer error aquí para no bloquear la UI
         }
 
-        // Fetch tasks
-        await fetchTasks(username);
       } catch (err) {
         console.error("Error en fetchData:", err);
         setError(
@@ -507,11 +502,12 @@ export default function TasksPage() {
 
   // Handle meeting selection change
   useEffect(() => {
-    if (username) {
+    if (username && selectedMeeting) {
       // Usar setTimeout para asegurar que el estado se actualiza antes de ejecutar la consulta
       setTimeout(() => {
         fetchTasks(username);
       }, 0);
+
     }
   }, [selectedMeeting, username]);
 
@@ -966,115 +962,6 @@ export default function TasksPage() {
             </div>
           </div>
 
-          {/* Pestañas de filtrado */}
-          <Tabs
-            defaultValue="all"
-            value={activeTab}
-            onValueChange={setActiveTab}
-            className="w-full mb-4"
-          >
-            <div className="overflow-x-auto pb-2">
-              <TabsList className="grid w-full min-w-[500px] grid-cols-4 bg-blue-800/30 gap-1 px-2 sm:px-4">
-                <TabsTrigger
-                  value="all"
-                  className="data-[state=active]:bg-blue-600"
-                >
-                  Todas ({taskCounts.all})
-                </TabsTrigger>
-                <TabsTrigger
-                  value="pending"
-                  className="data-[state=active]:bg-blue-600"
-                >
-                  Pendientes ({taskCounts.pending})
-                </TabsTrigger>
-                <TabsTrigger
-                  value="completed"
-                  className="data-[state=active]:bg-blue-600"
-                >
-                  Completadas ({taskCounts.completed})
-                </TabsTrigger>
-                <TabsTrigger
-                  value="overdue"
-                  className="data-[state=active]:bg-blue-600"
-                >
-                  Vencidas ({taskCounts.overdue})
-                </TabsTrigger>
-              </TabsList>
-            </div>
-          </Tabs>
-
-          <div className="flex flex-col md:flex-row gap-4">
-            <div className="md:w-1/3">
-              <Card className="bg-blue-800/20 border-blue-700/30">
-                <CardHeader className="pb-2">
-                  <CardTitle className="text-white">Conversaciones</CardTitle>
-                  <CardDescription className="text-blue-200/70">
-                    Selecciona una conversación para ver sus tareas
-                  </CardDescription>
-                </CardHeader>
-                <CardContent className="max-h-[60vh] overflow-y-auto">
-                  {meetings.length > 0 ? (
-                    meetings.map((m) => (
-                      <ConversationSidebarItem
-                        key={m.id}
-                        meeting={m}
-                        isSelected={selectedMeeting === m.id.toString()}
-                        onSelect={setSelectedMeeting}
-                      />
-                    ))
-                  ) : (
-                    <div className="text-center py-8 text-blue-300">
-                      No hay conversaciones
-                    </div>
-                  )}
-                </CardContent>
-              </Card>
-            </div>
-
-            <div className="flex-1">
-              <Card className="bg-blue-800/20 border-blue-700/30">
-                <CardHeader className="pb-2">
-                  <CardTitle className="text-white">
-                    Tareas de la reunión
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <TasksCalendar tasks={tasksWithDate} />
-                  <div className="mt-4 space-y-4">
-                    {tasksWithDate.length > 0 ? (
-                      tasksWithDate.map((task) => (
-                        <TaskItem
-                          key={task.id}
-                          task={task}
-                          userRole={currentUser.role}
-                          onToggleComplete={handleToggleComplete}
-                          onEdit={handleEditTask}
-                          onDelete={handleDeleteTask}
-                        />
-                      ))
-                    ) : (
-                      <div className="text-center py-8 text-blue-300">
-                        No hay tareas para esta reunión
-                      </div>
-                    )}
-                  </div>
-                  {tasksWithoutDate.length > 0 && (
-                    <div className="mt-8">
-                      <h3 className="text-lg text-white mb-2">
-                        Tareas sin fecha
-                      </h3>
-                      <div className="space-y-4">
-                        {tasksWithoutDate.map((task) => (
-                          <TaskItem
-                            key={task.id}
-                            task={task}
-                            userRole={currentUser.role}
-                            onToggleComplete={handleToggleComplete}
-                            onEdit={handleEditTask}
-                            onDelete={handleDeleteTask}
-                          />
-                        ))}
-                      </div>
                     </div>
                   )}
                 </CardContent>
