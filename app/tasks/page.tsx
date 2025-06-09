@@ -170,6 +170,91 @@ const TaskItem = ({ task, userRole, onToggleComplete, onEdit, onDelete }) => {
   )
 }
 
+// Elemento simple para la barra lateral de tareas
+const TaskSidebarItem = ({ task, isSelected, onSelect }) => {
+  return (
+    <div
+      className={`p-2 rounded cursor-pointer mb-1 border border-blue-700/30 ${
+        isSelected ? "bg-blue-700/40" : "bg-blue-800/30 hover:bg-blue-700/30"
+      }`}
+      onClick={() => onSelect(task)}
+    >
+      <p className={`text-sm ${task.completed ? "line-through text-blue-300/70" : "text-white"}`}>{task.text}</p>
+      {task.dueDate && (
+        <p className="text-xs text-blue-300/70">
+          {task.dueDate.split("T")[0].split("-").reverse().join("/")}
+        </p>
+      )}
+    </div>
+  )
+}
+
+// Vista detallada de una tarea seleccionada
+const TaskDetails = ({ task, userRole, onToggleComplete, onEdit, onDelete }) => {
+  if (!task) {
+    return (
+      <div className="flex items-center justify-center h-full text-blue-300">
+        Selecciona una tarea para ver los detalles
+      </div>
+    )
+  }
+
+  const isOverdue = task.dueDate && new Date(task.dueDate) < new Date() && !task.completed
+
+  return (
+    <div className="p-4 bg-blue-800/20 border border-blue-700/30 rounded-lg">
+      <div className="flex justify-between items-start mb-4">
+        <h2 className="text-xl font-bold text-white">{task.text}</h2>
+        <div className="flex space-x-2">
+          <Button
+            variant="ghost"
+            size="icon"
+            className="h-9 w-9 text-blue-300 hover:text-white hover:bg-blue-800/50"
+            onClick={() => onEdit(task)}
+          >
+            <Edit className="h-4 w-4" />
+          </Button>
+          <Button
+            variant="ghost"
+            size="icon"
+            className="h-9 w-9 text-blue-300 hover:text-red-400 hover:bg-red-900/20"
+            onClick={() => onDelete(task.id)}
+          >
+            <Trash2 className="h-4 w-4" />
+          </Button>
+        </div>
+      </div>
+
+      {task.description && (
+        <p className="text-blue-200/70 mb-4 whitespace-pre-line">{task.description}</p>
+      )}
+
+      {task.dueDate && (
+        <p className={`mb-2 ${isOverdue ? "text-red-300" : "text-blue-300"}`}>Fecha límite: {task.dueDate.split("T")[0].split("-").reverse().join("/")}</p>
+      )}
+
+      <div className="flex items-center gap-2 mb-4">
+        <Progress value={task.progress} className="h-2 w-full bg-blue-800/50" />
+        <span className="text-xs text-blue-200/70 min-w-10 text-right">{task.progress}%</span>
+      </div>
+
+      <div className="flex flex-wrap items-center text-sm gap-x-4 gap-y-2">
+        <div className="flex items-center text-blue-200/70">
+          <User className="h-3.5 w-3.5 mr-1" />
+          <span>{task.assignee && task.assignee !== "No asignado" ? `Asignado a: ${task.assignee}` : "Sin asignar"}</span>
+        </div>
+
+        {task.meeting_title && (
+          <div className="flex items-center text-blue-200/70">
+            <Link className="h-3.5 w-3.5 mr-1" />
+            <span className="text-xs px-2 py-0.5 rounded-full bg-blue-700/40">{task.meeting_title}</span>
+          </div>
+        )}
+      </div>
+    </div>
+  )
+}
+
 export default function TasksPage() {
   const [activeTab, setActiveTab] = useState("all")
   const [viewMode, setViewMode] = useState<"my-tasks" | "organization-tasks">("my-tasks")
@@ -180,6 +265,7 @@ export default function TasksPage() {
   const [showNewTaskModal, setShowNewTaskModal] = useState(false)
   const [showEditTaskModal, setShowEditTaskModal] = useState(false)
   const [currentTask, setCurrentTask] = useState<Task | null>(null)
+  const [selectedTask, setSelectedTask] = useState<Task | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [organizationMembers, setOrganizationMembers] = useState([])
@@ -821,9 +907,9 @@ export default function TasksPage() {
           </div>
 
           {/* Pestañas de filtrado */}
-          <Tabs defaultValue="all" value={activeTab} onValueChange={setActiveTab} className="w-full">
+          <Tabs defaultValue="all" value={activeTab} onValueChange={setActiveTab} className="w-full mb-4">
             <div className="overflow-x-auto pb-2">
-              <TabsList className="grid w-full min-w-[500px] grid-cols-4 mb-8 bg-blue-800/30 gap-1 px-2 sm:px-4">
+              <TabsList className="grid w-full min-w-[500px] grid-cols-4 bg-blue-800/30 gap-1 px-2 sm:px-4">
                 <TabsTrigger value="all" className="data-[state=active]:bg-blue-600">
                   Todas ({taskCounts.all})
                 </TabsTrigger>
@@ -838,12 +924,14 @@ export default function TasksPage() {
                 </TabsTrigger>
               </TabsList>
             </div>
+          </Tabs>
 
-            <TabsContent value="all" className="mt-0">
+          <div className="flex flex-col md:flex-row gap-4">
+            <div className="md:w-1/3">
               <Card className="bg-blue-800/20 border-blue-700/30">
                 <CardHeader className="pb-2">
                   <CardTitle className="text-white">
-                    {viewMode === "my-tasks" ? "Todas mis tareas" : "Todas las tareas de miembros"}
+                    {viewMode === "my-tasks" ? "Mis tareas" : "Tareas de miembros"}
                     {selectedMeeting !== "all" &&
                       meetings.find((m) => m.id.toString() === selectedMeeting) &&
                       ` - ${meetings.find((m) => m.id.toString() === selectedMeeting)?.title}`}
@@ -854,177 +942,42 @@ export default function TasksPage() {
                       : "Visualiza y gestiona todas las tareas asignadas a miembros de la organización"}
                   </CardDescription>
                 </CardHeader>
-                <CardContent>
+                <CardContent className="max-h-[60vh] overflow-y-auto">
                   {filteredTasks.length > 0 ? (
                     filteredTasks.map((task) => (
-                      <TaskItem
+                      <TaskSidebarItem
                         key={task.id}
                         task={task}
-                        userRole={currentUser.role}
-                        onToggleComplete={handleToggleComplete}
-                        onEdit={handleEditTask}
-                        onDelete={handleDeleteTask}
+                        isSelected={selectedTask?.id === task.id}
+                        onSelect={setSelectedTask}
                       />
                     ))
                   ) : (
-                    <div className="flex flex-col items-center justify-center py-8 text-center">
-                      <div className="rounded-full bg-blue-800/40 p-3 mb-4">
-                        <CheckSquare className="h-6 w-6 text-blue-300" />
-                      </div>
-                      <h3 className="text-lg font-medium text-white mb-1">No hay tareas disponibles</h3>
-                      <p className="text-blue-300/70">
-                        {activeTab === "all"
-                          ? "No se encontraron tareas. Crea una tarea nueva para empezar."
-                          : activeTab === "pending"
-                            ? "No hay tareas pendientes en este momento."
-                            : activeTab === "completed"
-                              ? "No hay tareas completadas en este momento."
-                              : "No hay tareas vencidas en este momento."}
-                      </p>
-                      <Button className="mt-4 bg-blue-600 hover:bg-blue-700" onClick={() => setShowNewTaskModal(true)}>
-                        <Plus className="mr-2 h-4 w-4" />
-                        Nueva tarea
-                      </Button>
-                    </div>
+                    <div className="text-center py-8 text-blue-300">No hay tareas disponibles</div>
                   )}
                 </CardContent>
               </Card>
-            </TabsContent>
+            </div>
 
-            <TabsContent value="pending" className="mt-0">
-              <Card className="bg-blue-800/20 border-blue-700/30">
-                <CardHeader className="pb-2">
-                  <CardTitle className="text-white">
-                    {viewMode === "my-tasks" ? "Mis tareas pendientes" : "Tareas pendientes de miembros"}
-                    {selectedMeeting !== "all" &&
-                      meetings.find((m) => m.id.toString() === selectedMeeting) &&
-                      ` - ${meetings.find((m) => m.id.toString() === selectedMeeting)?.title}`}
-                  </CardTitle>
-                  <CardDescription className="text-blue-200/70">
-                    Tareas que aún necesitan ser completadas
-                  </CardDescription>
-                </CardHeader>
-                <CardContent>
-                  {filteredTasks.length > 0 ? (
-                    filteredTasks.map((task) => (
-                      <TaskItem
-                        key={task.id}
-                        task={task}
-                        userRole={currentUser.role}
-                        onToggleComplete={handleToggleComplete}
-                        onEdit={handleEditTask}
-                        onDelete={handleDeleteTask}
-                      />
-                    ))
-                  ) : (
-                    <div className="flex flex-col items-center justify-center py-8 text-center">
-                      <div className="rounded-full bg-blue-800/40 p-3 mb-4">
-                        <CheckSquare className="h-6 w-6 text-blue-300" />
-                      </div>
-                      <h3 className="text-lg font-medium text-white mb-1">No hay tareas disponibles</h3>
-                      <p className="text-blue-300/70">
-                        {activeTab === "all"
-                          ? "No se encontraron tareas. Crea una tarea nueva para empezar."
-                          : activeTab === "pending"
-                            ? "No hay tareas pendientes en este momento."
-                            : activeTab === "completed"
-                              ? "No hay tareas completadas en este momento."
-                              : "No hay tareas vencidas en este momento."}
-                      </p>
-                      <Button className="mt-4 bg-blue-600 hover:bg-blue-700" onClick={() => setShowNewTaskModal(true)}>
-                        <Plus className="mr-2 h-4 w-4" />
-                        Nueva tarea
-                      </Button>
-                    </div>
-                  )}
-                </CardContent>
-              </Card>
-            </TabsContent>
-
-            <TabsContent value="completed" className="mt-0">
-              <Card className="bg-blue-800/20 border-blue-700/30">
-                <CardHeader className="pb-2">
-                  <CardTitle className="text-white">
-                    {viewMode === "my-tasks" ? "Mis tareas completadas" : "Tareas completadas de miembros"}
-                    {selectedMeeting !== "all" &&
-                      meetings.find((m) => m.id.toString() === selectedMeeting) &&
-                      ` - ${meetings.find((m) => m.id.toString() === selectedMeeting)?.title}`}
-                  </CardTitle>
-                  <CardDescription className="text-blue-200/70">Tareas que ya han sido finalizadas</CardDescription>
-                </CardHeader>
-                <CardContent>
-                  {filteredTasks.length > 0 ? (
-                    filteredTasks.map((task) => (
-                      <TaskItem
-                        key={task.id}
-                        task={task}
-                        userRole={currentUser.role}
-                        onToggleComplete={handleToggleComplete}
-                        onEdit={handleEditTask}
-                        onDelete={handleDeleteTask}
-                      />
-                    ))
-                  ) : (
-                    <div className="flex flex-col items-center justify-center py-8 text-center">
-                      <div className="rounded-full bg-blue-800/40 p-3 mb-4">
-                        <CheckSquare className="h-6 w-6 text-blue-300" />
-                      </div>
-                      <h3 className="text-lg font-medium text-white mb-1">No hay tareas disponibles</h3>
-                      <p className="text-blue-300/70">
-                        {activeTab === "all"
-                          ? "No se encontraron tareas. Crea una tarea nueva para empezar."
-                          : activeTab === "pending"
-                            ? "No hay tareas pendientes en este momento."
-                            : activeTab === "completed"
-                              ? "No hay tareas completadas en este momento."
-                              : "No hay tareas vencidas en este momento."}
-                      </p>
-                      <Button className="mt-4 bg-blue-600 hover:bg-blue-700" onClick={() => setShowNewTaskModal(true)}>
-                        <Plus className="mr-2 h-4 w-4" />
-                        Nueva tarea
-                      </Button>
-                    </div>
-                  )}
-                </CardContent>
-              </Card>
-            </TabsContent>
-
-            <TabsContent value="overdue" className="mt-0">
-              <Card className="bg-blue-800/20 border-blue-700/30">
-                <CardHeader className="pb-2">
-                  <CardTitle className="text-white">
-                    {viewMode === "my-tasks" ? "Mis tareas vencidas" : "Tareas vencidas de miembros"}
-                    {selectedMeeting !== "all" &&
-                      meetings.find((m) => m.id.toString() === selectedMeeting) &&
-                      ` - ${meetings.find((m) => m.id.toString() === selectedMeeting)?.title}`}
-                  </CardTitle>
-                  <CardDescription className="text-blue-200/70">Tareas que han pasado su fecha límite</CardDescription>
-                </CardHeader>
-                <CardContent>
-                  {filteredTasks.length > 0 ? (
-                    filteredTasks.map((task) => (
-                      <TaskItem
-                        key={task.id}
-                        task={task}
-                        userRole={currentUser.role}
-                        onToggleComplete={handleToggleComplete}
-                        onEdit={handleEditTask}
-                        onDelete={handleDeleteTask}
-                      />
-                    ))
-                  ) : (
-                    <div className="flex flex-col items-center justify-center py-8 text-center">
-                      <div className="rounded-full bg-blue-800/40 p-3 mb-4">
-                        <CheckSquare className="h-6 w-6 text-blue-300" />
-                      </div>
-                      <h3 className="text-lg font-medium text-white mb-1">No hay tareas vencidas</h3>
-                      <p className="text-blue-300/70">No tienes tareas que hayan pasado su fecha límite.</p>
-                    </div>
-                  )}
-                </CardContent>
-              </Card>
-            </TabsContent>
-          </Tabs>
+            <div className="flex-1">
+              {selectedTask && (
+                <Card className="bg-blue-800/20 border-blue-700/30">
+                  <CardHeader className="pb-2">
+                    <CardTitle className="text-white">Detalle de la tarea</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <TaskDetails
+                      task={selectedTask}
+                      userRole={currentUser.role}
+                      onToggleComplete={handleToggleComplete}
+                      onEdit={handleEditTask}
+                      onDelete={handleDeleteTask}
+                    />
+                  </CardContent>
+                </Card>
+              )}
+            </div>
+          </div>
         </div>
       </main>
 
