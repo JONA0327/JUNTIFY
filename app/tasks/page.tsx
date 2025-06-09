@@ -267,6 +267,7 @@ const TasksCalendar = ({ tasks }) => {
     <Calendar
       mode="single"
       weekStartsOn={1}
+
       modifiers={modifiers}
       modifiersClassNames={{
         completed: "bg-green-600 text-white hover:bg-green-600",
@@ -287,6 +288,7 @@ export default function TasksPage() {
   const [tasks, setTasks] = useState<Task[]>([]);
   const [meetings, setMeetings] = useState<Meeting[]>([]);
   const [selectedMeeting, setSelectedMeeting] = useState<string | null>(null);
+
   const [searchTerm, setSearchTerm] = useState("");
   const [showNewTaskModal, setShowNewTaskModal] = useState(false);
   const [showEditTaskModal, setShowEditTaskModal] = useState(false);
@@ -494,8 +496,6 @@ export default function TasksPage() {
           console.error("Error fetching meetings:", err);
           // No establecer error aquí para no bloquear la UI
         }
-
-        // Las tareas se cargan cuando se seleccione una conversación
       } catch (err) {
         console.error("Error en fetchData:", err);
         setError(
@@ -516,8 +516,10 @@ export default function TasksPage() {
       setTimeout(() => {
         fetchTasks(username);
       }, 0);
+
     } else {
       setTasks([]);
+
     }
   }, [selectedMeeting, username]);
 
@@ -973,6 +975,7 @@ export default function TasksPage() {
           </div>
 
 
+
           <div className="flex flex-col md:flex-row gap-4">
             <div className="md:w-1/3">
               <Card className="bg-blue-800/20 border-blue-700/30">
@@ -995,11 +998,13 @@ export default function TasksPage() {
                   ) : (
                     <div className="text-center py-8 text-blue-300">
                       No hay conversaciones
+
                     </div>
                   )}
                 </CardContent>
               </Card>
             </div>
+
 
             <div className="flex-1">
               <Card className="bg-blue-800/20 border-blue-700/30">
