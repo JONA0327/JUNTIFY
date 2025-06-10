@@ -221,7 +221,13 @@ const ConversationSidebarItem = ({ meeting, isSelected, onSelect }) => {
       className={`p-2 rounded cursor-pointer mb-1 border border-blue-700/30 ${
         isSelected ? "bg-blue-700/40" : "bg-blue-800/30 hover:bg-blue-700/30"
       }`}
-      onClick={() => onSelect(meeting.id.toString())}
+      onClick={() => {
+        if (meeting.id !== null && meeting.id !== undefined) {
+          onSelect(meeting.id.toString());
+        } else {
+          console.error("Meeting ID is null or undefined");
+        }
+      }}
     >
       <p className="text-sm text-white">{meeting.title}</p>
       {meeting.date && (
@@ -1202,23 +1208,6 @@ export default function TasksPage() {
               onSelect={setSelectedDate}
               onTaskSelect={(id) => setSelectedMeeting(id)}
             />
-            {selectedDate && (
-              <div className="mt-4 space-y-2">
-                {tasksForSelectedDate.length > 0 ? (
-                  tasksForSelectedDate.map((task) => (
-                    <button
-                      key={task.id}
-                      className="flex justify-between items-center w-full bg-blue-800/30 border border-blue-700/30 rounded p-2 hover:bg-blue-700/30"
-                      onClick={() => setSelectedMeeting(task.meeting_id.toString())}
-                    >
-                      <span className="text-white text-sm">{task.text}</span>
-                    </button>
-                  ))
-                ) : (
-                  <p className="text-center text-blue-300">No hay tareas para este día</p>
-                )}
-              </div>
-            )}
           </div>
 
           {error && (
