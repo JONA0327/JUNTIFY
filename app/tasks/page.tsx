@@ -347,79 +347,8 @@ const GlobalTasksCalendar = ({ tasks, selected, onSelect }) => {
     const d = new Date(dateStr)
     return d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
   }
-
-  return (
-    <section className="bg-blue-800/20 border border-blue-700/30 rounded-xl p-6">
-      <div className="w-full max-w-7xl mx-auto px-2 lg:px-8">
-        <div className="grid grid-cols-12 gap-8 max-w-4xl mx-auto xl:max-w-full">
-            <div className="col-span-12 xl:col-span-5">
-              <h2 className="font-manrope text-2xl leading-tight text-white mb-1.5">Próximas tareas</h2>
-              <p className="text-lg font-normal text-blue-300 mb-8">No pierdas tu agenda</p>
-              <div className="flex gap-5 flex-col">
-                {upcomingTasks.map((task) => (
-                  <div key={task.id} className="p-6 rounded-xl bg-blue-800/30 border border-blue-700/30">
-                    <div className="flex items-center justify-between mb-3">
-                      <div className="flex items-center gap-2.5">
-                        <span className={`w-2.5 h-2.5 rounded-full ${getPriorityColor(task.priority)}`}></span>
-                        <p className="text-base font-medium text-white">
-                          {formatDate(task.dueDate)} - {formatTime(task.dueDate)}
-                        </p>
-                      </div>
-                    </div>
-                    <h6 className="text-xl leading-8 font-semibold text-white mb-1">
-                      {task.text}
-                    </h6>
-                    {task.description && (
-                      <p className="text-base font-normal text-blue-300">
-                        {task.description}
-                      </p>
-                    )}
-                  </div>
-                ))}
-                {upcomingTasks.length === 0 && (
-                  <div className="p-6 rounded-xl bg-blue-800/30 border border-blue-700/30 text-blue-300">No hay tareas en proceso</div>
-                )}
-              </div>
-            </div>
-            <div className="col-span-12 xl:col-span-7 px-2.5 py-5 sm:p-8 bg-blue-800/20 border border-blue-700/30 rounded-2xl max-xl:row-start-1">
-              <h5 className="text-xl leading-8 font-semibold text-white mb-4">Calendario</h5>
-              <div className="border border-blue-700/30 rounded-xl p-2 bg-blue-800/30">
-                <Calendar
-                  mode="single"
-                  selected={selected}
-                  onSelect={onSelect}
-                  modifiers={modifiers}
-                  modifiersClassNames={{
-                    completed: 'bg-green-600 text-white hover:bg-green-600',
-                    overdue: 'bg-red-600 text-white hover:bg-red-600',
-                    inProgress: 'bg-yellow-500 text-black hover:bg-yellow-500',
-                    pending: 'bg-orange-500 text-white hover:bg-orange-500',
-                  }}
-                  className="rounded-lg"
-                />
-              </div>
-              <div className="mt-4 text-sm text-blue-300">
-                <strong className="text-white block mb-2">Tareas para este día</strong>
-                <ul className="space-y-1">
-                  {tasksToday.length > 0 ? (
-                    tasksToday.map((t) => (
-                      <li key={t.id} className="flex items-center">
-                        <span className={`inline-block w-2 h-2 rounded-full mr-2 ${getPriorityColor(t.priority)}`}></span>
-                        {t.text}
-                      </li>
-                    ))
-                  ) : (
-                    <li>No hay tareas para este día</li>
-                  )}
-                </ul>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-    </section>
-  )
 }
+ 
 
 
 export default function TasksPage() {
@@ -1327,4 +1256,5 @@ export default function TasksPage() {
       <NewNavbar />
     </div>
   );
+  
 }
