@@ -1,154 +1,157 @@
 "use client"
+import { useState } from "react"
+import { Search } from "lucide-react"
+import { Calendar } from "@/components/ui/calendar"
+import { Button } from "@/components/ui/button"
+import { Input } from "@/components/ui/input"
+import { Avatar, AvatarFallback } from "@/components/ui/avatar"
+
+interface Evento {
+  id: number
+  titulo: string
+  fecha: string
+  hora: string
+  color: keyof typeof colorMap
+  avatar?: string
+}
+
+const colorMap = {
+  indigo: { line: "bg-indigo-400", bg: "bg-indigo-400/20" },
+  cyan: { line: "bg-cyan-400", bg: "bg-cyan-400/20" },
+  green: { line: "bg-green-300", bg: "bg-green-300/20" },
+  blue: { line: "bg-blue-400", bg: "bg-blue-400/20" },
+  purple: { line: "bg-purple-400", bg: "bg-purple-400/20" },
+  red: { line: "bg-red-300", bg: "bg-red-300/20" },
+  orange: { line: "bg-orange-300", bg: "bg-orange-300/20" },
+}
+
+const diasSemana = ["Lun", "Mar", "Mié", "Jue", "Vie", "Sáb", "Dom"]
+
+const eventos: Evento[] = [
+  { id: 1, titulo: "Design Review", fecha: "2022-07-01", hora: "14:00 - 16:00", color: "indigo" },
+  { id: 2, titulo: "Dinner with Alpha Team", fecha: "2022-07-07", hora: "21:00 - 22:00", color: "cyan" },
+  { id: 3, titulo: "Family Trip to a beach and Resort", fecha: "2022-07-15", hora: "09:00 - 18:00", color: "green" },
+  { id: 4, titulo: "Grocery", fecha: "2022-07-23", hora: "17:00 - 19:00", color: "blue", avatar: "G" },
+  { id: 5, titulo: "Doctor's Visit", fecha: "2022-07-26", hora: "14:00 - 16:00", color: "red", avatar: "D" },
+  { id: 6, titulo: "Client Meetup", fecha: "2022-07-29", hora: "22:00 - 23:00", color: "purple", avatar: "C" },
+  { id: 7, titulo: "Dart Game", fecha: "2022-07-18", hora: "22:00 - 23:00", color: "orange" },
+]
 
 export default function GlobalEventsCalendar() {
+  const [selectedDate, setSelectedDate] = useState<Date | undefined>(new Date("2022-07-15"))
+  const [viewMode, setViewMode] = useState<"day" | "week" | "month">("month")
+  const [search, setSearch] = useState("")
+
+  const year = 2022
+  const month = 6 // Julio
+  const diasEnMes = new Date(year, month + 1, 0).getDate()
+  const inicioMes = (new Date(year, month, 1).getDay() + 6) % 7
+  const totalCeldas = Math.ceil((inicioMes + diasEnMes) / 7) * 7
+  const diasDelMes = Array.from({ length: totalCeldas }, (_, i) => {
+    const dia = i - inicioMes + 1
+    return dia > 0 && dia <= diasEnMes ? dia : null
+  })
+  const eventosHoy = selectedDate
+    ? eventos.filter((e) => new Date(e.fecha).toDateString() === selectedDate.toDateString())
+    : []
+
   return (
-    <section className="relative bg-stone-50">
-      <div className="bg-sky-400 w-full sm:w-40 h-40 rounded-full absolute top-1 opacity-20 max-sm:right-0 sm:left-56 z-0"></div>
-      <div className="bg-emerald-500 w-full sm:w-40 h-24 absolute top-0 -left-0 opacity-20 z-0"></div>
-      <div className="bg-purple-600 w-full sm:w-40 h-24 absolute top-40 -left-0 opacity-20 z-0"></div>
-      <div className="w-full py-24 relative z-10 backdrop-blur-3xl">
-        <div className="w-full max-w-7xl mx-auto px-2 lg:px-8">
-          <div className="grid grid-cols-12 gap-8 max-w-4xl mx-auto xl:max-w-full">
-            <div className="col-span-12 xl:col-span-5">
-              <h2 className="font-manrope text-3xl leading-tight text-gray-900 mb-1.5">Próximos Eventos</h2>
-              <p className="text-lg font-normal text-gray-600 mb-8">No pierdas tu agenda</p>
-              <div className="flex gap-5 flex-col">
-                <div className="p-6 rounded-xl bg-white">
-                  <div className="flex items-center justify-between mb-3">
-                    <div className="flex items-center gap-2.5">
-                      <span className="w-2.5 h-2.5 rounded-full bg-purple-600"></span>
-                      <p className="text-base font-medium text-gray-900">10 Ene 2024 - 10:00 - 11:00</p>
-                    </div>
-                    <div className="dropdown relative inline-flex">
-                      <button type="button" className="dropdown-toggle inline-flex justify-center py-2.5 px-1 items-center gap-2 text-sm text-black rounded-full cursor-pointer font-semibold text-center shadow-xs transition-all duration-500 hover:text-purple-600">
-                        <svg xmlns="http://www.w3.org/2000/svg" width="12" height="4" viewBox="0 0 12 4" fill="none">
-                          <path d="M1.85624 2.00085H1.81458M6.0343 2.00085H5.99263M10.2124 2.00085H10.1707" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"></path>
-                        </svg>
-                      </button>
-                    </div>
-                  </div>
-                  <h6 className="text-xl leading-8 font-semibold text-black mb-1">Reunión con amigos</h6>
-                  <p className="text-base font-normal text-gray-600">Conversación sobre destinos de viaje</p>
-                </div>
-                <div className="p-6 rounded-xl bg-white">
-                  <div className="flex items-center justify-between mb-3">
-                    <div className="flex items-center gap-2.5">
-                      <span className="w-2.5 h-2.5 rounded-full bg-sky-400"></span>
-                      <p className="text-base font-medium text-gray-900">10 Ene 2024 - 05:40 - 13:00</p>
-                    </div>
-                    <div className="dropdown relative inline-flex">
-                      <button type="button" className="dropdown-toggle inline-flex justify-center py-2.5 px-1 items-center gap-2 text-sm text-black rounded-full cursor-pointer font-semibold text-center shadow-xs transition-all duration-500 hover:text-sky-400">
-                        <svg xmlns="http://www.w3.org/2000/svg" width="12" height="4" viewBox="0 0 12 4" fill="none">
-                          <path d="M1.85624 2.00085H1.81458M6.0343 2.00085H5.99263M10.2124 2.00085H10.1707" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"></path>
-                        </svg>
-                      </button>
-                    </div>
-                  </div>
-                  <h6 className="text-xl leading-8 font-semibold text-black mb-1">Curso en línea</h6>
-                  <p className="text-base font-normal text-gray-600">Revisar actualizaciones del curso de diseño</p>
-                </div>
-                <div className="p-6 rounded-xl bg-white">
-                  <div className="flex items-center justify-between mb-3">
-                    <div className="flex items-center gap-2.5">
-                      <span className="w-2.5 h-2.5 rounded-full bg-emerald-600"></span>
-                      <p className="text-base font-medium text-gray-900">14 Ene 2024 10:00 - 11:00</p>
-                    </div>
-                    <div className="dropdown relative inline-flex">
-                      <button type="button" className="dropdown-toggle inline-flex justify-center py-2.5 px-1 items-center gap-2 text-sm text-black rounded-full cursor-pointer font-semibold text-center shadow-xs transition-all duration-500 hover:text-emerald-600">
-                        <svg xmlns="http://www.w3.org/2000/svg" width="12" height="4" viewBox="0 0 12 4" fill="none">
-                          <path d="M1.85624 2.00085H1.81458M6.0343 2.00085H5.99263M10.2124 2.00085H10.1707" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"></path>
-                        </svg>
-                      </button>
-                    </div>
-                  </div>
-                  <h6 className="text-xl leading-8 font-semibold text-black mb-1">Reunión de desarrollo</h6>
-                  <p className="text-base font-normal text-gray-600">Discusión con el equipo para el próximo proyecto</p>
-                </div>
+    <div className="max-w-7xl mx-auto overflow-x-auto">
+      <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between mb-6">
+        <h1 className="text-xl font-semibold text-white">15 Julio 2022, Lunes</h1>
+        <div className="flex-1 md:mx-6">
+          <div className="relative max-w-xs mx-auto md:mx-0">
+            <Search className="absolute left-2 top-2.5 h-4 w-4 text-blue-300" />
+            <Input
+              placeholder="Buscar"
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              className="pl-8 bg-blue-800/30 border-blue-700/30 text-white"
+            />
+          </div>
+        </div>
+        <div className="flex gap-2">
+          <Button variant={viewMode === "day" ? "default" : "outline"} onClick={() => setViewMode("day")}>Día</Button>
+          <Button variant={viewMode === "week" ? "default" : "outline"} onClick={() => setViewMode("week")}>Semana</Button>
+          <Button variant={viewMode === "month" ? "default" : "outline"} onClick={() => setViewMode("month")}>Mes</Button>
+          <Button className="bg-purple-700 text-white hover:bg-purple-600">+ Crear Evento</Button>
+        </div>
+      </div>
+
+      <div className="grid grid-cols-12 gap-6">
+        <div className="col-span-12 md:col-span-3">
+          <Calendar
+            mode="single"
+            month={new Date(2022, 6)}
+            selected={selectedDate}
+            onSelect={setSelectedDate}
+            className="rounded-lg border border-blue-700/30 bg-blue-800/20 text-white mb-6"
+          />
+          <div className="border border-blue-700/30 bg-blue-800/30 rounded-lg p-4">
+            <h2 className="font-semibold mb-2 text-white">Tareas para hoy</h2>
+            <ul className="space-y-2 text-sm text-blue-200">
+              {eventosHoy.length > 0 ? (
+                eventosHoy.map((ev) => (
+                  <li key={ev.id} className="flex items-center gap-2">
+                    <span className={`w-2 h-2 rounded-full ${colorMap[ev.color].line}`}></span>
+                    {ev.titulo}
+                  </li>
+                ))
+              ) : (
+                <li>No hay tareas para este día</li>
+              )}
+            </ul>
+          </div>
+        </div>
+
+        <div className="col-span-12 md:col-span-9 border border-blue-700/30 bg-blue-800/20 rounded-lg p-4">
+          <div className="grid grid-cols-7 text-center mb-2">
+            {diasSemana.map((d) => (
+              <div key={d} className="text-sm font-semibold text-blue-200 py-1">
+                {d}
               </div>
-            </div>
-            <div className="col-span-12 xl:col-span-7 px-2.5 py-5 sm:p-8 bg-gradient-to-b from-white/25 to-white xl:bg-white rounded-2xl max-xl:row-start-1">
-              <div className="flex flex-col md:flex-row gap-4 items-center justify-between mb-5">
-                <div className="flex items-center gap-4">
-                  <h5 className="text-xl leading-8 font-semibold text-gray-900">Enero 2024</h5>
-                  <div className="flex items-center">
-                    <button className="text-indigo-600 p-1 rounded transition-all duration-300 hover:text-white hover:bg-indigo-600">
-                      <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 16 16" fill="none">
-                        <path d="M10.0002 11.9999L6 7.99971L10.0025 3.99719" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" strokeLinejoin="round"></path>
-                      </svg>
-                    </button>
-                    <button className="text-indigo-600 p-1 rounded transition-all duration-300 hover:text-white hover:bg-indigo-600">
-                      <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 16 16" fill="none">
-                        <path d="M6.00236 3.99707L10.0025 7.99723L6 11.9998" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" strokeLinejoin="round"></path>
-                      </svg>
-                    </button>
+            ))}
+          </div>
+          <div className="grid grid-cols-7 gap-px">
+            {diasDelMes.map((day, idx) => {
+              const dateStr = day ? `2022-07-${day.toString().padStart(2, "0")}` : ""
+              const eventosDelDia = day ? eventos.filter((e) => e.fecha === dateStr) : []
+              return (
+                <div key={idx} className="min-h-[110px] border border-blue-700/30 p-1">
+                  <div className="text-xs text-blue-200 mb-1">
+                    {day ? (
+                      day === 15 ? (
+                        <span className="inline-flex items-center justify-center w-5 h-5 rounded-full bg-purple-600 text-white">
+                          {day}
+                        </span>
+                      ) : (
+                        day
+                      )
+                    ) : null}
                   </div>
+                  {eventosDelDia.map((ev) => (
+                    <div key={ev.id} className={`relative mb-1 p-1 pl-2 rounded text-xs ${colorMap[ev.color].bg}`}>
+                      <span className={`absolute left-0 top-0 bottom-0 w-1 rounded-l ${colorMap[ev.color].line}`}></span>
+                      <div className="flex items-center gap-1">
+                        {ev.avatar && (
+                          <Avatar className="h-4 w-4">
+                            <AvatarFallback className="text-[10px]">{ev.avatar}</AvatarFallback>
+                          </Avatar>
+                        )}
+                        <div className="flex-1">
+                          <p className="truncate leading-tight">{ev.titulo}</p>
+                          <p className="text-[10px]">{ev.hora}</p>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
                 </div>
-                <div className="flex items-center rounded-md p-1 bg-indigo-50 gap-px">
-                  <button className="py-2.5 px-5 rounded-lg bg-indigo-50 text-indigo-600 text-sm font-medium transition-all duration-300 hover:bg-indigo-600 hover:text-white">Día</button>
-                  <button className="py-2.5 px-5 rounded-lg bg-indigo-600 text-white text-sm font-medium transition-all duration-300 hover:bg-indigo-600 hover:text-white">Semana</button>
-                  <button className="py-2.5 px-5 rounded-lg bg-indigo-50 text-indigo-600 text-sm font-medium transition-all duration-300 hover:bg-indigo-600 hover:text-white">Mes</button>
-                </div>
-              </div>
-              <div className="border border-indigo-200 rounded-xl">
-                <div className="grid grid-cols-7 rounded-t-3xl border-b border-indigo-200">
-                  <div className="py-3.5 border-r rounded-tl-xl border-indigo-200 bg-indigo-50 flex items-center justify-center text-sm font-medium text-indigo-600">Dom</div>
-                  <div className="py-3.5 border-r border-indigo-200 bg-indigo-50 flex items-center justify-center text-sm font-medium text-indigo-600">Lun</div>
-                  <div className="py-3.5 border-r border-indigo-200 bg-indigo-50 flex items-center justify-center text-sm font-medium text-indigo-600">Mar</div>
-                  <div className="py-3.5 border-r border-indigo-200 bg-indigo-50 flex items-center justify-center text-sm font-medium text-indigo-600">Mié</div>
-                  <div className="py-3.5 border-r border-indigo-200 bg-indigo-50 flex items-center justify-center text-sm font-medium text-indigo-600">Jue</div>
-                  <div className="py-3.5 border-r border-indigo-200 bg-indigo-50 flex items-center justify-center text-sm font-medium text-indigo-600">Vie</div>
-                  <div className="py-3.5 rounded-tr-xl bg-indigo-50 flex items-center justify-center text-sm font-medium text-indigo-600">Sáb</div>
-                </div>
-                <div className="grid grid-cols-7 rounded-b-xl">
-                  <div className="flex xl:aspect-square max-xl:min-h-[60px] p-3.5 bg-gray-50 border-r border-b border-indigo-200 transition-all duration-300 hover:bg-indigo-50"><span className="text-xs font-semibold text-gray-400">27</span></div>
-                  <div className="flex xl:aspect-square max-xl:min-h-[60px] p-3.5 bg-gray-50 border-r border-b border-indigo-200 transition-all duration-300 hover:bg-indigo-50 cursor-pointer"><span className="text-xs font-semibold text-gray-400">28</span></div>
-                  <div className="flex xl:aspect-square max-xl:min-h-[60px] p-3.5 bg-gray-50 border-r border-b border-indigo-200 transition-all duration-300 hover:bg-indigo-50 cursor-pointer"><span className="text-xs font-semibold text-gray-400">29</span></div>
-                  <div className="flex xl:aspect-square max-xl:min-h-[60px] p-3.5 bg-gray-50 border-r border-b border-indigo-200 transition-all duration-300 hover:bg-indigo-50 cursor-pointer"><span className="text-xs font-semibold text-gray-400">30</span></div>
-                  <div className="flex xl:aspect-square max-xl:min-h-[60px] p-3.5 bg-gray-50 border-r border-b border-indigo-200 transition-all duration-300 hover:bg-indigo-50 cursor-pointer"><span className="text-xs font-semibold text-gray-400">31</span></div>
-                  <div className="flex xl:aspect-square max-xl:min-h-[60px] p-3.5 bg-white border-r border-b border-indigo-200 transition-all duration-300 hover:bg-indigo-50 cursor-pointer"><span className="text-xs font-semibold text-gray-900">1</span></div>
-                  <div className="flex xl:aspect-square max-xl:min-h-[60px] p-3.5 bg-white border-b border-indigo-200 transition-all duration-300 hover:bg-indigo-50 cursor-pointer"><span className="text-xs font-semibold text-gray-900">2</span></div>
-                  <div className="flex xl:aspect-square max-xl:min-h-[60px] p-3.5 relative bg-white border-r border-b border-indigo-200 transition-all duration-300 hover:bg-indigo-50 cursor-pointer"><span className="text-xs font-semibold text-gray-900">3</span><div className="absolute top-9 bottom-1 left-3.5 p-1.5 xl:px-2.5 h-max rounded bg-purple-50"><p className="hidden xl:block text-xs font-medium text-purple-600 mb-px">Reunión</p><span className="hidden xl:block text-xs font-normal text-purple-600 whitespace-nowrap">10:00 - 11:00</span><p className="xl:hidden w-2 h-2 rounded-full bg-purple-600"></p></div></div>
-                  <div className="flex xl:aspect-square max-xl:min-h-[60px] p-3.5 bg-white border-r border-b border-indigo-200 transition-all duration-300 hover:bg-indigo-50 cursor-pointer"><span className="text-xs font-semibold text-gray-900">4</span></div>
-                  <div className="flex xl:aspect-square max-xl:min-h-[60px] p-3.5 bg-white border-r border-b border-indigo-200 transition-all duration-300 hover:bg-indigo-50 cursor-pointer"><span className="text-xs font-semibold text-gray-900">5</span></div>
-                  <div className="flex xl:aspect-square max-xl:min-h-[60px] p-3.5 bg-white border-r border-b border-indigo-200 transition-all duration-300 hover:bg-indigo-50 cursor-pointer"><span className="text-xs font-semibold text-gray-900">6</span></div>
-                  <div className="flex xl:aspect-square max-xl:min-h-[60px] p-3.5 relative bg-white border-r border-b border-indigo-200 transition-all duration-300 hover:bg-indigo-50 cursor-pointer"><span className="text-xs font-semibold text-gray-900">7</span><div className="absolute top-9 bottom-1 left-3.5 p-1.5 xl:px-2.5 h-max rounded bg-emerald-50"><p className="hidden xl:block text-xs font-medium text-emerald-600 mb-px whitespace-nowrap">Developer Meetup</p><span className="hidden xl:block text-xs font-normal text-emerald-600 whitespace-nowrap">10:00 - 11:00</span><p className="xl:hidden w-2 h-2 rounded-full bg-emerald-600"></p></div></div>
-                  <div className="flex xl:aspect-square max-xl:min-h-[60px] p-3.5 bg-white border-r border-b border-indigo-200 transition-all duration-300 hover:bg-indigo-50 cursor-pointer"><span className="text-xs font-semibold text-gray-900">8</span></div>
-                  <div className="flex xl:aspect-square max-xl:min-h-[60px] p-3.5 bg-white border-b border-indigo-200 transition-all duration-300 hover:bg-indigo-50 cursor-pointer"><span className="text-xs font-semibold text-indigo-600 sm:text-white sm:w-6 sm:h-6 rounded-full sm:flex items-center justify-center sm:bg-indigo-600">9</span></div>
-                  <div className="flex xl:aspect-square max-xl:min-h-[60px] p-3.5 bg-white border-r border-b border-indigo-200 transition-all duration-300 hover:bg-indigo-50 cursor-pointer"><span className="text-xs font-semibold text-gray-900">10</span></div>
-                  <div className="flex xl:aspect-square max-xl:min-h-[60px] p-3.5 bg-white border-r border-b border-indigo-200 transition-all duration-300 hover:bg-indigo-50 cursor-pointer"><span className="text-xs font-semibold text-gray-900">11</span></div>
-                  <div className="flex xl:aspect-square max-xl:min-h-[60px] p-3.5 bg-white border-r border-b border-indigo-200 transition-all duration-300 hover:bg-indigo-50 cursor-pointer"><span className="text-xs font-semibold text-gray-900">12</span></div>
-                  <div className="flex xl:aspect-square max-xl:min-h-[60px] p-3.5 bg-white border-r border-b border-indigo-200 transition-all duration-300 hover:bg-indigo-50 cursor-pointer"><span className="text-xs font-semibold text-gray-900">13</span></div>
-                  <div className="flex xl:aspect-square max-xl:min-h-[60px] p-3.5 bg-white border-r border-b border-indigo-200 transition-all duration-300 hover:bg-indigo-50 cursor-pointer"><span className="text-xs font-semibold text-gray-900">14</span></div>
-                  <div className="flex xl:aspect-square max-xl:min-h-[60px] p-3.5 bg-white border-r border-b border-indigo-200 transition-all duration-300 hover:bg-indigo-50 cursor-pointer"><span className="text-xs font-semibold text-gray-900">15</span></div>
-                  <div className="flex xl:aspect-square max-xl:min-h-[60px] p-3.5 bg-white border-b border-indigo-200 transition-all duration-300 hover:bg-indigo-50 cursor-pointer"><span className="text-xs font-semibold text-gray-900">16</span></div>
-                  <div className="flex xl:aspect-square max-xl:min-h-[60px] p-3.5 bg-white border-r border-b border-indigo-200 transition-all duration-300 hover:bg-indigo-50 cursor-pointer"><span className="text-xs font-semibold text-gray-900">17</span></div>
-                  <div className="flex xl:aspect-square max-xl:min-h-[60px] p-3.5 bg-white border-r border-b border-indigo-200 transition-all duration-300 hover:bg-indigo-50 cursor-pointer"><span className="text-xs font-semibold text-gray-900">18</span></div>
-                  <div className="flex xl:aspect-square max-xl:min-h-[60px] p-3.5 relative bg-white border-r border-b border-indigo-200 transition-all duration-300 hover:bg-indigo-50 cursor-pointer"><span className="text-xs font-semibold text-gray-900">19</span><div className="absolute top-9 bottom-1 left-3.5 p-1.5 xl:px-2.5 h-max rounded bg-sky-50"><p className="hidden xl:block text-xs font-medium text-sky-600 mb-px whitespace-nowrap">Developer Meetup</p><span className="hidden xl:block text-xs font-normal text-sky-600 whitespace-nowrap">10:00 - 11:00</span><p className="xl:hidden w-2 h-2 rounded-full bg-sky-600"></p></div></div>
-                  <div className="flex xl:aspect-square max-xl:min-h-[60px] p-3.5 bg-white border-r border-b border-indigo-200 transition-all duration-300 hover:bg-indigo-50 cursor-pointer"><span className="text-xs font-semibold text-gray-900">20</span></div>
-                  <div className="flex xl:aspect-square max-xl:min-h-[60px] p-3.5 bg-white border-r border-b border-indigo-200 transition-all duration-300 hover:bg-indigo-50 cursor-pointer"><span className="text-xs font-semibold text-gray-900">21</span></div>
-                  <div className="flex xl:aspect-square max-xl:min-h-[60px] p-3.5 bg-white border-r border-b border-indigo-200 transition-all duration-300 hover:bg-indigo-50 cursor-pointer"><span className="text-xs font-semibold text-gray-900">22</span></div>
-                  <div className="flex xl:aspect-square max-xl:min-h-[60px] p-3.5 bg-white border-b border-indigo-200 transition-all duration-300 hover:bg-indigo-50 cursor-pointer"><span className="text-xs font-semibold text-gray-900">23</span></div>
-                  <div className="flex xl:aspect-square max-xl:min-h-[60px] p-3.5 bg-white border-r border-b border-indigo-200 transition-all duration-300 hover:bg-indigo-50 cursor-pointer"><span className="text-xs font-semibold text-gray-900">24</span></div>
-                  <div className="flex xl:aspect-square max-xl:min-h-[60px] p-3.5 bg-white border-r border-b border-indigo-200 transition-all duration-300 hover:bg-indigo-50 cursor-pointer"><span className="text-xs font-semibold text-gray-900">25</span></div>
-                  <div className="flex xl:aspect-square max-xl:min-h-[60px] p-3.5 bg-white border-r border-b border-indigo-200 transition-all duration-300 hover:bg-indigo-50 cursor-pointer"><span className="text-xs font-semibold text-gray-900">26</span></div>
-                  <div className="flex xl:aspect-square max-xl:min-h-[60px] p-3.5 bg-white border-r border-b border-indigo-200 transition-all duration-300 hover:bg-indigo-50 cursor-pointer"><span className="text-xs font-semibold text-gray-900">27</span></div>
-                  <div className="flex xl:aspect-square max-xl:min-h-[60px] p-3.5 bg-white border-r border-b border-indigo-200 transition-all duration-300 hover:bg-indigo-50 cursor-pointer"><span className="text-xs font-semibold text-gray-900">28</span></div>
-                  <div className="flex xl:aspect-square max-xl:min-h-[60px] p-3.5 bg-white border-r border-b border-indigo-200 transition-all duration-300 hover:bg-indigo-50 cursor-pointer"><span className="text-xs font-semibold text-gray-900">29</span></div>
-                  <div className="flex xl:aspect-square max-xl:min-h-[60px] p-3.5 bg-white border-b border-indigo-200 transition-all duration-300 hover:bg-indigo-50 cursor-pointer"><span className="text-xs font-semibold text-gray-900">30</span></div>
-                  <div className="flex xl:aspect-square max-xl:min-h-[60px] p-3.5 bg-white border-r border-indigo-200 rounded-bl-xl transition-all duration-300 hover:bg-indigo-50 cursor-pointer"><span className="text-xs font-semibold text-gray-900">31</span></div>
-                  <div className="flex xl:aspect-square max-xl:min-h-[60px] p-3.5 bg-gray-50 border-r border-indigo-200 transition-all duration-300 hover:bg-indigo-50 cursor-pointer"><span className="text-xs font-semibold text-gray-400">1</span></div>
-                  <div className="flex xl:aspect-square max-xl:min-h-[60px] p-3.5 bg-gray-50 border-r border-indigo-200 transition-all duration-300 hover:bg-indigo-50 cursor-pointer"><span className="text-xs font-semibold text-gray-400">2</span></div>
-                  <div className="flex xl:aspect-square max-xl:min-h-[60px] p-3.5 bg-gray-50 border-r border-indigo-200 transition-all duration-300 hover:bg-indigo-50 cursor-pointer"><span className="text-xs font-semibold text-gray-400">3</span></div>
-                  <div className="flex xl:aspect-square max-xl:min-h-[60px] p-3.5 relative bg-gray-50 border-r border-indigo-200 transition-all duration-300 hover:bg-indigo-50 cursor-pointer"><span className="text-xs font-semibold text-gray-400">4</span><div className="absolute top-9 bottom-1 left-3.5 p-1.5 xl:px-2.5 h-max rounded bg-purple-50"><p className="hidden xl:block text-xs font-medium text-purple-600 mb-px whitespace-nowrap">Amigos</p><span className="hidden xl:block text-xs font-normal text-purple-600 whitespace-nowrap">09:00 - 13:42</span><p className="xl:hidden w-2 h-2 rounded-full bg-purple-600"></p></div></div>
-                  <div className="flex xl:aspect-square max-xl:min-h-[60px] p-3.5 bg-gray-50 border-r border-indigo-200 transition-all duration-300 hover:bg-indigo-50 cursor-pointer"><span className="text-xs font-semibold text-gray-400">5</span></div>
-                  <div className="flex xl:aspect-square max-xl:min-h-[60px] p-3.5 bg-gray-50 border-indigo-200 rounded-br-xl transition-all duration-300 hover:bg-indigo-50 cursor-pointer"><span className="text-xs font-semibold text-gray-400">6</span></div>
-                </div>
-              </div>
-            </div>
+              )
+            })}
           </div>
         </div>
       </div>
-    </section>
-  );
+    </div>
+  )
 }
 
