@@ -25,6 +25,8 @@ const colorMap = {
   orange: { line: "bg-orange-300", bg: "bg-orange-300/20" },
 }
 
+const diasSemana = ["Lun", "Mar", "Mié", "Jue", "Vie", "Sáb", "Dom"]
+
 const eventos: Evento[] = [
   { id: 1, titulo: "Design Review", fecha: "2022-07-01", hora: "14:00 - 16:00", color: "indigo" },
   { id: 2, titulo: "Dinner with Alpha Team", fecha: "2022-07-07", hora: "21:00 - 22:00", color: "cyan" },
@@ -40,13 +42,21 @@ export default function GlobalEventsCalendar() {
   const [viewMode, setViewMode] = useState<"day" | "week" | "month">("month")
   const [search, setSearch] = useState("")
 
-  const diasDelMes = Array.from({ length: 31 }, (_, i) => i + 1)
+  const year = 2022
+  const month = 6 // Julio
+  const diasEnMes = new Date(year, month + 1, 0).getDate()
+  const inicioMes = (new Date(year, month, 1).getDay() + 6) % 7
+  const totalCeldas = Math.ceil((inicioMes + diasEnMes) / 7) * 7
+  const diasDelMes = Array.from({ length: totalCeldas }, (_, i) => {
+    const dia = i - inicioMes + 1
+    return dia > 0 && dia <= diasEnMes ? dia : null
+  })
   const eventosHoy = selectedDate
     ? eventos.filter((e) => new Date(e.fecha).toDateString() === selectedDate.toDateString())
     : []
 
   return (
-    <div>
+    <div className="max-w-7xl mx-auto overflow-x-auto">
       <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between mb-6">
         <h1 className="text-xl font-semibold text-white">15 Julio 2022, Lunes</h1>
         <div className="flex-1 md:mx-6">
@@ -95,13 +105,30 @@ export default function GlobalEventsCalendar() {
         </div>
 
         <div className="col-span-12 md:col-span-9 border border-blue-700/30 bg-blue-800/20 rounded-lg p-4">
+          <div className="grid grid-cols-7 text-center mb-2">
+            {diasSemana.map((d) => (
+              <div key={d} className="text-sm font-semibold text-blue-200 py-1">
+                {d}
+              </div>
+            ))}
+          </div>
           <div className="grid grid-cols-7 gap-px">
-            {diasDelMes.map((day) => {
-              const dateStr = `2022-07-${day.toString().padStart(2, "0")}`
-              const eventosDelDia = eventos.filter((e) => e.fecha === dateStr)
+            {diasDelMes.map((day, idx) => {
+              const dateStr = day ? `2022-07-${day.toString().padStart(2, "0")}` : ""
+              const eventosDelDia = day ? eventos.filter((e) => e.fecha === dateStr) : []
               return (
-                <div key={day} className="min-h-[110px] border border-blue-700/30 p-1">
-                  <div className="text-xs text-blue-200 mb-1">{day}</div>
+                <div key={idx} className="min-h-[110px] border border-blue-700/30 p-1">
+                  <div className="text-xs text-blue-200 mb-1">
+                    {day ? (
+                      day === 15 ? (
+                        <span className="inline-flex items-center justify-center w-5 h-5 rounded-full bg-purple-600 text-white">
+                          {day}
+                        </span>
+                      ) : (
+                        day
+                      )
+                    ) : null}
+                  </div>
                   {eventosDelDia.map((ev) => (
                     <div key={ev.id} className={`relative mb-1 p-1 pl-2 rounded text-xs ${colorMap[ev.color].bg}`}>
                       <span className={`absolute left-0 top-0 bottom-0 w-1 rounded-l ${colorMap[ev.color].line}`}></span>
