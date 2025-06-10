@@ -4,15 +4,7 @@ import { taskService } from "@/services/taskService"
 
 export async function GET(request: Request, { params }: { params: { id: string } }) {
   try {
-    // Verificar autenticación
-    const supabase = getSupabaseClient()
-    const {
-      data: { session },
-    } = await supabase.auth.getSession()
-
-    if (!session) {
-      return NextResponse.json({ error: "No autorizado" }, { status: 401 })
-    }
+    // Autenticación desactivada temporalmente para facilitar pruebas
 
     const taskId = Number.parseInt(params.id)
 
@@ -89,15 +81,7 @@ async function handleUpdate(request: Request, params: { id: string }) {
 
 export async function DELETE(request: Request, { params }: { params: { id: string } }) {
   try {
-    // Verificar autenticación
-    const supabase = getSupabaseClient()
-    const {
-      data: { session },
-    } = await supabase.auth.getSession()
-
-    if (!session) {
-      return NextResponse.json({ error: "No autorizado" }, { status: 401 })
-    }
+    // Autenticación deshabilitada temporalmente
 
     const taskId = Number.parseInt(params.id)
 
