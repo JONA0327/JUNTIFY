@@ -319,76 +319,126 @@ const GlobalTasksCalendar = ({ tasks, selected, onSelect }) => {
       )
     : []
 
+  // Próximas tareas (sin completar y con fecha futura)
+  const upcomingTasks = tasks
+    .filter((t) => t.dueDate && new Date(t.dueDate) >= new Date() && !t.completed)
+    .sort((a, b) => new Date(a.dueDate).getTime() - new Date(b.dueDate).getTime())
+    .slice(0, 5)
+
+  const getPriorityColor = (priority: string) => {
+    switch (priority) {
+      case 'alta':
+        return 'bg-red-500'
+      case 'media':
+        return 'bg-yellow-500'
+      default:
+        return 'bg-green-500'
+    }
+  }
+
+  const formatDate = (dateStr: string) => {
+    const d = new Date(dateStr)
+    return d.toLocaleDateString(undefined, {
+      day: '2-digit',
+      month: 'short',
+      year: 'numeric',
+    })
+  }
+
+  const formatTime = (dateStr: string) => {
+    const d = new Date(dateStr)
+    return d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+  }
+
   return (
-    <>
-      {/* Encabezado con selector de vista */}
-      <div className="flex justify-between items-center mb-4">
-        <h2 className="text-white text-lg font-semibold">Calendario</h2>
-        <div className="flex gap-2">
-          <Button
-            variant={viewMode === "day" ? "default" : "outline"}
-            onClick={() => setViewMode("day")}
-          >
-            Day
-          </Button>
-          <Button
-            variant={viewMode === "week" ? "default" : "outline"}
-            onClick={() => setViewMode("week")}
-          >
-            Week
-          </Button>
-          <Button
-            variant={viewMode === "month" ? "default" : "outline"}
-            onClick={() => setViewMode("month")}
-          >
-            Month
-          </Button>
+    <section className="relative bg-stone-50 rounded-xl">
+      <div className="bg-sky-400 w-full sm:w-40 h-40 rounded-full absolute top-1 opacity-20 max-sm:right-0 sm:left-56 z-0"></div>
+      <div className="bg-emerald-500 w-full sm:w-40 h-24 absolute top-0 -left-0 opacity-20 z-0"></div>
+      <div className="bg-purple-600 w-full sm:w-40 h-24 absolute top-40 -left-0 opacity-20 z-0"></div>
+      <div className="w-full py-10 relative z-10 backdrop-blur-3xl">
+        <div className="w-full max-w-7xl mx-auto px-2 lg:px-8">
+          <div className="grid grid-cols-12 gap-8 max-w-4xl mx-auto xl:max-w-full">
+            <div className="col-span-12 xl:col-span-5">
+              <h2 className="font-manrope text-2xl leading-tight text-gray-900 mb-1.5">Próximas tareas</h2>
+              <p className="text-lg font-normal text-gray-600 mb-8">No pierdas tu agenda</p>
+              <div className="flex gap-5 flex-col">
+                {upcomingTasks.map((task) => (
+                  <div key={task.id} className="p-6 rounded-xl bg-white">
+                    <div className="flex items-center justify-between mb-3">
+                      <div className="flex items-center gap-2.5">
+                        <span className={`w-2.5 h-2.5 rounded-full ${getPriorityColor(task.priority)}`}></span>
+                        <p className="text-base font-medium text-gray-900">
+                          {formatDate(task.dueDate)} - {formatTime(task.dueDate)}
+                        </p>
+                      </div>
+                    </div>
+                    <h6 className="text-xl leading-8 font-semibold text-black mb-1">
+                      {task.text}
+                    </h6>
+                    {task.description && (
+                      <p className="text-base font-normal text-gray-600">
+                        {task.description}
+                      </p>
+                    )}
+                  </div>
+                ))}
+                {upcomingTasks.length === 0 && (
+                  <div className="p-6 rounded-xl bg-white text-gray-600">No hay tareas próximas</div>
+                )}
+              </div>
+            </div>
+            <div className="col-span-12 xl:col-span-7 px-2.5 py-5 sm:p-8 bg-gradient-to-b from-white/25 to-white xl:bg-white rounded-2xl max-xl:row-start-1">
+              <div className="flex flex-col md:flex-row gap-4 items-center justify-between mb-5">
+                <div className="flex items-center gap-4">
+                  <h5 className="text-xl leading-8 font-semibold text-gray-900">Calendario</h5>
+                </div>
+                <div className="flex items-center rounded-md p-1 bg-indigo-50 gap-px">
+                  <button className={`py-2.5 px-5 rounded-lg ${viewMode === 'day' ? 'bg-indigo-600 text-white' : 'bg-indigo-50 text-indigo-600'} text-sm font-medium`} onClick={() => setViewMode('day')}>
+                    Day
+                  </button>
+                  <button className={`py-2.5 px-5 rounded-lg ${viewMode === 'week' ? 'bg-indigo-600 text-white' : 'bg-indigo-50 text-indigo-600'} text-sm font-medium`} onClick={() => setViewMode('week')}>
+                    Week
+                  </button>
+                  <button className={`py-2.5 px-5 rounded-lg ${viewMode === 'month' ? 'bg-indigo-600 text-white' : 'bg-indigo-50 text-indigo-600'} text-sm font-medium`} onClick={() => setViewMode('month')}>
+                    Month
+                  </button>
+                </div>
+              </div>
+              <div className="border border-indigo-200 rounded-xl p-2 bg-white">
+                <Calendar
+                  mode="single"
+                  selected={selected}
+                  onSelect={onSelect}
+                  modifiers={modifiers}
+                  modifiersClassNames={{
+                    completed: 'bg-green-600 text-white hover:bg-green-600',
+                    overdue: 'bg-red-600 text-white hover:bg-red-600',
+                    inProgress: 'bg-yellow-500 text-black hover:bg-yellow-500',
+                    pending: 'bg-orange-500 text-white hover:bg-orange-500',
+                  }}
+                  className="rounded-lg"
+                />
+              </div>
+              <div className="mt-4 text-sm text-gray-700">
+                <strong className="text-gray-900 block mb-2">Tareas para este día</strong>
+                <ul className="space-y-1">
+                  {tasksToday.length > 0 ? (
+                    tasksToday.map((t) => (
+                      <li key={t.id} className="flex items-center">
+                        <span className={`inline-block w-2 h-2 rounded-full mr-2 ${getPriorityColor(t.priority)}`}></span>
+                        {t.text}
+                      </li>
+                    ))
+                  ) : (
+                    <li>No hay tareas para este día</li>
+                  )}
+                </ul>
+              </div>
+            </div>
+          </div>
         </div>
       </div>
-
-      {/* Calendario mensual */}
-      <Calendar
-        mode="single"
-        selected={selected}
-        onSelect={onSelect}
-        modifiers={modifiers}
-        modifiersClassNames={{
-          completed: "bg-green-600 text-white hover:bg-green-600",
-          overdue: "bg-red-600 text-white hover:bg-red-600",
-          inProgress: "bg-yellow-500 text-black hover:bg-yellow-500",
-          pending: "bg-orange-500 text-white hover:bg-orange-500",
-        }}
-        className="rounded-lg border border-blue-700/30 bg-blue-800/20"
-      />
-
-      {/* Leyenda: tareas del día */}
-      <div className="mt-4 text-sm text-blue-300">
-        <strong className="text-white block mb-2">Tasks Due Today</strong>
-        <ul className="space-y-1">
-          {tasksToday.length > 0 ? (
-            tasksToday.map((t) => (
-              <li key={t.id} className="flex items-center">
-                {/* Ejemplo: colorea según estado o prioridad */}
-                <span
-                  className={`inline-block w-2 h-2 rounded-full mr-2 ${
-                    t.completed
-                      ? "bg-green-500"
-                      : new Date(t.dueDate) < new Date()
-                      ? "bg-red-500"
-                      : t.progress > 0
-                      ? "bg-yellow-500"
-                      : "bg-orange-500"
-                  }`}
-                ></span>
-                {t.text}
-              </li>
-            ))
-          ) : (
-            <li>No hay tareas para este día</li>
-          )}
-        </ul>
-      </div>
-    </>
+    </section>
   )
 }
 
