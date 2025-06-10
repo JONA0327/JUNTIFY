@@ -439,9 +439,14 @@ const GlobalTasksCalendar: React.FC<GlobalTasksCalendarProps> = ({
           <div className="flex gap-5 flex-col">
               {upcomingTasks.length > 0 ? (
                 upcomingTasks.map((task) => (
-                  <div
+                  <button
                     key={task.id}
-                    className="p-6 rounded-xl bg-blue-800/30 border border-blue-700/30"
+                    className="p-6 rounded-xl bg-blue-800/30 border border-blue-700/30 text-left hover:bg-blue-700/30"
+                    onClick={() =>
+                      task.meeting_id &&
+                      onTaskSelect &&
+                      onTaskSelect(task.meeting_id.toString())
+                    }
                   >
                     <div className="flex items-center justify-between mb-3">
                       <div className="flex items-center gap-2.5">
@@ -463,7 +468,7 @@ const GlobalTasksCalendar: React.FC<GlobalTasksCalendarProps> = ({
                         {task.description}
                       </p>
                     )}
-                  </div>
+                  </button>
                 ))
               ) : (
                 <div className="p-6 rounded-xl bg-blue-800/30 border border-blue-700/30 text-blue-300">
