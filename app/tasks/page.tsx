@@ -12,6 +12,8 @@ import {
   Link,
   Loader2,
   AlertCircle,
+  ChevronLeft,
+  ChevronRight,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
@@ -299,6 +301,16 @@ const GlobalTasksCalendar: React.FC<GlobalTasksCalendarProps> = ({
   const [filter, setFilter] = useState<"inProgress" | "pending" | "overdue">(
     "inProgress",
   );
+  const [page, setPage] = useState(0);
+
+  const currentYear = new Date().getFullYear();
+  const tasksThisYear = tasks.filter(
+    (t) => t.dueDate && new Date(t.dueDate).getFullYear() === currentYear,
+  );
+
+  useEffect(() => {
+    setPage(0);
+  }, [filter, tasksThisYear.length]);
   // Extrae fechas únicas de un array de tareas
   const uniqueDates = (items: Task[]) =>
     Array.from(new Set(items.map((t) => t.dueDate)))
@@ -306,36 +318,38 @@ const GlobalTasksCalendar: React.FC<GlobalTasksCalendarProps> = ({
 
   // Modificadores según estado
   const modifiers = {
-    completed: uniqueDates(tasks.filter((t) => t.completed && t.dueDate)),
+    completed: uniqueDates(
+      tasksThisYear.filter((t) => t.completed && t.dueDate),
+    ),
     overdue: uniqueDates(
-      tasks.filter(
-        (t) => !t.completed && t.dueDate && new Date(t.dueDate) < new Date()
-      )
+      tasksThisYear.filter(
+        (t) => !t.completed && t.dueDate && new Date(t.dueDate) < new Date(),
+      ),
     ),
     inProgress: uniqueDates(
-      tasks.filter(
+      tasksThisYear.filter(
         (t) =>
           !t.completed &&
           t.dueDate &&
           t.progress > 0 &&
           t.progress < 100 &&
-          new Date(t.dueDate) >= new Date()
-      )
+          new Date(t.dueDate) >= new Date(),
+      ),
     ),
     pending: uniqueDates(
-      tasks.filter(
+      tasksThisYear.filter(
         (t) =>
           !t.completed &&
           t.dueDate &&
           t.progress === 0 &&
-          new Date(t.dueDate) >= new Date()
-      )
+          new Date(t.dueDate) >= new Date(),
+      ),
     ),
   };
 
   // Tareas para el día seleccionado
   const tasksToday = selected
-    ? tasks.filter(
+    ? tasksThisYear.filter(
         (t) =>
           t.dueDate &&
           new Date(t.dueDate).toDateString() === selected.toDateString()
@@ -343,7 +357,8 @@ const GlobalTasksCalendar: React.FC<GlobalTasksCalendarProps> = ({
     : [];
 
   // Próximas tareas según filtro
-  const upcomingTasks = tasks
+  const tasksPerPage = 5;
+  const filteredTasks = tasksThisYear
     .filter((t) => {
       if (filter === "pending") {
         return (
@@ -367,9 +382,13 @@ const GlobalTasksCalendar: React.FC<GlobalTasksCalendarProps> = ({
     .sort(
       (a, b) =>
         new Date(a.dueDate || "").getTime() -
-        new Date(b.dueDate || "").getTime()
-    )
-    .slice(0, 5);
+        new Date(b.dueDate || "").getTime(),
+    );
+  const totalPages = Math.ceil(filteredTasks.length / tasksPerPage);
+  const upcomingTasks = filteredTasks.slice(
+    page * tasksPerPage,
+    page * tasksPerPage + tasksPerPage,
+  );
 
   // Helpers
   const getPriorityColor = (priority: Task["priority"]) => {
@@ -479,6 +498,27 @@ const GlobalTasksCalendar: React.FC<GlobalTasksCalendarProps> = ({
               ) : (
                 <div className="p-6 rounded-xl bg-blue-800/30 border border-blue-700/30 text-blue-300">
                   No hay tareas en proceso
+                </div>
+              )}
+              {totalPages > 1 && (
+                <div className="flex justify-center gap-4 mt-2">
+                  <button
+                    disabled={page === 0}
+                    onClick={() => setPage((p) => Math.max(0, p - 1))}
+                    className="text-blue-300 disabled:text-blue-600"
+                  >
+                    <ChevronLeft />
+                  </button>
+                  <span className="text-blue-200">
+                    {page + 1} / {totalPages}
+                  </span>
+                  <button
+                    disabled={page >= totalPages - 1}
+                    onClick={() => setPage((p) => Math.min(totalPages - 1, p + 1))}
+                    className="text-blue-300 disabled:text-blue-600"
+                  >
+                    <ChevronRight />
+                  </button>
                 </div>
               )}
             </div>
@@ -812,7 +852,10 @@ export default function TasksPage() {
         );
 
   // Filtrar tareas según la pestaña activa y el término de búsqueda
-  const filteredTasks = viewFilteredTasks.filter((task) => {
+  const currentYearTasks = viewFilteredTasks.filter(
+    (task) => task.dueDate && new Date(task.dueDate).getFullYear() === new Date().getFullYear(),
+  );
+  const filteredTasks = currentYearTasks.filter((task) => {
     // Filtrar por término de búsqueda
     const matchesSearchTerm =
       searchTerm === "" ||
@@ -1138,11 +1181,15 @@ export default function TasksPage() {
 
   // Tareas para el día seleccionado en el calendario global
   const tasksForSelectedDate = selectedDate
-    ? allTasks.filter(
-        (t) =>
-          t.dueDate &&
-          new Date(t.dueDate).toDateString() === selectedDate.toDateString(),
-      )
+    ? allTasks
+        .filter(
+          (t) =>
+            t.dueDate &&
+            new Date(t.dueDate).toDateString() === selectedDate.toDateString(),
+        )
+        .filter(
+          (t) => new Date(t.dueDate).getFullYear() === new Date().getFullYear(),
+        )
     : [];
 
   // Handle login redirect
