@@ -277,11 +277,63 @@ const TasksCalendar = ({ tasks }) => {
   );
 };
 
+// Calendario global con selección de fecha
+const GlobalTasksCalendar = ({ tasks, selected, onSelect }) => {
+  const uniqueDates = (items) =>
+    Array.from(new Set(items.map((t) => t.dueDate))).map((d) => new Date(d));
+
+  const modifiers = {
+    completed: uniqueDates(tasks.filter((t) => t.completed && t.dueDate)),
+    overdue: uniqueDates(
+      tasks.filter(
+        (t) => !t.completed && t.dueDate && new Date(t.dueDate) < new Date(),
+      ),
+    ),
+    inProgress: uniqueDates(
+      tasks.filter(
+        (t) =>
+          !t.completed &&
+          t.dueDate &&
+          t.progress > 0 &&
+          t.progress < 100 &&
+          new Date(t.dueDate) >= new Date(),
+      ),
+    ),
+    pending: uniqueDates(
+      tasks.filter(
+        (t) =>
+          !t.completed &&
+          t.dueDate &&
+          t.progress === 0 &&
+          new Date(t.dueDate) >= new Date(),
+      ),
+    ),
+  };
+
+  return (
+    <Calendar
+      mode="single"
+      selected={selected}
+      onSelect={onSelect}
+      modifiers={modifiers}
+      modifiersClassNames={{
+        completed: "bg-green-600 text-white hover:bg-green-600",
+        overdue: "bg-red-600 text-white hover:bg-red-600",
+        inProgress: "bg-yellow-500 text-black hover:bg-yellow-500",
+        pending: "bg-orange-500 text-white hover:bg-orange-500",
+      }}
+      className="rounded-lg border border-blue-700/30 bg-blue-800/20"
+    />
+  );
+};
+
 export default function TasksPage() {
   const [viewMode, setViewMode] = useState<"my-tasks" | "organization-tasks">(
     "my-tasks",
   );
   const [tasks, setTasks] = useState<Task[]>([]);
+  const [allTasks, setAllTasks] = useState<Task[]>([]);
+  const [selectedDate, setSelectedDate] = useState<Date | undefined>();
   const [meetings, setMeetings] = useState<Meeting[]>([]);
   const [selectedMeeting, setSelectedMeeting] = useState<string>("");
   const [searchTerm, setSearchTerm] = useState("");
@@ -419,6 +471,25 @@ export default function TasksPage() {
     }
   };
 
+  // Obtener todas las tareas para el calendario global
+  const fetchAllTasks = async (username: string) => {
+    try {
+      const response = await fetch('/api/tasks', {
+        headers: {
+          'X-Username': username,
+        },
+        cache: 'no-store',
+      });
+      if (!response.ok) {
+        throw new Error(`Error ${response.status}`);
+      }
+      const data = await response.json();
+      setAllTasks(data);
+    } catch (err) {
+      console.error('Error fetching all tasks:', err);
+    }
+  };
+
   // Fetch conversations when username is available
   useEffect(() => {
     async function fetchData() {
@@ -488,7 +559,10 @@ export default function TasksPage() {
           // No establecer error aquí para no bloquear la UI
         }
 
-        // Fetch tasks
+        // Fetch tareas globales para el calendario
+        await fetchAllTasks(username);
+
+        // Fetch tasks de la reunión seleccionada
         if (selectedMeeting) {
           await fetchTasks(username);
         }
@@ -591,6 +665,17 @@ export default function TasksPage() {
             : task,
         ),
       );
+      setAllTasks(
+        allTasks.map((task) =>
+          task.id === taskId
+            ? {
+                ...task,
+                completed: !task.completed,
+                progress: !taskToUpdate.completed ? 100 : task.progress,
+              }
+            : task,
+        ),
+      );
 
       toast({
         title: !taskToUpdate.completed
@@ -642,6 +727,7 @@ export default function TasksPage() {
 
         // Update local state
         setTasks(tasks.filter((task) => task.id !== taskId));
+        setAllTasks(allTasks.filter((task) => task.id !== taskId));
 
         toast({
           title: "Tarea eliminada",
@@ -699,6 +785,7 @@ export default function TasksPage() {
 
       // Update local state
       setTasks([...tasks, createdTask]);
+      setAllTasks([...allTasks, createdTask]);
       setShowNewTaskModal(false);
 
       toast({
@@ -799,6 +886,11 @@ export default function TasksPage() {
           task.id === updatedTask.id ? formattedTask : task,
         ),
       );
+      setAllTasks(
+        allTasks.map((task) =>
+          task.id === updatedTask.id ? formattedTask : task,
+        ),
+      );
       setShowEditTaskModal(false);
       setCurrentTask(null);
 
@@ -830,6 +922,15 @@ export default function TasksPage() {
   const pendingTasks = filteredTasks.filter(
     (t) => !t.completed && !(t.dueDate && new Date(t.dueDate) < new Date()),
   );
+
+  // Tareas para el día seleccionado en el calendario global
+  const tasksForSelectedDate = selectedDate
+    ? allTasks.filter(
+        (t) =>
+          t.dueDate &&
+          new Date(t.dueDate).toDateString() === selectedDate.toDateString(),
+      )
+    : [];
 
   // Handle login redirect
   const handleLogin = () => {
@@ -886,6 +987,37 @@ export default function TasksPage() {
             Tareas
           </h1>
 
+          {/* Calendario global */}
+          <div className="mb-6">
+            <GlobalTasksCalendar
+              tasks={allTasks}
+              selected={selectedDate}
+              onSelect={setSelectedDate}
+            />
+            {selectedDate && (
+              <div className="mt-4 space-y-2">
+                {tasksForSelectedDate.length > 0 ? (
+                  tasksForSelectedDate.map((task) => (
+                    <div
+                      key={task.id}
+                      className="flex justify-between items-center bg-blue-800/30 border border-blue-700/30 rounded p-2"
+                    >
+                      <span className="text-white text-sm">{task.text}</span>
+                      <Button
+                        size="sm"
+                        onClick={() => setSelectedMeeting(task.meeting_id.toString())}
+                      >
+                        Ver
+                      </Button>
+                    </div>
+                  ))
+                ) : (
+                  <p className="text-center text-blue-300">No hay tareas para este día</p>
+                )}
+              </div>
+            )}
+          </div>
+
           {error && (
             <Alert
               variant="destructive"
@@ -935,15 +1067,20 @@ export default function TasksPage() {
 
           {/* Filtros: Barra de búsqueda, selector de reunión y botón de nueva tarea */}
           <div className="mb-8 flex flex-col gap-4">
-            <div className="relative">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-blue-300" />
-              <input
-                type="text"
-                placeholder="Buscar tareas..."
-                className="pl-10 w-full bg-blue-800/30 border border-blue-700/30 text-white rounded-lg p-3 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-              />
+            <div className="flex gap-2">
+              <div className="relative flex-1">
+                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-blue-300" />
+                <input
+                  type="text"
+                  placeholder="Buscar tareas..."
+                  className="pl-10 w-full bg-blue-800/30 border border-blue-700/30 text-white rounded-lg p-3 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                />
+              </div>
+              <Button className="bg-blue-600 hover:bg-blue-700" onClick={() => setShowNewTaskModal(true)}>
+                Añadir tarea
+              </Button>
             </div>
           </div>
 
