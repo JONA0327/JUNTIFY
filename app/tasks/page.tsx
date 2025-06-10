@@ -416,6 +416,7 @@ const GlobalTasksCalendar = ({ tasks, selected, onSelect }) => {
             </div>
           </div>
         </div>
+      </div>
     </section>
   )
 }
