@@ -277,50 +277,42 @@ const TasksCalendar = ({ tasks }) => {
 };
 
 // Calendario global con selección de fecha + vistas + leyenda
-const GlobalTasksCalendar = ({ tasks, selected, onSelect }) => {
 
-  // Extrae fechas únicas para cada modificador
+
+const GlobalTasksCalendar = ({ tasks, selected, onSelect }) => {
   const uniqueDates = (items: typeof tasks) =>
-    Array.from(new Set(items.map((t) => t.dueDate)))
-      .map((d) => new Date(d))
+    Array.from(new Set(items.map((t) => t.dueDate))).map((d) => new Date(d))
 
   const modifiers = {
     completed: uniqueDates(tasks.filter((t) => t.completed && t.dueDate)),
     overdue: uniqueDates(
-      tasks.filter((t) => !t.completed && t.dueDate && new Date(t.dueDate) < new Date())
+      tasks.filter((t) => !t.completed && t.dueDate && new Date(t.dueDate) < new Date()),
     ),
     inProgress: uniqueDates(
-      tasks.filter((t) =>
-        !t.completed &&
-        t.dueDate &&
-        t.progress > 0 &&
-        t.progress < 100 &&
-        new Date(t.dueDate) >= new Date()
-      )
+      tasks.filter(
+        (t) =>
+          !t.completed && t.dueDate && t.progress > 0 && t.progress < 100 && new Date(t.dueDate) >= new Date(),
+      ),
     ),
     pending: uniqueDates(
-      tasks.filter((t) =>
-        !t.completed &&
-        t.dueDate &&
-        t.progress === 0 &&
-        new Date(t.dueDate) >= new Date()
-      )
+      tasks.filter(
+        (t) => !t.completed && t.dueDate && t.progress === 0 && new Date(t.dueDate) >= new Date(),
+      ),
     ),
   }
 
-  // Tareas del día seleccionado
   const tasksToday = selected
     ? tasks.filter(
         (t) =>
-          t.dueDate &&
-          new Date(t.dueDate).toDateString() === selected.toDateString()
+          t.dueDate && new Date(t.dueDate).toDateString() === selected.toDateString(),
       )
     : []
 
-  // Tareas en proceso (progreso entre 1 y 99)
   const upcomingTasks = tasks
     .filter((t) => !t.completed && t.progress > 0 && t.progress < 100)
-    .sort((a, b) => new Date(a.dueDate || 0).getTime() - new Date(b.dueDate || 0).getTime())
+    .sort(
+      (a, b) => new Date(a.dueDate || 0).getTime() - new Date(b.dueDate || 0).getTime(),
+    )
     .slice(0, 5)
 
   const getPriorityColor = (priority: string) => {
@@ -352,67 +344,64 @@ const GlobalTasksCalendar = ({ tasks, selected, onSelect }) => {
     <section className="bg-blue-800/20 border border-blue-700/30 rounded-xl p-6">
       <div className="w-full max-w-7xl mx-auto px-2 lg:px-8">
         <div className="grid grid-cols-12 gap-8 max-w-4xl mx-auto xl:max-w-full">
-            <div className="col-span-12 xl:col-span-5">
-              <h2 className="font-manrope text-2xl leading-tight text-white mb-1.5">Próximas tareas</h2>
-              <p className="text-lg font-normal text-blue-300 mb-8">No pierdas tu agenda</p>
-              <div className="flex gap-5 flex-col">
-                {upcomingTasks.map((task) => (
-                  <div key={task.id} className="p-6 rounded-xl bg-blue-800/30 border border-blue-700/30">
-                    <div className="flex items-center justify-between mb-3">
-                      <div className="flex items-center gap-2.5">
-                        <span className={`w-2.5 h-2.5 rounded-full ${getPriorityColor(task.priority)}`}></span>
-                        <p className="text-base font-medium text-white">
-                          {formatDate(task.dueDate)} - {formatTime(task.dueDate)}
-                        </p>
-                      </div>
-                    </div>
-                    <h6 className="text-xl leading-8 font-semibold text-white mb-1">
-                      {task.text}
-                    </h6>
-                    {task.description && (
-                      <p className="text-base font-normal text-blue-300">
-                        {task.description}
+          <div className="col-span-12 xl:col-span-5">
+            <h2 className="font-manrope text-2xl leading-tight text-white mb-1.5">Próximas tareas</h2>
+            <p className="text-lg font-normal text-blue-300 mb-8">No pierdas tu agenda</p>
+            <div className="flex gap-5 flex-col">
+              {upcomingTasks.map((task) => (
+                <div key={task.id} className="p-6 rounded-xl bg-blue-800/30 border border-blue-700/30">
+                  <div className="flex items-center justify-between mb-3">
+                    <div className="flex items-center gap-2.5">
+                      <span className={`w-2.5 h-2.5 rounded-full ${getPriorityColor(task.priority)}`}></span>
+                      <p className="text-base font-medium text-white">
+                        {formatDate(task.dueDate)} - {formatTime(task.dueDate)}
                       </p>
-                    )}
+                    </div>
                   </div>
-                ))}
-                {upcomingTasks.length === 0 && (
-                  <div className="p-6 rounded-xl bg-blue-800/30 border border-blue-700/30 text-blue-300">No hay tareas en proceso</div>
-                )}
-              </div>
-            </div>
-            <div className="col-span-12 xl:col-span-7 px-2.5 py-5 sm:p-8 bg-blue-800/20 border border-blue-700/30 rounded-2xl max-xl:row-start-1">
-              <h5 className="text-xl leading-8 font-semibold text-white mb-4">Calendario</h5>
-              <div className="border border-blue-700/30 rounded-xl p-2 bg-blue-800/30">
-                <Calendar
-                  mode="single"
-                  selected={selected}
-                  onSelect={onSelect}
-                  modifiers={modifiers}
-                  modifiersClassNames={{
-                    completed: 'bg-green-600 text-white hover:bg-green-600',
-                    overdue: 'bg-red-600 text-white hover:bg-red-600',
-                    inProgress: 'bg-yellow-500 text-black hover:bg-yellow-500',
-                    pending: 'bg-orange-500 text-white hover:bg-orange-500',
-                  }}
-                  className="rounded-lg"
-                />
-              </div>
-              <div className="mt-4 text-sm text-blue-300">
-                <strong className="text-white block mb-2">Tareas para este día</strong>
-                <ul className="space-y-1">
-                  {tasksToday.length > 0 ? (
-                    tasksToday.map((t) => (
-                      <li key={t.id} className="flex items-center">
-                        <span className={`inline-block w-2 h-2 rounded-full mr-2 ${getPriorityColor(t.priority)}`}></span>
-                        {t.text}
-                      </li>
-                    ))
-                  ) : (
-                    <li>No hay tareas para este día</li>
+                  <h6 className="text-xl leading-8 font-semibold text-white mb-1">{task.text}</h6>
+                  {task.description && (
+                    <p className="text-base font-normal text-blue-300">{task.description}</p>
                   )}
-                </ul>
-              </div>
+                </div>
+              ))}
+              {upcomingTasks.length === 0 && (
+                <div className="p-6 rounded-xl bg-blue-800/30 border border-blue-700/30 text-blue-300">
+                  No hay tareas en proceso
+                </div>
+              )}
+            </div>
+          </div>
+          <div className="col-span-12 xl:col-span-7 px-2.5 py-5 sm:p-8 bg-blue-800/20 border border-blue-700/30 rounded-2xl max-xl:row-start-1">
+            <h5 className="text-xl leading-8 font-semibold text-white mb-4">Calendario</h5>
+            <div className="border border-blue-700/30 rounded-xl p-2 bg-blue-800/30">
+              <Calendar
+                mode="single"
+                selected={selected}
+                onSelect={onSelect}
+                modifiers={modifiers}
+                modifiersClassNames={{
+                  completed: 'bg-green-600 text-white hover:bg-green-600',
+                  overdue: 'bg-red-600 text-white hover:bg-red-600',
+                  inProgress: 'bg-yellow-500 text-black hover:bg-yellow-500',
+                  pending: 'bg-orange-500 text-white hover:bg-orange-500',
+                }}
+                className="rounded-lg"
+              />
+            </div>
+            <div className="mt-4 text-sm text-blue-300">
+              <strong className="text-white block mb-2">Tareas para este día</strong>
+              <ul className="space-y-1">
+                {tasksToday.length > 0 ? (
+                  tasksToday.map((t) => (
+                    <li key={t.id} className="flex items-center">
+                      <span className={`inline-block w-2 h-2 rounded-full mr-2 ${getPriorityColor(t.priority)}`}></span>
+                      {t.text}
+                    </li>
+                  ))
+                ) : (
+                  <li>No hay tareas para este día</li>
+                )}
+              </ul>
             </div>
           </div>
         </div>
@@ -420,8 +409,6 @@ const GlobalTasksCalendar = ({ tasks, selected, onSelect }) => {
     </section>
   )
 }
-
-
 export default function TasksPage() {
   const [viewMode, setViewMode] = useState<"my-tasks" | "organization-tasks">(
     "my-tasks",
