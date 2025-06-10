@@ -13,9 +13,10 @@ interface NewTaskModalProps {
   onSave: (task: any) => void
   currentUserName: string
   organizationMembers: { id: number; name: string }[]
+  meetings: { id: number; title: string }[]
 }
 
-export function NewTaskModal({ onCancel, onSave, currentUserName, organizationMembers }: NewTaskModalProps) {
+export function NewTaskModal({ onCancel, onSave, currentUserName, organizationMembers, meetings }: NewTaskModalProps) {
   const [title, setTitle] = useState("")
   const [description, setDescription] = useState("")
   const [priority, setPriority] = useState<"baja" | "media" | "alta">("media")
@@ -189,6 +190,27 @@ export function NewTaskModal({ onCancel, onSave, currentUserName, organizationMe
                 {organizationMembers.map((member) => (
                   <SelectItem key={member.id} value={member.name} className="text-white">
                     {member.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+
+          <div className="space-y-2">
+            <label htmlFor="meeting" className="block text-sm font-medium text-white">
+              Asignar conversación
+            </label>
+            <Select
+              value={selectedMeeting ? String(selectedMeeting) : ""}
+              onValueChange={(val) => setSelectedMeeting(Number(val))}
+            >
+              <SelectTrigger className="bg-blue-700/40 border border-blue-600/50 text-white">
+                <SelectValue placeholder="Seleccionar conversación" />
+              </SelectTrigger>
+              <SelectContent className="bg-blue-800/90 border border-blue-700/50">
+                {meetings.map((m) => (
+                  <SelectItem key={m.id} value={String(m.id)} className="text-white">
+                    {m.title}
                   </SelectItem>
                 ))}
               </SelectContent>
