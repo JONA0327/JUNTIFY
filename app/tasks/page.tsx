@@ -278,8 +278,6 @@ const TasksCalendar = ({ tasks }) => {
 
 // Calendario global con selección de fecha + vistas + leyenda
 const GlobalTasksCalendar = ({ tasks, selected, onSelect }) => {
-  // Estado para la vista activa (solo cambia estilo de botones)
-  const [viewMode, setViewMode] = useState<"day" | "week" | "month">("month")
 
   // Extrae fechas únicas para cada modificador
   const uniqueDates = (items: typeof tasks) =>
@@ -319,10 +317,10 @@ const GlobalTasksCalendar = ({ tasks, selected, onSelect }) => {
       )
     : []
 
-  // Próximas tareas (sin completar y con fecha futura)
+  // Tareas en proceso (progreso entre 1 y 99)
   const upcomingTasks = tasks
-    .filter((t) => t.dueDate && new Date(t.dueDate) >= new Date() && !t.completed)
-    .sort((a, b) => new Date(a.dueDate).getTime() - new Date(b.dueDate).getTime())
+    .filter((t) => !t.completed && t.progress > 0 && t.progress < 100)
+    .sort((a, b) => new Date(a.dueDate || 0).getTime() - new Date(b.dueDate || 0).getTime())
     .slice(0, 5)
 
   const getPriorityColor = (priority: string) => {
@@ -351,60 +349,41 @@ const GlobalTasksCalendar = ({ tasks, selected, onSelect }) => {
   }
 
   return (
-    <section className="relative bg-stone-50 rounded-xl">
-      <div className="bg-sky-400 w-full sm:w-40 h-40 rounded-full absolute top-1 opacity-20 max-sm:right-0 sm:left-56 z-0"></div>
-      <div className="bg-emerald-500 w-full sm:w-40 h-24 absolute top-0 -left-0 opacity-20 z-0"></div>
-      <div className="bg-purple-600 w-full sm:w-40 h-24 absolute top-40 -left-0 opacity-20 z-0"></div>
-      <div className="w-full py-10 relative z-10 backdrop-blur-3xl">
-        <div className="w-full max-w-7xl mx-auto px-2 lg:px-8">
-          <div className="grid grid-cols-12 gap-8 max-w-4xl mx-auto xl:max-w-full">
+    <section className="bg-blue-800/20 border border-blue-700/30 rounded-xl p-6">
+      <div className="w-full max-w-7xl mx-auto px-2 lg:px-8">
+        <div className="grid grid-cols-12 gap-8 max-w-4xl mx-auto xl:max-w-full">
             <div className="col-span-12 xl:col-span-5">
-              <h2 className="font-manrope text-2xl leading-tight text-gray-900 mb-1.5">Próximas tareas</h2>
-              <p className="text-lg font-normal text-gray-600 mb-8">No pierdas tu agenda</p>
+              <h2 className="font-manrope text-2xl leading-tight text-white mb-1.5">Próximas tareas</h2>
+              <p className="text-lg font-normal text-blue-300 mb-8">No pierdas tu agenda</p>
               <div className="flex gap-5 flex-col">
                 {upcomingTasks.map((task) => (
-                  <div key={task.id} className="p-6 rounded-xl bg-white">
+                  <div key={task.id} className="p-6 rounded-xl bg-blue-800/30 border border-blue-700/30">
                     <div className="flex items-center justify-between mb-3">
                       <div className="flex items-center gap-2.5">
                         <span className={`w-2.5 h-2.5 rounded-full ${getPriorityColor(task.priority)}`}></span>
-                        <p className="text-base font-medium text-gray-900">
+                        <p className="text-base font-medium text-white">
                           {formatDate(task.dueDate)} - {formatTime(task.dueDate)}
                         </p>
                       </div>
                     </div>
-                    <h6 className="text-xl leading-8 font-semibold text-black mb-1">
+                    <h6 className="text-xl leading-8 font-semibold text-white mb-1">
                       {task.text}
                     </h6>
                     {task.description && (
-                      <p className="text-base font-normal text-gray-600">
+                      <p className="text-base font-normal text-blue-300">
                         {task.description}
                       </p>
                     )}
                   </div>
                 ))}
                 {upcomingTasks.length === 0 && (
-                  <div className="p-6 rounded-xl bg-white text-gray-600">No hay tareas próximas</div>
+                  <div className="p-6 rounded-xl bg-blue-800/30 border border-blue-700/30 text-blue-300">No hay tareas en proceso</div>
                 )}
               </div>
             </div>
-            <div className="col-span-12 xl:col-span-7 px-2.5 py-5 sm:p-8 bg-gradient-to-b from-white/25 to-white xl:bg-white rounded-2xl max-xl:row-start-1">
-              <div className="flex flex-col md:flex-row gap-4 items-center justify-between mb-5">
-                <div className="flex items-center gap-4">
-                  <h5 className="text-xl leading-8 font-semibold text-gray-900">Calendario</h5>
-                </div>
-                <div className="flex items-center rounded-md p-1 bg-indigo-50 gap-px">
-                  <button className={`py-2.5 px-5 rounded-lg ${viewMode === 'day' ? 'bg-indigo-600 text-white' : 'bg-indigo-50 text-indigo-600'} text-sm font-medium`} onClick={() => setViewMode('day')}>
-                    Day
-                  </button>
-                  <button className={`py-2.5 px-5 rounded-lg ${viewMode === 'week' ? 'bg-indigo-600 text-white' : 'bg-indigo-50 text-indigo-600'} text-sm font-medium`} onClick={() => setViewMode('week')}>
-                    Week
-                  </button>
-                  <button className={`py-2.5 px-5 rounded-lg ${viewMode === 'month' ? 'bg-indigo-600 text-white' : 'bg-indigo-50 text-indigo-600'} text-sm font-medium`} onClick={() => setViewMode('month')}>
-                    Month
-                  </button>
-                </div>
-              </div>
-              <div className="border border-indigo-200 rounded-xl p-2 bg-white">
+            <div className="col-span-12 xl:col-span-7 px-2.5 py-5 sm:p-8 bg-blue-800/20 border border-blue-700/30 rounded-2xl max-xl:row-start-1">
+              <h5 className="text-xl leading-8 font-semibold text-white mb-4">Calendario</h5>
+              <div className="border border-blue-700/30 rounded-xl p-2 bg-blue-800/30">
                 <Calendar
                   mode="single"
                   selected={selected}
@@ -419,8 +398,8 @@ const GlobalTasksCalendar = ({ tasks, selected, onSelect }) => {
                   className="rounded-lg"
                 />
               </div>
-              <div className="mt-4 text-sm text-gray-700">
-                <strong className="text-gray-900 block mb-2">Tareas para este día</strong>
+              <div className="mt-4 text-sm text-blue-300">
+                <strong className="text-white block mb-2">Tareas para este día</strong>
                 <ul className="space-y-1">
                   {tasksToday.length > 0 ? (
                     tasksToday.map((t) => (
