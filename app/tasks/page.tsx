@@ -1,5 +1,5 @@
 "use client";
-
+import CalendarioEventos from "@/components/Calendar-Tasks-Dashboard"
 import { useState, useEffect } from "react";
 import { NewNavbar } from "@/components/new-navbar";
 import {
@@ -277,55 +277,122 @@ const TasksCalendar = ({ tasks }) => {
   );
 };
 
-// Calendario global con selección de fecha
+// Calendario global con selección de fecha + vistas + leyenda
 const GlobalTasksCalendar = ({ tasks, selected, onSelect }) => {
-  const uniqueDates = (items) =>
-    Array.from(new Set(items.map((t) => t.dueDate))).map((d) => new Date(d));
+  // Estado para la vista activa (solo cambia estilo de botones)
+  const [viewMode, setViewMode] = useState<"day" | "week" | "month">("month")
+
+  // Extrae fechas únicas para cada modificador
+  const uniqueDates = (items: typeof tasks) =>
+    Array.from(new Set(items.map((t) => t.dueDate)))
+      .map((d) => new Date(d))
 
   const modifiers = {
     completed: uniqueDates(tasks.filter((t) => t.completed && t.dueDate)),
     overdue: uniqueDates(
-      tasks.filter(
-        (t) => !t.completed && t.dueDate && new Date(t.dueDate) < new Date(),
-      ),
+      tasks.filter((t) => !t.completed && t.dueDate && new Date(t.dueDate) < new Date())
     ),
     inProgress: uniqueDates(
-      tasks.filter(
-        (t) =>
-          !t.completed &&
-          t.dueDate &&
-          t.progress > 0 &&
-          t.progress < 100 &&
-          new Date(t.dueDate) >= new Date(),
-      ),
+      tasks.filter((t) =>
+        !t.completed &&
+        t.dueDate &&
+        t.progress > 0 &&
+        t.progress < 100 &&
+        new Date(t.dueDate) >= new Date()
+      )
     ),
     pending: uniqueDates(
-      tasks.filter(
-        (t) =>
-          !t.completed &&
-          t.dueDate &&
-          t.progress === 0 &&
-          new Date(t.dueDate) >= new Date(),
-      ),
+      tasks.filter((t) =>
+        !t.completed &&
+        t.dueDate &&
+        t.progress === 0 &&
+        new Date(t.dueDate) >= new Date()
+      )
     ),
-  };
+  }
+
+  // Tareas del día seleccionado
+  const tasksToday = selected
+    ? tasks.filter(
+        (t) =>
+          t.dueDate &&
+          new Date(t.dueDate).toDateString() === selected.toDateString()
+      )
+    : []
 
   return (
-    <Calendar
-      mode="single"
-      selected={selected}
-      onSelect={onSelect}
-      modifiers={modifiers}
-      modifiersClassNames={{
-        completed: "bg-green-600 text-white hover:bg-green-600",
-        overdue: "bg-red-600 text-white hover:bg-red-600",
-        inProgress: "bg-yellow-500 text-black hover:bg-yellow-500",
-        pending: "bg-orange-500 text-white hover:bg-orange-500",
-      }}
-      className="rounded-lg border border-blue-700/30 bg-blue-800/20"
-    />
-  );
-};
+    <>
+      {/* Encabezado con selector de vista */}
+      <div className="flex justify-between items-center mb-4">
+        <h2 className="text-white text-lg font-semibold">Calendario</h2>
+        <div className="flex gap-2">
+          <Button
+            variant={viewMode === "day" ? "default" : "outline"}
+            onClick={() => setViewMode("day")}
+          >
+            Day
+          </Button>
+          <Button
+            variant={viewMode === "week" ? "default" : "outline"}
+            onClick={() => setViewMode("week")}
+          >
+            Week
+          </Button>
+          <Button
+            variant={viewMode === "month" ? "default" : "outline"}
+            onClick={() => setViewMode("month")}
+          >
+            Month
+          </Button>
+        </div>
+      </div>
+
+      {/* Calendario mensual */}
+      <Calendar
+        mode="single"
+        selected={selected}
+        onSelect={onSelect}
+        modifiers={modifiers}
+        modifiersClassNames={{
+          completed: "bg-green-600 text-white hover:bg-green-600",
+          overdue: "bg-red-600 text-white hover:bg-red-600",
+          inProgress: "bg-yellow-500 text-black hover:bg-yellow-500",
+          pending: "bg-orange-500 text-white hover:bg-orange-500",
+        }}
+        className="rounded-lg border border-blue-700/30 bg-blue-800/20"
+      />
+
+      {/* Leyenda: tareas del día */}
+      <div className="mt-4 text-sm text-blue-300">
+        <strong className="text-white block mb-2">Tasks Due Today</strong>
+        <ul className="space-y-1">
+          {tasksToday.length > 0 ? (
+            tasksToday.map((t) => (
+              <li key={t.id} className="flex items-center">
+                {/* Ejemplo: colorea según estado o prioridad */}
+                <span
+                  className={`inline-block w-2 h-2 rounded-full mr-2 ${
+                    t.completed
+                      ? "bg-green-500"
+                      : new Date(t.dueDate) < new Date()
+                      ? "bg-red-500"
+                      : t.progress > 0
+                      ? "bg-yellow-500"
+                      : "bg-orange-500"
+                  }`}
+                ></span>
+                {t.text}
+              </li>
+            ))
+          ) : (
+            <li>No hay tareas para este día</li>
+          )}
+        </ul>
+      </div>
+    </>
+  )
+}
+
 
 export default function TasksPage() {
   const [viewMode, setViewMode] = useState<"my-tasks" | "organization-tasks">(
