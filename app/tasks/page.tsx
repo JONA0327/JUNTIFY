@@ -15,7 +15,6 @@ import {
   AlertCircle,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   Card,
   CardContent,
@@ -279,13 +278,12 @@ const TasksCalendar = ({ tasks }) => {
 };
 
 export default function TasksPage() {
-  const [activeTab, setActiveTab] = useState("all");
   const [viewMode, setViewMode] = useState<"my-tasks" | "organization-tasks">(
     "my-tasks",
   );
   const [tasks, setTasks] = useState<Task[]>([]);
   const [meetings, setMeetings] = useState<Meeting[]>([]);
-  const [selectedMeeting, setSelectedMeeting] = useState<string>("all");
+  const [selectedMeeting, setSelectedMeeting] = useState<string>("");
   const [searchTerm, setSearchTerm] = useState("");
   const [showNewTaskModal, setShowNewTaskModal] = useState(false);
   const [showEditTaskModal, setShowEditTaskModal] = useState(false);
@@ -376,7 +374,7 @@ export default function TasksPage() {
       let url = "/api/tasks";
 
       // Añadir el parámetro de meetingId solo si está seleccionado
-      if (selectedMeeting && selectedMeeting !== "all") {
+      if (selectedMeeting) {
         url += `?meetingId=${selectedMeeting}`;
       }
 
@@ -491,7 +489,9 @@ export default function TasksPage() {
         }
 
         // Fetch tasks
-        await fetchTasks(username);
+        if (selectedMeeting) {
+          await fetchTasks(username);
+        }
       } catch (err) {
         console.error("Error en fetchData:", err);
         setError(
@@ -507,7 +507,7 @@ export default function TasksPage() {
 
   // Handle meeting selection change
   useEffect(() => {
-    if (username) {
+    if (username && selectedMeeting) {
       // Usar setTimeout para asegurar que el estado se actualiza antes de ejecutar la consulta
       setTimeout(() => {
         fetchTasks(username);
@@ -537,21 +537,6 @@ export default function TasksPage() {
       (task.meeting_title &&
         task.meeting_title.toLowerCase().includes(searchTerm.toLowerCase()));
 
-    // Filtrar por estado (completado/pendiente)
-    if (activeTab === "completed") {
-      return task.completed && matchesSearchTerm;
-    } else if (activeTab === "pending") {
-      return !task.completed && matchesSearchTerm;
-    } else if (activeTab === "overdue") {
-      return (
-        !task.completed &&
-        task.dueDate &&
-        new Date(task.dueDate) < new Date() &&
-        matchesSearchTerm
-      );
-    }
-
-    // Pestaña "todas"
     return matchesSearchTerm;
   });
 
@@ -698,7 +683,7 @@ export default function TasksPage() {
           assignee: newTask.assignee,
           dueDate: newTask.dueDate, // Usar directamente el string de fecha
           priority: newTask.priority,
-          meetingId: newTask.meetingId !== "all" ? newTask.meetingId : null,
+          meetingId: newTask.meetingId || null,
           progress: 0,
           completed: false,
         }),
@@ -836,19 +821,15 @@ export default function TasksPage() {
     }
   };
 
-  // Contar tareas por estado
-  const taskCounts = {
-    all: filteredTasks.length,
-    completed: filteredTasks.filter((task) => task.completed).length,
-    pending: filteredTasks.filter((task) => !task.completed).length,
-    overdue: filteredTasks.filter(
-      (task) =>
-        !task.completed && task.dueDate && new Date(task.dueDate) < new Date(),
-    ).length,
-  };
-
   const tasksWithDate = filteredTasks.filter((task) => task.dueDate);
-  const tasksWithoutDate = filteredTasks.filter((task) => !task.dueDate);
+
+  const completedTasks = filteredTasks.filter((t) => t.completed);
+  const overdueTasks = filteredTasks.filter(
+    (t) => !t.completed && t.dueDate && new Date(t.dueDate) < new Date(),
+  );
+  const pendingTasks = filteredTasks.filter(
+    (t) => !t.completed && !(t.dueDate && new Date(t.dueDate) < new Date()),
+  );
 
   // Handle login redirect
   const handleLogin = () => {
@@ -966,42 +947,6 @@ export default function TasksPage() {
             </div>
           </div>
 
-          {/* Pestañas de filtrado */}
-          <Tabs
-            defaultValue="all"
-            value={activeTab}
-            onValueChange={setActiveTab}
-            className="w-full mb-4"
-          >
-            <div className="overflow-x-auto pb-2">
-              <TabsList className="grid w-full min-w-[500px] grid-cols-4 bg-blue-800/30 gap-1 px-2 sm:px-4">
-                <TabsTrigger
-                  value="all"
-                  className="data-[state=active]:bg-blue-600"
-                >
-                  Todas ({taskCounts.all})
-                </TabsTrigger>
-                <TabsTrigger
-                  value="pending"
-                  className="data-[state=active]:bg-blue-600"
-                >
-                  Pendientes ({taskCounts.pending})
-                </TabsTrigger>
-                <TabsTrigger
-                  value="completed"
-                  className="data-[state=active]:bg-blue-600"
-                >
-                  Completadas ({taskCounts.completed})
-                </TabsTrigger>
-                <TabsTrigger
-                  value="overdue"
-                  className="data-[state=active]:bg-blue-600"
-                >
-                  Vencidas ({taskCounts.overdue})
-                </TabsTrigger>
-              </TabsList>
-            </div>
-          </Tabs>
 
           <div className="flex flex-col md:flex-row gap-4">
             <div className="md:w-1/3">
@@ -1034,48 +979,77 @@ export default function TasksPage() {
             <div className="flex-1">
               <Card className="bg-blue-800/20 border-blue-700/30">
                 <CardHeader className="pb-2">
-                  <CardTitle className="text-white">
-                    Tareas de la reunión
-                  </CardTitle>
+                  <CardTitle className="text-white">Tareas de la reunión</CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <TasksCalendar tasks={tasksWithDate} />
-                  <div className="mt-4 space-y-4">
-                    {tasksWithDate.length > 0 ? (
-                      tasksWithDate.map((task) => (
-                        <TaskItem
-                          key={task.id}
-                          task={task}
-                          userRole={currentUser.role}
-                          onToggleComplete={handleToggleComplete}
-                          onEdit={handleEditTask}
-                          onDelete={handleDeleteTask}
-                        />
-                      ))
-                    ) : (
-                      <div className="text-center py-8 text-blue-300">
-                        No hay tareas para esta reunión
-                      </div>
-                    )}
-                  </div>
-                  {tasksWithoutDate.length > 0 && (
-                    <div className="mt-8">
-                      <h3 className="text-lg text-white mb-2">
-                        Tareas sin fecha
-                      </h3>
-                      <div className="space-y-4">
-                        {tasksWithoutDate.map((task) => (
-                          <TaskItem
-                            key={task.id}
-                            task={task}
-                            userRole={currentUser.role}
-                            onToggleComplete={handleToggleComplete}
-                            onEdit={handleEditTask}
-                            onDelete={handleDeleteTask}
-                          />
-                        ))}
-                      </div>
+                  {!selectedMeeting ? (
+                    <div className="text-center py-8 text-blue-300">
+                      Selecciona una conversación
                     </div>
+                  ) : (
+                    <>
+                      <TasksCalendar tasks={tasksWithDate} />
+                      <div className="mt-4 space-y-8">
+                        {pendingTasks.length > 0 && (
+                          <div>
+                            <h3 className="text-lg text-white mb-2">Pendientes</h3>
+                            <div className="space-y-4">
+                              {pendingTasks.map((task) => (
+                                <TaskItem
+                                  key={task.id}
+                                  task={task}
+                                  userRole={currentUser.role}
+                                  onToggleComplete={handleToggleComplete}
+                                  onEdit={handleEditTask}
+                                  onDelete={handleDeleteTask}
+                                />
+                              ))}
+                            </div>
+                          </div>
+                        )}
+                        {overdueTasks.length > 0 && (
+                          <div>
+                            <h3 className="text-lg text-white mb-2">Vencidas</h3>
+                            <div className="space-y-4">
+                              {overdueTasks.map((task) => (
+                                <TaskItem
+                                  key={task.id}
+                                  task={task}
+                                  userRole={currentUser.role}
+                                  onToggleComplete={handleToggleComplete}
+                                  onEdit={handleEditTask}
+                                  onDelete={handleDeleteTask}
+                                />
+                              ))}
+                            </div>
+                          </div>
+                        )}
+                        {completedTasks.length > 0 && (
+                          <div>
+                            <h3 className="text-lg text-white mb-2">Completadas</h3>
+                            <div className="space-y-4">
+                              {completedTasks.map((task) => (
+                                <TaskItem
+                                  key={task.id}
+                                  task={task}
+                                  userRole={currentUser.role}
+                                  onToggleComplete={handleToggleComplete}
+                                  onEdit={handleEditTask}
+                                  onDelete={handleDeleteTask}
+                                />
+                              ))}
+                            </div>
+                          </div>
+                        )}
+                        {pendingTasks.length === 0 &&
+                          overdueTasks.length === 0 &&
+                          completedTasks.length === 0 && (
+                            <div className="text-center py-8 text-blue-300">
+                              No hay tareas para esta reunión
+                            </div>
+                          )}
+                      </div>
+                    </>
                   )}
                 </CardContent>
               </Card>
