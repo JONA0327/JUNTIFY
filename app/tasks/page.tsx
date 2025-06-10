@@ -416,10 +416,12 @@ const GlobalTasksCalendar = ({ tasks, selected, onSelect }) => {
             </div>
           </div>
         </div>
+
       </div>
+
     </section>
   )
-}
+};
 
 
 export default function TasksPage() {
