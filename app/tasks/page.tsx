@@ -53,6 +53,7 @@ interface GlobalTasksCalendarProps {
   tasks: Task[];
   selected?: Date;
   onSelect: (date?: Date) => void;
+  onTaskSelect?: (meetingId: string) => void;
 }
 // Tipo para una reunión
 interface Meeting {
@@ -287,7 +288,11 @@ const GlobalTasksCalendar: React.FC<GlobalTasksCalendarProps> = ({
   tasks,
   selected,
   onSelect,
+  onTaskSelect,
 }) => {
+  const [filter, setFilter] = useState<"inProgress" | "pending" | "overdue">(
+    "inProgress",
+  );
   // Extrae fechas únicas de un array de tareas
   const uniqueDates = (items: Task[]) =>
     Array.from(new Set(items.map((t) => t.dueDate)))
@@ -331,9 +336,28 @@ const GlobalTasksCalendar: React.FC<GlobalTasksCalendarProps> = ({
       )
     : [];
 
-  // Próximas tareas (en progreso)
+  // Próximas tareas según filtro
   const upcomingTasks = tasks
-    .filter((t) => !t.completed && t.progress > 0 && t.progress < 100)
+    .filter((t) => {
+      if (filter === "pending") {
+        return (
+          !t.completed &&
+          t.dueDate &&
+          t.progress === 0 &&
+          new Date(t.dueDate) >= new Date()
+        );
+      }
+      if (filter === "overdue") {
+        return !t.completed && t.dueDate && new Date(t.dueDate) < new Date();
+      }
+      return (
+        !t.completed &&
+        t.dueDate &&
+        t.progress > 0 &&
+        t.progress < 100 &&
+        new Date(t.dueDate) >= new Date()
+      );
+    })
     .sort(
       (a, b) =>
         new Date(a.dueDate || "").getTime() -
@@ -374,10 +398,45 @@ const GlobalTasksCalendar: React.FC<GlobalTasksCalendarProps> = ({
             <h2 className="font-manrope text-2xl leading-tight text-white mb-1.5">
               Próximas tareas
             </h2>
-            <p className="text-lg font-normal text-blue-300 mb-8">
-              No pierdas tu agenda
-            </p>
-            <div className="flex gap-5 flex-col">
+          <p className="text-lg font-normal text-blue-300 mb-8">
+            No pierdas tu agenda
+          </p>
+          <div className="flex gap-2 mb-4">
+            <Button
+              variant={filter === "inProgress" ? "default" : "outline"}
+              className={
+                filter === "inProgress"
+                  ? "bg-blue-600 hover:bg-blue-700"
+                  : "border-blue-600/50 text-blue-300 hover:bg-blue-800/30"
+              }
+              onClick={() => setFilter("inProgress")}
+            >
+              En progreso
+            </Button>
+            <Button
+              variant={filter === "pending" ? "default" : "outline"}
+              className={
+                filter === "pending"
+                  ? "bg-blue-600 hover:bg-blue-700"
+                  : "border-blue-600/50 text-blue-300 hover:bg-blue-800/30"
+              }
+              onClick={() => setFilter("pending")}
+            >
+              Pendientes
+            </Button>
+            <Button
+              variant={filter === "overdue" ? "default" : "outline"}
+              className={
+                filter === "overdue"
+                  ? "bg-blue-600 hover:bg-blue-700"
+                  : "border-blue-600/50 text-blue-300 hover:bg-blue-800/30"
+              }
+              onClick={() => setFilter("overdue")}
+            >
+              Vencidas
+            </Button>
+          </div>
+          <div className="flex gap-5 flex-col">
               {upcomingTasks.length > 0 ? (
                 upcomingTasks.map((task) => (
                   <div
@@ -441,13 +500,20 @@ const GlobalTasksCalendar: React.FC<GlobalTasksCalendarProps> = ({
               <ul className="space-y-1">
                 {tasksToday.length > 0 ? (
                   tasksToday.map((t) => (
-                    <li key={t.id} className="flex items-center">
-                      <span
-                        className={`inline-block w-2 h-2 rounded-full mr-2 ${getPriorityColor(
-                          t.priority
-                        )}`}
-                      />
-                      {t.text}
+                    <li key={t.id}>
+                      <button
+                        className="flex items-center w-full text-left hover:bg-blue-700/30 p-1 rounded"
+                        onClick={() =>
+                          t.meeting_id && onTaskSelect && onTaskSelect(t.meeting_id.toString())
+                        }
+                      >
+                        <span
+                          className={`inline-block w-2 h-2 rounded-full mr-2 ${getPriorityColor(
+                            t.priority
+                          )}`}
+                        />
+                        {t.text}
+                      </button>
                     </li>
                   ))
                 ) : (
@@ -1129,23 +1195,19 @@ export default function TasksPage() {
               tasks={allTasks}
               selected={selectedDate}
               onSelect={setSelectedDate}
+              onTaskSelect={(id) => setSelectedMeeting(id)}
             />
             {selectedDate && (
               <div className="mt-4 space-y-2">
                 {tasksForSelectedDate.length > 0 ? (
                   tasksForSelectedDate.map((task) => (
-                    <div
+                    <button
                       key={task.id}
-                      className="flex justify-between items-center bg-blue-800/30 border border-blue-700/30 rounded p-2"
+                      className="flex justify-between items-center w-full bg-blue-800/30 border border-blue-700/30 rounded p-2 hover:bg-blue-700/30"
+                      onClick={() => setSelectedMeeting(task.meeting_id.toString())}
                     >
                       <span className="text-white text-sm">{task.text}</span>
-                      <Button
-                        size="sm"
-                        onClick={() => setSelectedMeeting(task.meeting_id.toString())}
-                      >
-                        Ver
-                      </Button>
-                    </div>
+                    </button>
                   ))
                 ) : (
                   <p className="text-center text-blue-300">No hay tareas para este día</p>
