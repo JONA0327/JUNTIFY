@@ -49,7 +49,11 @@ interface Task {
   progress: number;
   comments?: { author: string; text: string; date: string }[];
 }
-
+interface GlobalTasksCalendarProps {
+  tasks: Task[];
+  selected?: Date;
+  onSelect: (date?: Date) => void;
+}
 // Tipo para una reunión
 interface Meeting {
   id: number;
@@ -279,82 +283,116 @@ const TasksCalendar = ({ tasks }) => {
 // Calendario global con selección de fecha + vistas + leyenda
 
 
-const GlobalTasksCalendar = ({ tasks, selected, onSelect }) => {
-  const uniqueDates = (items: typeof tasks) =>
-    Array.from(new Set(items.map((t) => t.dueDate))).map((d) => new Date(d))
+const GlobalTasksCalendar: React.FC<GlobalTasksCalendarProps> = ({
+  tasks,
+  selected,
+  onSelect,
+}) => {
+  // Extrae fechas únicas de un array de tareas
+  const uniqueDates = (items: Task[]) =>
+    Array.from(new Set(items.map((t) => t.dueDate)))
+      .map((d) => new Date(d));
 
+  // Modificadores según estado
   const modifiers = {
     completed: uniqueDates(tasks.filter((t) => t.completed && t.dueDate)),
     overdue: uniqueDates(
-      tasks.filter((t) => !t.completed && t.dueDate && new Date(t.dueDate) < new Date()),
+      tasks.filter(
+        (t) => !t.completed && t.dueDate && new Date(t.dueDate) < new Date()
+      )
     ),
     inProgress: uniqueDates(
       tasks.filter(
         (t) =>
-          !t.completed && t.dueDate && t.progress > 0 && t.progress < 100 && new Date(t.dueDate) >= new Date(),
-      ),
+          !t.completed &&
+          t.dueDate &&
+          t.progress > 0 &&
+          t.progress < 100 &&
+          new Date(t.dueDate) >= new Date()
+      )
     ),
     pending: uniqueDates(
       tasks.filter(
-        (t) => !t.completed && t.dueDate && t.progress === 0 && new Date(t.dueDate) >= new Date(),
-      ),
+        (t) =>
+          !t.completed &&
+          t.dueDate &&
+          t.progress === 0 &&
+          new Date(t.dueDate) >= new Date()
+      )
     ),
-  }
+  };
 
+  // Tareas para el día seleccionado
   const tasksToday = selected
     ? tasks.filter(
         (t) =>
-          t.dueDate && new Date(t.dueDate).toDateString() === selected.toDateString(),
+          t.dueDate &&
+          new Date(t.dueDate).toDateString() === selected.toDateString()
       )
-    : []
+    : [];
 
+  // Próximas tareas (en progreso)
   const upcomingTasks = tasks
     .filter((t) => !t.completed && t.progress > 0 && t.progress < 100)
     .sort(
-      (a, b) => new Date(a.dueDate || 0).getTime() - new Date(b.dueDate || 0).getTime(),
+      (a, b) =>
+        new Date(a.dueDate || "").getTime() -
+        new Date(b.dueDate || "").getTime()
     )
-    .slice(0, 5)
+    .slice(0, 5);
 
-  const getPriorityColor = (priority: string) => {
+  // Helpers
+  const getPriorityColor = (priority: Task["priority"]) => {
     switch (priority) {
-      case 'alta':
-        return 'bg-red-500'
-      case 'media':
-        return 'bg-yellow-500'
+      case "alta":
+        return "bg-red-500";
+      case "media":
+        return "bg-yellow-500";
       default:
-        return 'bg-green-500'
+        return "bg-green-500";
     }
-  }
-
+  };
   const formatDate = (dateStr: string) => {
-    const d = new Date(dateStr)
+    const d = new Date(dateStr);
     return d.toLocaleDateString(undefined, {
-      day: '2-digit',
-      month: 'short',
-      year: 'numeric',
-    })
-  }
-
+      day: "2-digit",
+      month: "short",
+      year: "numeric",
+    });
+  };
   const formatTime = (dateStr: string) => {
-    const d = new Date(dateStr)
-    return d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
-  }
+    const d = new Date(dateStr);
+    return d.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
+  };
 
   return (
     <section className="bg-blue-800/20 border border-blue-700/30 rounded-xl p-6">
       <div className="w-full max-w-7xl mx-auto px-2 lg:px-8">
         <div className="grid grid-cols-12 gap-8 max-w-4xl mx-auto xl:max-w-full">
-            <div className="col-span-12 xl:col-span-5">
-              <h2 className="font-manrope text-2xl leading-tight text-white mb-1.5">Próximas tareas</h2>
-              <p className="text-lg font-normal text-blue-300 mb-8">No pierdas tu agenda</p>
-              <div className="flex gap-5 flex-col">
-                {upcomingTasks.map((task) => (
-                  <div key={task.id} className="p-6 rounded-xl bg-blue-800/30 border border-blue-700/30">
+          {/* Próximas tareas */}
+          <div className="col-span-12 xl:col-span-5">
+            <h2 className="font-manrope text-2xl leading-tight text-white mb-1.5">
+              Próximas tareas
+            </h2>
+            <p className="text-lg font-normal text-blue-300 mb-8">
+              No pierdas tu agenda
+            </p>
+            <div className="flex gap-5 flex-col">
+              {upcomingTasks.length > 0 ? (
+                upcomingTasks.map((task) => (
+                  <div
+                    key={task.id}
+                    className="p-6 rounded-xl bg-blue-800/30 border border-blue-700/30"
+                  >
                     <div className="flex items-center justify-between mb-3">
                       <div className="flex items-center gap-2.5">
-                        <span className={`w-2.5 h-2.5 rounded-full ${getPriorityColor(task.priority)}`}></span>
+                        <span
+                          className={`w-2.5 h-2.5 rounded-full ${getPriorityColor(
+                            task.priority
+                          )}`}
+                        />
                         <p className="text-base font-medium text-white">
-                          {formatDate(task.dueDate)} - {formatTime(task.dueDate)}
+                          {formatDate(task.dueDate)} – {formatTime(task.dueDate)}
                         </p>
                       </div>
                     </div>
@@ -367,51 +405,62 @@ const GlobalTasksCalendar = ({ tasks, selected, onSelect }) => {
                       </p>
                     )}
                   </div>
-                ))}
-                {upcomingTasks.length === 0 && (
-                  <div className="p-6 rounded-xl bg-blue-800/30 border border-blue-700/30 text-blue-300">No hay tareas en proceso</div>
-                )}
-              </div>
+                ))
+              ) : (
+                <div className="p-6 rounded-xl bg-blue-800/30 border border-blue-700/30 text-blue-300">
+                  No hay tareas en proceso
+                </div>
+              )}
             </div>
-            <div className="col-span-12 xl:col-span-7 px-2.5 py-5 sm:p-8 bg-blue-800/20 border border-blue-700/30 rounded-2xl max-xl:row-start-1">
-              <h5 className="text-xl leading-8 font-semibold text-white mb-4">Calendario</h5>
-              <div className="border border-blue-700/30 rounded-xl p-2 bg-blue-800/30">
-                <Calendar
-                  mode="single"
-                  selected={selected}
-                  onSelect={onSelect}
-                  modifiers={modifiers}
-                  modifiersClassNames={{
-                    completed: 'bg-green-600 text-white hover:bg-green-600',
-                    overdue: 'bg-red-600 text-white hover:bg-red-600',
-                    inProgress: 'bg-yellow-500 text-black hover:bg-yellow-500',
-                    pending: 'bg-orange-500 text-white hover:bg-orange-500',
-                  }}
-                  className="rounded-lg"
-                />
-              </div>
-              <div className="mt-4 text-sm text-blue-300">
-                <strong className="text-white block mb-2">Tareas para este día</strong>
-                <ul className="space-y-1">
-                  {tasksToday.length > 0 ? (
-                    tasksToday.map((t) => (
-                      <li key={t.id} className="flex items-center">
-                        <span className={`inline-block w-2 h-2 rounded-full mr-2 ${getPriorityColor(t.priority)}`}></span>
-                        {t.text}
-                      </li>
-                    ))
-                  ) : (
-                    <li>No hay tareas para este día</li>
-                  )}
-                </ul>
-              </div>
+          </div>
+
+          {/* Calendario */}
+          <div className="col-span-12 xl:col-span-7 px-2.5 py-5 sm:p-8 bg-blue-800/20 border border-blue-700/30 rounded-2xl max-xl:row-start-1">
+            <h5 className="text-xl leading-8 font-semibold text-white mb-4">
+              Calendario
+            </h5>
+            <div className="border border-blue-700/30 rounded-xl p-2 bg-blue-800/30">
+              <Calendar
+                mode="single"
+                selected={selected}
+                onSelect={onSelect}
+                modifiers={modifiers}
+                modifiersClassNames={{
+                  completed: "bg-green-600 text-white hover:bg-green-600",
+                  overdue: "bg-red-600 text-white hover:bg-red-600",
+                  inProgress: "bg-yellow-500 text-black hover:bg-yellow-500",
+                  pending: "bg-orange-500 text-white hover:bg-orange-500",
+                }}
+                className="rounded-lg"
+              />
+            </div>
+            <div className="mt-4 text-sm text-blue-300">
+              <strong className="text-white block mb-2">
+                Tareas para este día
+              </strong>
+              <ul className="space-y-1">
+                {tasksToday.length > 0 ? (
+                  tasksToday.map((t) => (
+                    <li key={t.id} className="flex items-center">
+                      <span
+                        className={`inline-block w-2 h-2 rounded-full mr-2 ${getPriorityColor(
+                          t.priority
+                        )}`}
+                      />
+                      {t.text}
+                    </li>
+                  ))
+                ) : (
+                  <li>No hay tareas para este día</li>
+                )}
+              </ul>
             </div>
           </div>
         </div>
       </div>
     </section>
-  )
-}
+  );
+};
 
 
 export default function TasksPage() {
