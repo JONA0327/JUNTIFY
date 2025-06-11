@@ -1,27 +1,35 @@
-"use client"
+"use client";
 
-import { useState } from "react"
-import { Button } from "@/components/ui/button"
-import { X } from "lucide-react"
+import { useState } from "react";
+import { Button } from "@/components/ui/button";
+import { X } from "lucide-react";
 
 interface NewContainerModalProps {
-  onCancel: () => void
-  onCreate: (name: string) => void
+  onCancel: () => void;
+  onCreate: (name: string) => void;
 }
 
-export function NewContainerModal({ onCancel, onCreate }: NewContainerModalProps) {
-  const [name, setName] = useState("")
+export function NewContainerModal({
+  onCancel,
+  onCreate,
+}: NewContainerModalProps) {
+  const [name, setName] = useState("");
   const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault()
-    if (!name.trim()) return
-    onCreate(name.trim())
-  }
+    e.preventDefault();
+    if (!name.trim()) return;
+    onCreate(name.trim());
+  };
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60">
       <div className="bg-blue-800/95 border border-blue-700/30 rounded-lg p-6 w-full max-w-sm">
         <div className="flex justify-between items-center mb-4">
           <h2 className="text-lg font-semibold text-white">Nuevo Contenedor</h2>
-          <Button variant="ghost" size="icon" className="text-blue-200 hover:text-white" onClick={onCancel}>
+          <Button
+            variant="ghost"
+            size="icon"
+            className="text-blue-200 hover:text-white"
+            onClick={onCancel}
+          >
             <X className="h-5 w-5" />
           </Button>
         </div>
@@ -44,5 +52,5 @@ export function NewContainerModal({ onCancel, onCreate }: NewContainerModalProps
         </form>
       </div>
     </div>
-  )
+  );
 }
