@@ -92,3 +92,8 @@ body {
     @apply bg-background text-foreground;
   }
 }
+
+/* Ensure react-day-picker calendar uses full width */
+.rdp {
+  width: 100%;
+}
