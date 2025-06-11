@@ -4,7 +4,6 @@ import { useEffect, useState } from "react"
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet"
 import { Button } from "@/components/ui/button"
 import { addUsernameToHeaders } from "@/utils/user-helpers"
-import Link from "next/link"
 import { ChevronDown, Plus } from "lucide-react"
 
 interface Container {
@@ -17,7 +16,11 @@ interface Meeting {
   title: string
 }
 
-export function ContainerPanel() {
+interface ContainerPanelProps {
+  onMeetingSelect?: (meetingId: number) => void
+}
+
+export function ContainerPanel({ onMeetingSelect }: ContainerPanelProps) {
   const [containers, setContainers] = useState<Container[]>([])
   const [expanded, setExpanded] = useState<number | null>(null)
 
@@ -81,13 +84,13 @@ export function ContainerPanel() {
               {expanded === c.id && meetings[c.id] && (
                 <div className="bg-blue-800/40 p-2 space-y-1">
                   {meetings[c.id].map((m) => (
-                    <Link
+                    <button
                       key={m.id}
-                      href={`/transcriptions/${m.id}`}
-                      className="block px-2 py-1 rounded hover:bg-blue-700/50"
+                      onClick={() => onMeetingSelect?.(m.id)}
+                      className="block w-full text-left px-2 py-1 rounded hover:bg-blue-700/50"
                     >
                       {m.title}
-                    </Link>
+                    </button>
                   ))}
                 </div>
               )}
