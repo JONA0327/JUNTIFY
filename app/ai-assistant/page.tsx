@@ -11,6 +11,8 @@ import { es } from "date-fns/locale"
 import { addUsernameToHeaders } from "@/utils/user-helpers"
 import Link from "next/link"
 import { AIChatModal } from "@/components/ai-chat-modal"
+import { NewContainerModal } from "@/components/new-container-modal"
+import { ContainerPanel } from "@/components/container-panel"
 
 // Componente para el selector de rango de fechas
 const DateRangeSelector = ({ startDate, endDate, onStartDateChange, onEndDateChange }) => {
@@ -167,6 +169,7 @@ export default function AIAssistantPage() {
     )
   }
 
+
   const handleCreateContainer = async () => {
     if (selectedForContainer.length === 0) return
     const name = prompt("Nombre del nuevo contenedor")
@@ -291,10 +294,12 @@ export default function AIAssistantPage() {
           <div className="mt-4 flex gap-3">
             {!isCreatingContainer ? (
               <Button className="bg-blue-600 hover:bg-blue-700" onClick={() => setIsCreatingContainer(true)}>
+
                 <Plus className="mr-2 h-4 w-4" /> Nuevo contenedor
               </Button>
             ) : (
               <>
+
                 <Button className="bg-blue-600 hover:bg-blue-700" onClick={handleCreateContainer}>
                   Guardar contenedor
                 </Button>
@@ -368,6 +373,13 @@ export default function AIAssistantPage() {
           />
         )}
       </AnimatePresence>
+
+      {showContainerModal && (
+        <NewContainerModal
+          onCancel={() => setShowContainerModal(false)}
+          onCreate={handleCreateContainer}
+        />
+      )}
 
       {/* Navbar */}
       <NewNavbar />
