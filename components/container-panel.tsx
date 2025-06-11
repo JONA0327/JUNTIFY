@@ -36,9 +36,6 @@ export function ContainerPanel({ onMeetingSelect }: ContainerPanelProps) {
   const [showAddModal, setShowAddModal] = useState<Container | null>(null);
   const [deleteTarget, setDeleteTarget] = useState<Container | null>(null);
 
-
-  const [deleteTarget, setDeleteTarget] = useState<Container | null>(null);
-
   const fetchContainers = async () => {
     try {
       const res = await fetch("/api/containers", {
