@@ -221,6 +221,7 @@ export default function AIAssistantPage() {
     const dateB = b.date ? new Date(b.date) : new Date(0)
     return dateB - dateA
   })
+ const [showContainerModal, setShowContainerModal] = useState(false);
 
   return (
     <div className="min-h-screen bg-blue-900">
