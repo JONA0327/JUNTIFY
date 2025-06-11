@@ -12,21 +12,32 @@ const dbConfig = {
   queueLimit: 0,
 }
 
-// Pool de conexiones para reutilizar conexiones
+// Pool de conexiones para reutilizar conexiones. En entornos serverless es
+// posible que el módulo se cargue varias veces, por lo que guardamos el pool
+// en la instancia global para evitar crear nuevos pools en cada invocación.
 let pool: mysql.Pool
 
-// Función para obtener el pool de conexiones
-export const getMySQLPool = async (): Promise<mysql.Pool> => {
+export const getMySQLPool = (): mysql.Pool => {
   if (!pool) {
-    try {
+    // Reutilizar pool si ya existe en el ámbito global
+    pool = (global as any).mysqlPool
+    if (!pool) {
       pool = mysql.createPool(dbConfig)
+      ;(global as any).mysqlPool = pool
       console.log("Pool de conexiones MySQL creado")
-    } catch (error) {
-      console.error("Error al crear el pool de conexiones MySQL:", error)
-      throw error
     }
   }
   return pool
+}
+
+// Función para cerrar el pool de conexiones manualmente en casos donde se
+// necesite liberar todos los recursos, por ejemplo al cerrar la aplicación.
+export const closeMySQLPool = async (): Promise<void> => {
+  if (pool) {
+    await pool.end()
+    ;(global as any).mysqlPool = undefined
+    pool = undefined as unknown as mysql.Pool
+  }
 }
 
 // Función para obtener una conexión del pool
