@@ -13,7 +13,6 @@ import { addUsernameToHeaders } from "@/utils/user-helpers"
 import Link from "next/link"
 import { AIChatModal } from "@/components/ai-chat-modal"
 import { NewContainerModal } from "@/components/new-container-modal"
-import { ContainerPanel } from "@/components/container-panel"
 
 // Componente para el selector de rango de fechas
 const DateRangeSelector = ({ startDate, endDate, onStartDateChange, onEndDateChange }) => {
@@ -204,7 +203,11 @@ export default function AIAssistantPage() {
             </div>
           ),
         })
-        window.location.reload()
+
+        setTimeout(() => {
+          window.location.reload()
+        }, 1000)
+
       }
     } catch (err) {
       console.error("Error creando contenedor", err)
@@ -318,6 +321,9 @@ export default function AIAssistantPage() {
               </Button>
             ) : (
               <>
+                <Button className="bg-blue-600 hover:bg-blue-700" onClick={() => setShowContainerModal(true)}>
+
+
                 <Button className="bg-blue-600 hover:bg-blue-700" onClick={() => setShowContainerModal(true)}>
 
                   Guardar contenedor
