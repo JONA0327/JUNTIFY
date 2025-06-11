@@ -11,6 +11,8 @@ import { es } from "date-fns/locale"
 import { addUsernameToHeaders } from "@/utils/user-helpers"
 import Link from "next/link"
 import { AIChatModal } from "@/components/ai-chat-modal"
+import { NewContainerModal } from "@/components/new-container-modal"
+import { ContainerPanel } from "@/components/container-panel"
 
 // Componente para el selector de rango de fechas
 const DateRangeSelector = ({ startDate, endDate, onStartDateChange, onEndDateChange }) => {
@@ -49,7 +51,7 @@ const DateRangeSelector = ({ startDate, endDate, onStartDateChange, onEndDateCha
 }
 
 // Componente para la tarjeta de transcripción
-const TranscriptionCard = ({ meeting, onClick, isSelected }) => {
+const TranscriptionCard = ({ meeting, onClick, isSelected, creationMode, onToggle }) => {
   // Formatear la fecha
   const formattedDate = meeting.date
     ? format(new Date(meeting.date), "dd MMM yyyy", { locale: es })
@@ -74,9 +76,22 @@ const TranscriptionCard = ({ meeting, onClick, isSelected }) => {
       }`}
       whileHover={{ scale: 1.01 }}
       whileTap={{ scale: 0.99 }}
-      onClick={() => onClick(meeting)}
+      onClick={() => (creationMode ? onToggle(meeting.id) : onClick(meeting))}
     >
-      <h3 className="text-base sm:text-lg font-medium text-white mb-1 sm:mb-2 line-clamp-2">{meeting.title}</h3>
+      <div className="flex items-start">
+        {creationMode && (
+          <input
+            type="checkbox"
+            className="mr-2 mt-1"
+            checked={isSelected}
+            onChange={() => onToggle(meeting.id)}
+            onClick={(e) => e.stopPropagation()}
+          />
+        )}
+        <h3 className="text-base sm:text-lg font-medium text-white mb-1 sm:mb-2 line-clamp-2">
+          {meeting.title}
+        </h3>
+      </div>
       <div className="flex items-center text-blue-200/70 text-xs sm:text-sm mb-1 sm:mb-2">
         <Calendar className="h-4 w-4 mr-1" />
         <span className="mr-3">{formattedDate}</span>
@@ -111,6 +126,9 @@ export default function AIAssistantPage() {
   const [meetings, setMeetings] = useState([])
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState(null)
+  const [isCreatingContainer, setIsCreatingContainer] = useState(false)
+  const [showContainerModal, setShowContainerModal] = useState(false)
+  const [selectedForContainer, setSelectedForContainer] = useState<number[]>([])
 
   // Cargar las reuniones del usuario
   useEffect(() => {
@@ -144,6 +162,39 @@ export default function AIAssistantPage() {
   const handleSelectMeeting = (meeting) => {
     setSelectedMeeting(meeting)
     setShowChatModal(true)
+  }
+
+  const toggleSelectForContainer = (id: number) => {
+    setSelectedForContainer((prev) =>
+      prev.includes(id) ? prev.filter((m) => m !== id) : [...prev, id],
+    )
+  }
+
+  const handleCreateContainer = async (name: string) => {
+    if (selectedForContainer.length === 0) return
+    try {
+      const response = await fetch("/api/containers", {
+        method: "POST",
+        headers: addUsernameToHeaders({ "Content-Type": "application/json" }),
+        body: JSON.stringify({ name }),
+      })
+      if (response.ok) {
+        const created = await response.json()
+        for (const meetingId of selectedForContainer) {
+          await fetch(`/api/containers/${created.id}/meetings`, {
+            method: "POST",
+            headers: addUsernameToHeaders({ "Content-Type": "application/json" }),
+            body: JSON.stringify({ meetingId }),
+          })
+        }
+      }
+    } catch (err) {
+      console.error("Error creando contenedor", err)
+    } finally {
+      setIsCreatingContainer(false)
+      setSelectedForContainer([])
+      setShowContainerModal(false)
+    }
   }
 
   // Filtrar reuniones según los criterios de búsqueda
@@ -238,6 +289,35 @@ export default function AIAssistantPage() {
               </div>
             </div>
           </div>
+          <div className="mt-4 flex gap-3">
+            {!isCreatingContainer ? (
+              <Button
+                className="bg-blue-600 hover:bg-blue-700"
+                onClick={() => setIsCreatingContainer(true)}
+              >
+                <Plus className="mr-2 h-4 w-4" /> Nuevo contenedor
+              </Button>
+            ) : (
+              <>
+                <Button
+                  className="bg-blue-600 hover:bg-blue-700"
+                  onClick={() => setShowContainerModal(true)}
+                >
+                  Guardar contenedor
+                </Button>
+                <Button
+                  variant="outline"
+                  onClick={() => {
+                    setIsCreatingContainer(false)
+                    setSelectedForContainer([])
+                  }}
+                >
+                  Cancelar
+                </Button>
+              </>
+            )}
+            <ContainerPanel />
+          </div>
 
           {/* Estado de carga */}
           {isLoading && (
@@ -262,7 +342,9 @@ export default function AIAssistantPage() {
                     key={meeting.id}
                     meeting={meeting}
                     onClick={handleSelectMeeting}
-                    isSelected={selectedMeeting?.id === meeting.id}
+                    isSelected={isCreatingContainer ? selectedForContainer.includes(meeting.id) : selectedMeeting?.id === meeting.id}
+                    creationMode={isCreatingContainer}
+                    onToggle={toggleSelectForContainer}
                   />
                 ))
               ) : (
@@ -300,6 +382,13 @@ export default function AIAssistantPage() {
           />
         )}
       </AnimatePresence>
+
+      {showContainerModal && (
+        <NewContainerModal
+          onCancel={() => setShowContainerModal(false)}
+          onCreate={handleCreateContainer}
+        />
+      )}
 
       {/* Navbar */}
       <NewNavbar />
