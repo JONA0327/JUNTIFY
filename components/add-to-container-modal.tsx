@@ -75,7 +75,14 @@ export function AddToContainerModal({ containerId, onClose, onAdded }: AddToCont
     <>
       <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60">
         <div className="bg-blue-800/95 border border-blue-700/30 rounded-lg p-6 w-full max-w-sm">
-          <div className="flex justify-between items-center mb-4">
+            <Button
+              className="bg-blue-600 hover:bg-blue-700"
+              onClick={() => {
+                setShowSuccess(false)
+                onClose()
+                window.location.reload()
+              }}
+            >
             <h2 className="text-lg font-semibold text-white">Añadir reunión</h2>
             <Button variant="ghost" size="icon" className="text-blue-200 hover:text-white" onClick={onClose}>
               <X className="h-5 w-5" />

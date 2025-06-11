@@ -204,6 +204,7 @@ export default function AIAssistantPage() {
             </div>
           ),
         })
+        window.location.reload()
       }
     } catch (err) {
       console.error("Error creando contenedor", err)
