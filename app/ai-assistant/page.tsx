@@ -2,7 +2,8 @@
 
 import { useState, useEffect } from "react"
 import { NewNavbar } from "@/components/new-navbar"
-import { Search, Calendar, Clock, Users, ChevronDown, MessageSquare, Plus, Loader2 } from "lucide-react"
+import { Search, Calendar, Clock, Users, ChevronDown, MessageSquare, Plus, Loader2, CheckCircle } from "lucide-react"
+import { toast } from "@/components/ui/use-toast"
 import { motion, AnimatePresence } from "framer-motion"
 import { Button } from "@/components/ui/button"
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
@@ -170,6 +171,13 @@ export default function AIAssistantPage() {
     )
   }
 
+  const handleContainerMeetingSelect = (id: number) => {
+    const meeting = meetings.find((m) => m.id === id)
+    if (meeting) {
+      handleSelectMeeting(meeting)
+    }
+  }
+
 
   const handleCreateContainer = async (name: string) => {
     if (selectedForContainer.length === 0) return
@@ -188,7 +196,15 @@ export default function AIAssistantPage() {
             body: JSON.stringify({ meetingId }),
           })
         }
-        alert("Contenedor creado correctamente")
+        toast({
+          title: (
+            <div className="flex items-center gap-2 text-green-200">
+              <CheckCircle className="h-5 w-5 text-green-400" />
+              <span>Contenedor creado correctamente</span>
+            </div>
+          ),
+        })
+        window.location.reload()
       }
     } catch (err) {
       console.error("Error creando contenedor", err)
@@ -227,6 +243,7 @@ export default function AIAssistantPage() {
       <main className="container mx-auto px-3 sm:px-4 pb-24 pt-6 sm:pt-8">
         <div className="max-w-7xl mx-auto">
           <h1 className="text-2xl sm:text-3xl font-bold text-white mb-4 sm:mb-8 glow-text">Asistente IA</h1>
+          <ContainerPanel onMeetingSelect={handleContainerMeetingSelect} />
 
           {/* Barra de búsqueda y filtros */}
           <div className="mb-4 sm:mb-8 bg-blue-800/30 border border-blue-700/30 rounded-lg p-3 sm:p-6">
