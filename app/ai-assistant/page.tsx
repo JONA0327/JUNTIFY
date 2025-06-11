@@ -291,19 +291,27 @@ export default function AIAssistantPage() {
               </div>
             </div>
           </div>
-          <div className="mt-4 flex gap-3">
+          <div className="mt-4 flex flex-wrap gap-3">
+            <ContainerPanel />
             {!isCreatingContainer ? (
+
               <Button className="bg-blue-600 hover:bg-blue-700" onClick={() => setIsCreatingContainer(true)}>
 
                 <Plus className="mr-2 h-4 w-4" /> Nuevo contenedor
               </Button>
             ) : (
               <>
-
                 <Button className="bg-blue-600 hover:bg-blue-700" onClick={() => setShowContainerModal(true)}>
+
                   Guardar contenedor
                 </Button>
-                <Button variant="outline" onClick={() => { setIsCreatingContainer(false); setSelectedForContainer([]); }}>
+                <Button
+                  variant="outline"
+                  onClick={() => {
+                    setIsCreatingContainer(false)
+                    setSelectedForContainer([])
+                  }}
+                >
                   Cancelar
                 </Button>
               </>
