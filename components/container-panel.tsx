@@ -13,6 +13,8 @@ import { Button } from "@/components/ui/button";
 import { addUsernameToHeaders } from "@/utils/user-helpers";
 import { ChevronDown, Plus, Trash2 } from "lucide-react";
 import { AddToContainerModal } from "./add-to-container-modal";
+import { DeleteContainerModal } from "./delete-container-modal";
+
 
 
 interface Container {
@@ -35,6 +37,9 @@ export function ContainerPanel({ onMeetingSelect }: ContainerPanelProps) {
   const [expanded, setExpanded] = useState<number | null>(null);
   const [searchTerm, setSearchTerm] = useState("");
   const [showAddModal, setShowAddModal] = useState<Container | null>(null);
+
+  const [deleteTarget, setDeleteTarget] = useState<Container | null>(null);
+
 
 
   const fetchContainers = async () => {
@@ -78,21 +83,25 @@ export function ContainerPanel({ onMeetingSelect }: ContainerPanelProps) {
     }
   };
 
-  const handleDelete = async (id: number) => {
-    if (!confirm("¿Eliminar contenedor?")) return;
+
+  const confirmDelete = async (id: number) => {
+
     try {
       const res = await fetch(`/api/containers/${id}`, {
         method: "DELETE",
         headers: addUsernameToHeaders(),
-      });
+
+      })
       if (res.ok) {
-        setContainers((prev) => prev.filter((c) => c.id !== id));
-        setExpanded((prev) => (prev === id ? null : prev));
+        setContainers((prev) => prev.filter((c) => c.id !== id))
+        setExpanded((prev) => (prev === id ? null : prev))
+        setDeleteTarget(null)
       }
     } catch (err) {
-      console.error("Error deleting container", err);
+      console.error("Error deleting container", err)
     }
-  };
+  }
+
 
   return (
     <Sheet>
@@ -145,7 +154,8 @@ export function ContainerPanel({ onMeetingSelect }: ContainerPanelProps) {
                     <Plus className="h-4 w-4" />
                   </button>
                   <button
-                    onClick={() => handleDelete(c.id)}
+                    onClick={() => setDeleteTarget(c)}
+
                     className="text-red-300 hover:text-red-500"
                   >
                     <Trash2 className="h-4 w-4" />
@@ -179,6 +189,15 @@ export function ContainerPanel({ onMeetingSelect }: ContainerPanelProps) {
           onAdded={() => fetchContainers()}
         />
       )}
+
+      {deleteTarget && (
+        <DeleteContainerModal
+          container={deleteTarget}
+          onCancel={() => setDeleteTarget(null)}
+          onConfirm={(id) => confirmDelete(id)}
+        />
+      )}
+
     </Sheet>
   );
 }
