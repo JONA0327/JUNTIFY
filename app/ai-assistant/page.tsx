@@ -170,6 +170,13 @@ export default function AIAssistantPage() {
     )
   }
 
+  const handleContainerMeetingSelect = (id: number) => {
+    const meeting = meetings.find((m) => m.id === id)
+    if (meeting) {
+      handleSelectMeeting(meeting)
+    }
+  }
+
 
   const handleCreateContainer = async (name: string) => {
     if (selectedForContainer.length === 0) return
@@ -196,9 +203,11 @@ export default function AIAssistantPage() {
             </div>
           ),
         })
+
         setTimeout(() => {
           window.location.reload()
         }, 1000)
+
       }
     } catch (err) {
       console.error("Error creando contenedor", err)
@@ -237,6 +246,7 @@ export default function AIAssistantPage() {
       <main className="container mx-auto px-3 sm:px-4 pb-24 pt-6 sm:pt-8">
         <div className="max-w-7xl mx-auto">
           <h1 className="text-2xl sm:text-3xl font-bold text-white mb-4 sm:mb-8 glow-text">Asistente IA</h1>
+          <ContainerPanel onMeetingSelect={handleContainerMeetingSelect} />
 
           {/* Barra de búsqueda y filtros */}
           <div className="mb-4 sm:mb-8 bg-blue-800/30 border border-blue-700/30 rounded-lg p-3 sm:p-6">
@@ -301,19 +311,30 @@ export default function AIAssistantPage() {
               </div>
             </div>
           </div>
-          <div className="mt-4 flex gap-3">
+          <div className="mt-4 flex flex-wrap gap-3">
+            <ContainerPanel />
             {!isCreatingContainer ? (
+
               <Button className="bg-blue-600 hover:bg-blue-700" onClick={() => setIsCreatingContainer(true)}>
 
                 <Plus className="mr-2 h-4 w-4" /> Nuevo contenedor
               </Button>
             ) : (
               <>
+                <Button className="bg-blue-600 hover:bg-blue-700" onClick={() => setShowContainerModal(true)}>
+
 
                 <Button className="bg-blue-600 hover:bg-blue-700" onClick={() => setShowContainerModal(true)}>
+
                   Guardar contenedor
                 </Button>
-                <Button variant="outline" onClick={() => { setIsCreatingContainer(false); setSelectedForContainer([]); }}>
+                <Button
+                  variant="outline"
+                  onClick={() => {
+                    setIsCreatingContainer(false)
+                    setSelectedForContainer([])
+                  }}
+                >
                   Cancelar
                 </Button>
               </>
