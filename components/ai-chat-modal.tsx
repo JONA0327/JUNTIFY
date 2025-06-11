@@ -50,9 +50,21 @@ export const AIChatModal = ({ meeting, container = null, onClose }) => {
   const chatContainerRef = useRef(null)
   const { isMobile } = useDevice()
 
+  const conversationKey =
+    selectedMeeting?.id !== undefined
+      ? String(selectedMeeting.id)
+      : selectedContainer?.id !== undefined
+      ? `container-${selectedContainer.id}`
+      : selectedContainerId !== null
+      ? `container-${selectedContainerId}`
+      : null
+
 
   useEffect(() => {
     setSelectedContainer(container)
+    if (container?.id !== undefined) {
+      setSelectedContainerId(container.id)
+    }
   }, [container?.id])
 
 
@@ -61,15 +73,17 @@ export const AIChatModal = ({ meeting, container = null, onClose }) => {
     const username = getUsername()
     if (!username) {
       setIsAuthenticated(false)
-      // Inicializar con mensaje de error de autenticación
-      setConversations({
-        [conversationKey as string]: [
-          {
-            role: "assistant",
-            content: "⚠️ Error de autenticación: No hay sesión activa. Por favor, inicia sesión de nuevo.",
-          },
-        ],
-      })
+      if (conversationKey) {
+        // Inicializar con mensaje de error de autenticación
+        setConversations({
+          [conversationKey]: [
+            {
+              role: "assistant",
+              content: "⚠️ Error de autenticación: No hay sesión activa. Por favor, inicia sesión de nuevo.",
+            },
+          ],
+        })
+      }
     } else {
       // Inicializar con mensaje de bienvenida solo si está autenticado
       const welcomeMessage = {
@@ -93,9 +107,11 @@ Puedo ayudarte con preguntas como:
 ¿En qué puedo ayudarte hoy?`,
       }
 
-      setConversations({
-        [conversationKey as string]: [welcomeMessage],
-      })
+      if (conversationKey) {
+        setConversations({
+          [conversationKey]: [welcomeMessage],
+        })
+      }
     }
   }, [])
 
@@ -192,6 +208,7 @@ Puedo ayudarte con preguntas como:
 
   const handleSelectContainer = (container) => {
     setSelectedContainerId(container.id)
+    setSelectedContainer(container)
     setSelectedMeeting(null)
     setMeetingDetails(null)
     setIsLoadingDetails(false)
@@ -344,11 +361,11 @@ Puedo ayudarte con preguntas como:
       const response = await fetch("/api/ai-chat", {
         method: "POST",
         headers,
-        body: JSON.stringify({
-          messages: recentMessages.map((msg) => ({ role: msg.role, content: msg.content })),
+          body: JSON.stringify({
+            messages: recentMessages.map((msg) => ({ role: msg.role, content: msg.content })),
 
-          meetingId: selectedMeeting.id,
-          containerId: selectedContainer?.id || null,
+            meetingId: selectedMeeting?.id || null,
+            containerId: selectedContainer?.id || null,
 
           searchWeb: isSearchingWeb,
         }),
@@ -425,7 +442,9 @@ Puedo ayudarte con preguntas como:
           {/* Título y fecha en móvil - centrados */}
           <div className="flex flex-col items-center sm:items-start p-3 sm:hidden">
             <h2 className="text-lg font-semibold text-white">
-              {selectedMeeting ? selectedMeeting.title : `Contenedor ${selectedContainerId}`}
+              {selectedMeeting
+                ? selectedMeeting.title
+                : selectedContainer?.name || `Contenedor ${selectedContainerId}`}
             </h2>
             {selectedMeeting && (
               <div className="text-blue-200/70 text-sm mt-1">
@@ -440,7 +459,9 @@ Puedo ayudarte con preguntas como:
           <div className="hidden sm:flex flex-row items-center justify-between p-4">
             <div className="flex flex-col">
               <h2 className="text-xl font-semibold text-white">
-                {selectedMeeting ? selectedMeeting.title : `Contenedor ${selectedContainerId}`}
+                {selectedMeeting
+                  ? selectedMeeting.title
+                  : selectedContainer?.name || `Contenedor ${selectedContainerId}`}
               </h2>
               {selectedMeeting && (
                 <div className="text-blue-200/70 text-sm mt-1">
