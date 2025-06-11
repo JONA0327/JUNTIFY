@@ -15,15 +15,63 @@ export async function POST(request: Request) {
 
     // Parse the request body
     const body = await request.json()
-    const { messages, meetingId, searchWeb } = body
+    const { messages, meetingId, containerId, searchWeb } = body
 
     if (!messages || !Array.isArray(messages) || messages.length === 0) {
       return NextResponse.json({ error: "No se proporcionaron mensajes válidos" }, { status: 400 })
     }
 
-    // Get meeting details if meetingId is provided
+    // Get meeting details or container context if provided
     let meetingContext = ""
-    if (meetingId) {
+    if (containerId) {
+      try {
+        const meetings = await query(
+          `SELECT m.* FROM container_meetings cm
+           JOIN meetings m ON cm.meeting_id = m.id
+           WHERE cm.container_id = ? AND m.username = ?`,
+          [containerId, username],
+        )
+
+        for (const meeting of meetings) {
+          const transcriptionResult = await query(
+            "SELECT * FROM transcriptions WHERE meeting_id = ? ORDER BY id ASC",
+            [meeting.id],
+          )
+          const keyPointsResult = await query(
+            "SELECT * FROM key_points WHERE meeting_id = ? ORDER BY order_num ASC",
+            [meeting.id],
+          )
+          const tasksResult = await query(
+            "SELECT * FROM tasks WHERE meeting_id = ? ORDER BY due_date ASC, priority DESC",
+            [meeting.id],
+          )
+
+          meetingContext += `\nContexto de la reunión "${meeting.title}" (${meeting.date ? new Date(meeting.date).toLocaleDateString() : "Fecha desconocida"}):\n\nRESUMEN:\n${meeting.summary || "No hay resumen disponible."}\n\nPUNTOS CLAVE:\n${
+            keyPointsResult.length > 0
+              ? keyPointsResult.map((p, i) => `${i + 1}. ${p.point_text}`).join("\n")
+              : "No hay puntos clave disponibles."
+          }\n\nTAREAS ASIGNADAS:\n${
+            tasksResult.length > 0
+              ? tasksResult
+                  .map(
+                    (t) =>
+                      `- ${t.text} | Asignado a: ${t.assignee || "No asignado"} | Fecha límite: ${t.due_date ? new Date(t.due_date).toLocaleDateString() : "Sin fecha"} | Estado: ${t.completed ? "Completada" : "Pendiente"}`,
+                  )
+                  .join("\n")
+              : "No hay tareas asignadas."
+          }\n\nTRANSCRIPCIÓN COMPLETA:\n${
+            transcriptionResult.length > 0
+              ? transcriptionResult
+                  .map((seg) => `${seg.speaker || "Hablante"} (${seg.time || "00:00"}): ${seg.text}`)
+                  .join("\n")
+              : "No hay transcripción disponible."
+          }\n`
+        }
+      } catch (error) {
+        console.error("Error fetching container details:", error)
+        meetingContext = "Error al obtener datos del contenedor."
+      }
+    } else if (meetingId) {
       try {
         // Get complete meeting details including all related data
         const meetingResult = await query("SELECT * FROM meetings WHERE id = ? AND username = ?", [meetingId, username])
