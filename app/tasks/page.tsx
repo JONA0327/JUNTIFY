@@ -312,9 +312,7 @@ const GlobalTasksCalendar: React.FC<GlobalTasksCalendarProps> = ({
 }) => {
   const [filter, setFilter] =
     useState<"inProgress" | "pending" | "overdue" | "completed" | "noDate">(
-
       "inProgress"
-
     );
   const [page, setPage] = useState(0);
 
@@ -327,6 +325,7 @@ const GlobalTasksCalendar: React.FC<GlobalTasksCalendarProps> = ({
   useEffect(() => {
     setPage(0);
   }, [filter, tasksThisYear.length, tasksWithoutDate.length]);
+
   // Extrae fechas únicas de un array de tareas
   const uniqueDates = (items: Task[]) =>
     Array.from(new Set(items.map((t) => t.dueDate)))
@@ -389,9 +388,7 @@ const GlobalTasksCalendar: React.FC<GlobalTasksCalendarProps> = ({
               );
             }
             if (filter === "overdue") {
-
               return !t.completed && t.dueDate && new Date(t.dueDate) < new Date();
-
             }
             if (filter === "completed") {
               return t.completed;
@@ -407,9 +404,7 @@ const GlobalTasksCalendar: React.FC<GlobalTasksCalendarProps> = ({
           .sort(
             (a, b) =>
               new Date(a.dueDate || "").getTime() -
-
               new Date(b.dueDate || "").getTime()
-
           );
   const totalPages = Math.ceil(filteredTasks.length / tasksPerPage);
   const upcomingTasks = filteredTasks.slice(
@@ -555,23 +550,9 @@ const GlobalTasksCalendar: React.FC<GlobalTasksCalendarProps> = ({
                       <p className="text-base font-normal text-blue-300">
                         {task.description}
                       </p>
-                    </div>
-                    {task.meeting_title && (
-                      <span className="text-xs text-blue-300 truncate">
-                        {task.meeting_title}
-                      </span>
                     )}
-                  </div>
-                  <h6 className="text-base leading-6 font-semibold text-white mb-1">
-                    {task.text}
-                  </h6>
-                  {task.description && (
-                    <p className="text-sm font-normal text-blue-300">
-                      {task.description}
-                    </p>
-                  )}
-                </button>
-              ))
+                  </button>
+                ))
               ) : (
                 <div className="p-6 rounded-xl bg-blue-800/30 border border-blue-700/30 text-blue-300">
                   No hay tareas en proceso
@@ -606,7 +587,7 @@ const GlobalTasksCalendar: React.FC<GlobalTasksCalendarProps> = ({
             <h5 className="text-xl leading-8 font-semibold text-white mb-4">
               Calendario
             </h5>
-            <div className="border border-blue-700/30 rounded-xl p-2 bg-blue-800/30 w-full">
+            <div className="w-full border border-blue-700/30 rounded-xl p-2 bg-blue-800/30">
               <Calendar
                 mode="single"
                 selected={selected}
@@ -619,6 +600,7 @@ const GlobalTasksCalendar: React.FC<GlobalTasksCalendarProps> = ({
                   pending: "bg-orange-500 text-white hover:bg-orange-500",
                 }}
                 className="w-full rounded-lg"
+                style={{ width: "100%" }}
               />
             </div>
             <div className="mt-4 text-sm text-blue-300">
