@@ -685,7 +685,10 @@ Puedo ayudarte con preguntas como:
                             )}
                           </div>
                           <div className="flex-1">
-                            <p className="text-white font-medium">{task.title}</p>
+                            <p className="text-white font-medium">{task.text}</p>
+                            {task.description && (
+                              <p className="text-blue-200/70 text-sm mt-1">{task.description}</p>
+                            )}
                             <div className="flex flex-col sm:flex-row sm:items-center text-sm text-blue-200/70 mt-1">
                               <span className="mr-3">Asignado a: {task.assignee || "No asignado"}</span>
                               <span>
