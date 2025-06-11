@@ -11,7 +11,8 @@ import {
 } from "@/components/ui/sheet";
 import { Button } from "@/components/ui/button";
 import { addUsernameToHeaders } from "@/utils/user-helpers";
-import { ChevronDown, Plus } from "lucide-react";
+import { ChevronDown, Plus, Trash2 } from "lucide-react";
+import { AddToContainerModal } from "./add-to-container-modal";
 
 
 interface Container {
@@ -32,22 +33,25 @@ interface ContainerPanelProps {
 export function ContainerPanel({ onMeetingSelect }: ContainerPanelProps) {
   const [containers, setContainers] = useState<Container[]>([]);
   const [expanded, setExpanded] = useState<number | null>(null);
+  const [searchTerm, setSearchTerm] = useState("");
+  const [showAddModal, setShowAddModal] = useState<Container | null>(null);
 
+
+  const fetchContainers = async () => {
+    try {
+      const res = await fetch("/api/containers", {
+        headers: addUsernameToHeaders(),
+      });
+      if (res.ok) {
+        const data = await res.json();
+        setContainers(data);
+      }
+    } catch (err) {
+      console.error("Error loading containers", err);
+    }
+  };
 
   useEffect(() => {
-    const fetchContainers = async () => {
-      try {
-        const res = await fetch("/api/containers", {
-          headers: addUsernameToHeaders(),
-        });
-        if (res.ok) {
-          const data = await res.json();
-          setContainers(data);
-        }
-      } catch (err) {
-        console.error("Error loading containers", err);
-      }
-    };
     fetchContainers();
   }, []);
 
@@ -74,6 +78,22 @@ export function ContainerPanel({ onMeetingSelect }: ContainerPanelProps) {
     }
   };
 
+  const handleDelete = async (id: number) => {
+    if (!confirm("¿Eliminar contenedor?")) return;
+    try {
+      const res = await fetch(`/api/containers/${id}`, {
+        method: "DELETE",
+        headers: addUsernameToHeaders(),
+      });
+      if (res.ok) {
+        setContainers((prev) => prev.filter((c) => c.id !== id));
+        setExpanded((prev) => (prev === id ? null : prev));
+      }
+    } catch (err) {
+      console.error("Error deleting container", err);
+    }
+  };
+
   return (
     <Sheet>
       <SheetTrigger asChild>
@@ -91,18 +111,47 @@ export function ContainerPanel({ onMeetingSelect }: ContainerPanelProps) {
         <SheetHeader className="p-4 border-b border-blue-700/30">
           <SheetTitle>Contenedores</SheetTitle>
         </SheetHeader>
+        <div className="p-4 border-b border-blue-700/30">
+          <input
+            type="text"
+            placeholder="Buscar contenedor"
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            className="w-full bg-blue-700/40 border border-blue-600/50 text-white rounded-lg p-2.5"
+          />
+        </div>
         <div className="p-4 space-y-2 overflow-y-auto h-full">
-          {containers.map((c) => (
+          {containers
+            .filter((c) =>
+              c.name.toLowerCase().includes(searchTerm.toLowerCase()),
+            )
+            .map((c) => (
             <div key={c.id} className="border border-blue-700/50 rounded-lg">
-              <button
-                onClick={() => toggleExpand(c.id)}
-                className="w-full flex justify-between items-center p-3 bg-blue-800/50 hover:bg-blue-800"
-              >
-                <span>{c.name}</span>
-                <ChevronDown
-                  className={`h-4 w-4 transition-transform ${expanded === c.id ? "rotate-180" : ""}`}
-                />
-              </button>
+              <div className="flex items-center justify-between p-3 bg-blue-800/50">
+                <button
+                  onClick={() => toggleExpand(c.id)}
+                  className="flex-1 text-left flex items-center justify-between"
+                >
+                  <span>{c.name}</span>
+                  <ChevronDown
+                    className={`h-4 w-4 transition-transform ${expanded === c.id ? "rotate-180" : ""}`}
+                  />
+                </button>
+                <div className="flex items-center gap-2 ml-2">
+                  <button
+                    onClick={() => setShowAddModal(c)}
+                    className="text-blue-200 hover:text-white"
+                  >
+                    <Plus className="h-4 w-4" />
+                  </button>
+                  <button
+                    onClick={() => handleDelete(c.id)}
+                    className="text-red-300 hover:text-red-500"
+                  >
+                    <Trash2 className="h-4 w-4" />
+                  </button>
+                </div>
+              </div>
               {expanded === c.id && meetings[c.id] && (
                 <div className="bg-blue-800/40 p-2 space-y-1">
                   {meetings[c.id].map((m) => (
@@ -123,6 +172,13 @@ export function ContainerPanel({ onMeetingSelect }: ContainerPanelProps) {
           )}
         </div>
       </SheetContent>
+      {showAddModal && (
+        <AddToContainerModal
+          containerId={showAddModal.id}
+          onClose={() => setShowAddModal(null)}
+          onAdded={() => fetchContainers()}
+        />
+      )}
     </Sheet>
   );
 }
