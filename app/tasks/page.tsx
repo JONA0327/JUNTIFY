@@ -738,6 +738,28 @@ export default function TasksPage() {
     checkAuth();
   }, []);
 
+  // Suscribirse a eliminaciones en tiempo real de la tabla de tareas
+  useEffect(() => {
+    const supabase = getSupabaseClient();
+    const channel = supabase
+      .channel("tasks-page")
+      .on(
+        "postgres_changes",
+        { event: "DELETE", schema: "public", table: "tasks" },
+        (payload) => {
+          const deletedId = payload.old.id;
+          setTasks((prev) => prev.filter((t) => t.id !== deletedId));
+          setAllTasks((prev) => prev.filter((t) => t.id !== deletedId));
+        },
+      );
+
+    channel.subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, []);
+
   // Función para obtener las tareas
   const fetchTasks = async (username: string) => {
     try {
