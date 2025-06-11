@@ -117,4 +117,51 @@ export const containerService = {
       return false
     }
   },
+
+  async getContainerDetails(
+    id: number,
+    username: string,
+  ): Promise<
+    Array<{
+      id: number
+      title: string
+      summary: string | null
+      keyPoints: string[]
+      tasks: any[]
+    }>
+  > {
+    try {
+      const meetings = await this.listMeetings(id, username)
+      const details = [] as Array<{
+        id: number
+        title: string
+        summary: string | null
+        keyPoints: string[]
+        tasks: any[]
+      }>
+
+      for (const meeting of meetings) {
+        const keyPoints = await query(
+          "SELECT point_text FROM key_points WHERE meeting_id = ? ORDER BY order_num",
+          [meeting.id],
+        )
+        const tasks = await query(
+          "SELECT * FROM tasks WHERE meeting_id = ? ORDER BY priority DESC, due_date ASC",
+          [meeting.id],
+        )
+        details.push({
+          id: meeting.id,
+          title: meeting.title,
+          summary: meeting.summary || null,
+          keyPoints: keyPoints.map((k: any) => k.point_text),
+          tasks,
+        })
+      }
+
+      return details
+    } catch (error) {
+      console.error("Error fetching container details:", error)
+      return []
+    }
+  },
 }
