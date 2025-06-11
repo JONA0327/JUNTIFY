@@ -128,6 +128,7 @@ export default function AIAssistantPage() {
   const [error, setError] = useState(null)
   const [isCreatingContainer, setIsCreatingContainer] = useState(false)
   const [selectedForContainer, setSelectedForContainer] = useState<number[]>([])
+  const [showContainerModal, setShowContainerModal] = useState(false)
 
   // Cargar las reuniones del usuario
   useEffect(() => {
@@ -170,10 +171,8 @@ export default function AIAssistantPage() {
   }
 
 
-  const handleCreateContainer = async () => {
+  const handleCreateContainer = async (name: string) => {
     if (selectedForContainer.length === 0) return
-    const name = prompt("Nombre del nuevo contenedor")
-    if (!name) return
     try {
       const response = await fetch("/api/containers", {
         method: "POST",
@@ -196,6 +195,7 @@ export default function AIAssistantPage() {
     } finally {
       setIsCreatingContainer(false)
       setSelectedForContainer([])
+      setShowContainerModal(false)
     }
   }
 
@@ -221,7 +221,6 @@ export default function AIAssistantPage() {
     const dateB = b.date ? new Date(b.date) : new Date(0)
     return dateB - dateA
   })
- const [showContainerModal, setShowContainerModal] = useState(false);
 
   return (
     <div className="min-h-screen bg-blue-900">
@@ -301,7 +300,7 @@ export default function AIAssistantPage() {
             ) : (
               <>
 
-                <Button className="bg-blue-600 hover:bg-blue-700" onClick={handleCreateContainer}>
+                <Button className="bg-blue-600 hover:bg-blue-700" onClick={() => setShowContainerModal(true)}>
                   Guardar contenedor
                 </Button>
                 <Button variant="outline" onClick={() => { setIsCreatingContainer(false); setSelectedForContainer([]); }}>
@@ -378,7 +377,7 @@ export default function AIAssistantPage() {
       {showContainerModal && (
         <NewContainerModal
           onCancel={() => setShowContainerModal(false)}
-          onCreate={handleCreateContainer}
+          onCreate={(name) => handleCreateContainer(name)}
         />
       )}
 
