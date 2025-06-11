@@ -1,5 +1,6 @@
 "use client";
 
+
 import { useEffect, useState } from "react";
 import {
   Sheet,
@@ -12,6 +13,7 @@ import { Button } from "@/components/ui/button";
 import { addUsernameToHeaders } from "@/utils/user-helpers";
 import { ChevronDown, Plus } from "lucide-react";
 
+
 interface Container {
   id: number;
   name: string;
@@ -23,12 +25,14 @@ interface Meeting {
 }
 
 interface ContainerPanelProps {
+
   onMeetingSelect?: (meetingId: number) => void;
 }
 
 export function ContainerPanel({ onMeetingSelect }: ContainerPanelProps) {
   const [containers, setContainers] = useState<Container[]>([]);
   const [expanded, setExpanded] = useState<number | null>(null);
+
 
   useEffect(() => {
     const fetchContainers = async () => {

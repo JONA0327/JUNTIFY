@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useState, useEffect } from "react";
@@ -27,6 +28,7 @@ import { addUsernameToHeaders } from "@/utils/user-helpers";
 import Link from "next/link";
 import { AIChatModal } from "@/components/ai-chat-modal";
 import { NewContainerModal } from "@/components/new-container-modal";
+
 
 // Componente para el selector de rango de fechas
 const DateRangeSelector = ({
@@ -154,6 +156,7 @@ const TranscriptionCard = ({
 };
 
 export default function AIAssistantPage() {
+
   const [searchTerm, setSearchTerm] = useState("");
   const [startDate, setStartDate] = useState(null);
   const [endDate, setEndDate] = useState(null);
@@ -167,6 +170,7 @@ export default function AIAssistantPage() {
     [],
   );
   const [showContainerModal, setShowContainerModal] = useState(false);
+
 
   // Cargar las reuniones del usuario
   useEffect(() => {
@@ -210,8 +214,17 @@ export default function AIAssistantPage() {
     );
   };
 
+
   const handleCreateContainer = async (name: string) => {
     if (selectedForContainer.length === 0) return;
+
+  const handleContainerMeetingSelect = (id: number) => {
+    const meeting = meetings.find((m) => m.id === id)
+    if (meeting) {
+      handleSelectMeeting(meeting)
+    }
+  }
+
     try {
       const response = await fetch("/api/containers", {
         method: "POST",
@@ -236,14 +249,17 @@ export default function AIAssistantPage() {
               <span>Contenedor creado correctamente</span>
             </div>
           ),
+
         });
         setTimeout(() => {
           window.location.reload();
         }, 1000);
+
       }
     } catch (err) {
       console.error("Error creando contenedor", err);
     } finally {
+
       setIsCreatingContainer(false);
       setSelectedForContainer([]);
       setShowContainerModal(false);
@@ -270,18 +286,22 @@ export default function AIAssistantPage() {
 
   // Ordenar reuniones por fecha (más recientes primero)
   const sortedMeetings = [...filteredMeetings].sort((a, b) => {
+
     const dateA = a.date ? new Date(a.date) : new Date(0);
     const dateB = b.date ? new Date(b.date) : new Date(0);
     return dateB - dateA;
   });
 
+
   return (
     <div className="min-h-screen bg-blue-900">
       <main className="container mx-auto px-3 sm:px-4 pb-24 pt-6 sm:pt-8">
         <div className="max-w-7xl mx-auto">
+
           <h1 className="text-2xl sm:text-3xl font-bold text-white mb-4 sm:mb-8 glow-text">
             Asistente IA
           </h1>
+
 
           {/* Barra de búsqueda y filtros */}
           <div className="mb-4 sm:mb-8 bg-blue-800/30 border border-blue-700/30 rounded-lg p-3 sm:p-6">
@@ -313,7 +333,7 @@ export default function AIAssistantPage() {
                       Rango de fechas
                       <ChevronDown className="h-4 w-4 ml-2" />
                     </Button>
-                  </PopoverTrigger>
+              <Button className="bg-blue-600 hover:bg-blue-700" onClick={() => setShowContainerModal(true)}>
                   <PopoverContent className="bg-blue-800/90 border border-blue-700/50 p-4 w-72">
                     <DateRangeSelector
                       startDate={startDate}
@@ -346,27 +366,34 @@ export default function AIAssistantPage() {
               </div>
             </div>
           </div>
-          <div className="mt-4 flex gap-3">
+          <div className="mt-4 flex flex-wrap gap-3">
+            <ContainerPanel />
             {!isCreatingContainer ? (
+
               <Button
                 className="bg-blue-600 hover:bg-blue-700"
                 onClick={() => setShowContainerModal(true)}
               >
+
                 <Plus className="mr-2 h-4 w-4" /> Nuevo contenedor
               </Button>
             ) : (
               <>
+
                 <Button
                   className="bg-blue-600 hover:bg-blue-700"
                   onClick={() => setShowContainerModal(true)}
                 >
+
                   Guardar contenedor
                 </Button>
                 <Button
                   variant="outline"
                   onClick={() => {
+
                     setIsCreatingContainer(false);
                     setSelectedForContainer([]);
+
                   }}
                 >
                   Cancelar
@@ -455,4 +482,5 @@ export default function AIAssistantPage() {
       <NewNavbar />
     </div>
   );
+}
 }
