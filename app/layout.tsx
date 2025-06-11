@@ -3,7 +3,10 @@ import type { Metadata } from "next"
 import ClientLayout from "./client-layout"
 import Script from "next/script"
 import { FeedbackButton } from "@/components/FeedbackButton"
+import { Inter } from "next/font/google"
 import './globals.css'
+
+const inter = Inter({ subsets: ["latin"] })
 
 export const metadata: Metadata = {
   title: "Juntify - Reuniones Organizadas Inteligentes",
@@ -45,7 +48,7 @@ export default function RootLayout({
         </noscript>
         {/* End Meta Pixel Code */}
       </head>
-      <body>
+      <body className={inter.className}>
         <ClientLayout>
           {children}
         </ClientLayout>

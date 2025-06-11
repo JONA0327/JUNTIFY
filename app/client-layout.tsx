@@ -6,10 +6,7 @@ import { useDevice } from "@/hooks/use-device"
 import { useVirtualKeyboard } from "@/hooks/use-virtual-keyboard"
 import { DesktopNavigation } from "@/components/desktop-navigation"
 import { MobileNavigation } from "@/components/mobile-navigation"
-import { Inter } from "next/font/google"
 import "./globals.css"
-
-const inter = Inter({ subsets: ["latin"] })
 
 export default function ClientLayout({
   children,
@@ -20,7 +17,7 @@ export default function ClientLayout({
   const { isKeyboardVisible } = useVirtualKeyboard()
 
   return (
-    <body className={inter.className}>
+    <>
       {/* Navegación según dispositivo */}
       {isDesktop && <DesktopNavigation />}
 
@@ -34,6 +31,6 @@ export default function ClientLayout({
 
       {/* Navegación móvil */}
       {isMobile && <MobileNavigation />}
-    </body>
+    </>
   )
 }

@@ -1141,6 +1141,9 @@ export function TranscriptionView({
         <DialogContent className="bg-blue-800 border-blue-700 text-white">
           <DialogHeader>
             <DialogTitle>Editar nombre de hablante</DialogTitle>
+            <DialogDescription className="text-blue-300">
+              Cambia el nombre mostrado para este hablante
+            </DialogDescription>
           </DialogHeader>
           <div className="py-4">
             <Input
