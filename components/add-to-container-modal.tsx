@@ -2,7 +2,9 @@
 
 import { useEffect, useState } from "react"
 import { Button } from "@/components/ui/button"
+
 import { Check, X } from "lucide-react"
+
 import { addUsernameToHeaders } from "@/utils/user-helpers"
 
 interface Meeting { id: number; title: string }

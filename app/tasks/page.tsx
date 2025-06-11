@@ -24,7 +24,16 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
-import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
+import {
+  Dialog,
+  DialogContent,
+  DialogTitle,
+  DialogHeader,
+  DialogDescription,
+
+  DialogFooter,
+
+} from "@/components/ui/dialog";
 import { NewTaskModal } from "@/components/new-task-modal";
 import { EditTaskModal } from "@/components/edit-task-modal";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
@@ -665,6 +674,8 @@ export default function TasksPage() {
   const [searchTerm, setSearchTerm] = useState("");
   const [showNewTaskModal, setShowNewTaskModal] = useState(false);
   const [showEditTaskModal, setShowEditTaskModal] = useState(false);
+  const [showDeleteTaskModal, setShowDeleteTaskModal] = useState(false);
+  const [taskToDelete, setTaskToDelete] = useState<number | null>(null);
   const [currentTask, setCurrentTask] = useState<Task | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -730,6 +741,28 @@ export default function TasksPage() {
     };
 
     checkAuth();
+  }, []);
+
+  // Suscribirse a eliminaciones en tiempo real de la tabla de tareas
+  useEffect(() => {
+    const supabase = getSupabaseClient();
+    const channel = supabase
+      .channel("tasks-page")
+      .on(
+        "postgres_changes",
+        { event: "DELETE", schema: "public", table: "tasks" },
+        (payload) => {
+          const deletedId = payload.old.id;
+          setTasks((prev) => prev.filter((t) => t.id !== deletedId));
+          setAllTasks((prev) => prev.filter((t) => t.id !== deletedId));
+        },
+      );
+
+    channel.subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
   }, []);
 
   // Función para obtener las tareas
@@ -1042,48 +1075,56 @@ export default function TasksPage() {
     setShowEditTaskModal(true);
   };
 
-  // Manejar la eliminación de una tarea
-  const handleDeleteTask = async (taskId) => {
-    if (confirm("¿Estás seguro de que deseas eliminar esta tarea?")) {
-      try {
-        if (!username) {
-          setError(
-            "No se encontró información de usuario. Por favor, inicia sesión nuevamente.",
-          );
-          return;
-        }
+  // Abrir el modal de confirmación de eliminación
+  const requestDeleteTask = (taskId: number) => {
+    setTaskToDelete(taskId);
+    setShowDeleteTaskModal(true);
+  };
 
-        const response = await fetch(`/api/tasks/${taskId}`, {
-          method: "DELETE",
-          headers: {
-            "X-Username": username,
-          },
-        });
-
-        if (!response.ok) {
-          const errorText = await response.text();
-          console.error("Error response:", errorText);
-          throw new Error(`Error ${response.status}: ${await response.text()}`);
-        }
-
-        // Update local state
-        setTasks(tasks.filter((task) => task.id !== taskId));
-        setAllTasks(allTasks.filter((task) => task.id !== taskId));
-
-        toast({
-          title: "Tarea eliminada",
-          description: "La tarea ha sido eliminada correctamente.",
-          variant: "default",
-        });
-      } catch (err) {
-        console.error("Error deleting task:", err);
-        setError("Error al eliminar la tarea: " + err.message);
-        toast({
-          title: "Error",
-          description: "No se pudo eliminar la tarea.",
-          variant: "destructive",
-        });
+  // Confirmar la eliminación de una tarea
+  const handleDeleteTask = async () => {
+    if (taskToDelete === null) return;
+    try {
+      if (!username) {
+        setError(
+          "No se encontró información de usuario. Por favor, inicia sesión nuevamente.",
+        );
+        return;
       }
+
+      const response = await fetch(`/api/tasks/${taskToDelete}`, {
+        method: "DELETE",
+        headers: {
+          "X-Username": username,
+        },
+      });
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error("Error response:", errorText);
+        throw new Error(`Error ${response.status}: ${await response.text()}`);
+      }
+
+      // Update local state
+      setTasks(tasks.filter((task) => task.id !== taskToDelete));
+      setAllTasks(allTasks.filter((task) => task.id !== taskToDelete));
+
+      toast({
+        title: "Tarea eliminada",
+        description: "La tarea ha sido eliminada correctamente.",
+        variant: "default",
+      });
+    } catch (err) {
+      console.error("Error deleting task:", err);
+      setError("Error al eliminar la tarea: " + err.message);
+      toast({
+        title: "Error",
+        description: "No se pudo eliminar la tarea.",
+        variant: "destructive",
+      });
+    } finally {
+      setShowDeleteTaskModal(false);
+      setTaskToDelete(null);
     }
   };
 
@@ -1462,7 +1503,7 @@ export default function TasksPage() {
                                   userRole={currentUser.role}
                                   onToggleComplete={handleToggleComplete}
                                   onEdit={handleEditTask}
-                                  onDelete={handleDeleteTask}
+                                  onDelete={requestDeleteTask}
                                 />
                               ))}
                             </div>
@@ -1479,7 +1520,7 @@ export default function TasksPage() {
                                   userRole={currentUser.role}
                                   onToggleComplete={handleToggleComplete}
                                   onEdit={handleEditTask}
-                                  onDelete={handleDeleteTask}
+                                  onDelete={requestDeleteTask}
                                 />
                               ))}
                             </div>
@@ -1496,7 +1537,7 @@ export default function TasksPage() {
                                   userRole={currentUser.role}
                                   onToggleComplete={handleToggleComplete}
                                   onEdit={handleEditTask}
-                                  onDelete={handleDeleteTask}
+                                  onDelete={requestDeleteTask}
                                 />
                               ))}
                             </div>
@@ -1557,6 +1598,29 @@ export default function TasksPage() {
           </DialogContent>
         </Dialog>
       )}
+
+      {/* Modal de confirmación para eliminar tarea */}
+      <Dialog open={showDeleteTaskModal} onOpenChange={setShowDeleteTaskModal}>
+        <DialogContent className="bg-blue-800/90 border border-blue-700/50">
+          <DialogHeader>
+            <DialogTitle>Eliminar Tarea</DialogTitle>
+            <DialogDescription>
+              ¿Estás seguro de que deseas eliminar esta tarea?
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter className="mt-4">
+            <Button
+              variant="secondary"
+              onClick={() => setShowDeleteTaskModal(false)}
+            >
+              Cancelar
+            </Button>
+            <Button variant="destructive" onClick={handleDeleteTask}>
+              Eliminar
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       {/* Navbar */}
       <NewNavbar />

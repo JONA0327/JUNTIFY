@@ -14,8 +14,6 @@ import { addUsernameToHeaders } from "@/utils/user-helpers";
 import { ChevronDown, Plus, Trash2 } from "lucide-react";
 import { AddToContainerModal } from "./add-to-container-modal";
 import { DeleteContainerModal } from "./delete-container-modal";
-
-
 interface Container {
   id: number;
   name: string;
@@ -38,6 +36,8 @@ export function ContainerPanel({ onMeetingSelect }: ContainerPanelProps) {
   const [showAddModal, setShowAddModal] = useState<Container | null>(null);
   const [deleteTarget, setDeleteTarget] = useState<Container | null>(null);
 
+
+  const [deleteTarget, setDeleteTarget] = useState<Container | null>(null);
 
   const fetchContainers = async () => {
     try {
@@ -80,11 +80,13 @@ export function ContainerPanel({ onMeetingSelect }: ContainerPanelProps) {
     }
   };
 
+
   const confirmDelete = async (id: number) => {
     try {
       const res = await fetch(`/api/containers/${id}`, {
         method: "DELETE",
         headers: addUsernameToHeaders(),
+
       })
       if (res.ok) {
         setContainers((prev) => prev.filter((c) => c.id !== id))
@@ -95,6 +97,7 @@ export function ContainerPanel({ onMeetingSelect }: ContainerPanelProps) {
       console.error("Error deleting container", err)
     }
   }
+
 
   return (
     <Sheet>
@@ -148,6 +151,7 @@ export function ContainerPanel({ onMeetingSelect }: ContainerPanelProps) {
                   </button>
                   <button
                     onClick={() => setDeleteTarget(c)}
+
                     className="text-red-300 hover:text-red-500"
                   >
                     <Trash2 className="h-4 w-4" />
@@ -181,6 +185,7 @@ export function ContainerPanel({ onMeetingSelect }: ContainerPanelProps) {
           onAdded={() => fetchContainers()}
         />
       )}
+
       {deleteTarget && (
         <DeleteContainerModal
           container={deleteTarget}
@@ -188,6 +193,7 @@ export function ContainerPanel({ onMeetingSelect }: ContainerPanelProps) {
           onConfirm={(id) => confirmDelete(id)}
         />
       )}
+
     </Sheet>
   );
 }
