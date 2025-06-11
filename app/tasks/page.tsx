@@ -69,6 +69,7 @@ const TaskItem = ({ task, userRole, onToggleComplete, onEdit, onDelete }) => {
   const isOverdue =
     task.dueDate && new Date(task.dueDate) < new Date() && !task.completed;
   const hasComments = task.comments && task.comments.length > 0;
+  const router = useRouter();
 
   return (
     <div
@@ -192,6 +193,17 @@ const TaskItem = ({ task, userRole, onToggleComplete, onEdit, onDelete }) => {
         </div>
 
         <div className="flex space-x-2 ml-2">
+          {task.meeting_id && (
+            <Button
+              variant="ghost"
+              size="icon"
+              className="h-9 w-9 text-blue-300 hover:text-white hover:bg-blue-800/50"
+              onClick={() => router.push(`/tasks?meeting=${task.meeting_id}`)}
+            >
+              <Link className="h-4 w-4" />
+              <span className="sr-only">Ir a reunión</span>
+            </Button>
+          )}
           <Button
             variant="ghost"
             size="icon"
@@ -298,9 +310,10 @@ const GlobalTasksCalendar: React.FC<GlobalTasksCalendarProps> = ({
   onSelect,
   onTaskSelect,
 }) => {
-  const [filter, setFilter] = useState<"inProgress" | "pending" | "overdue">(
-    "inProgress",
-  );
+  const [filter, setFilter] =
+    useState<"inProgress" | "pending" | "overdue" | "completed">(
+      "inProgress",
+    );
   const [page, setPage] = useState(0);
 
   const currentYear = new Date().getFullYear();
@@ -370,6 +383,9 @@ const GlobalTasksCalendar: React.FC<GlobalTasksCalendarProps> = ({
       }
       if (filter === "overdue") {
         return !t.completed && t.dueDate && new Date(t.dueDate) < new Date();
+      }
+      if (filter === "completed") {
+        return t.completed;
       }
       return (
         !t.completed &&
@@ -459,6 +475,17 @@ const GlobalTasksCalendar: React.FC<GlobalTasksCalendarProps> = ({
               onClick={() => setFilter("overdue")}
             >
               Vencidas
+            </Button>
+            <Button
+              variant={filter === "completed" ? "default" : "outline"}
+              className={
+                filter === "completed"
+                  ? "bg-blue-600 hover:bg-blue-700"
+                  : "border-blue-600/50 text-blue-300 hover:bg-blue-800/30"
+              }
+              onClick={() => setFilter("completed")}
+            >
+              Completadas
             </Button>
           </div>
           <div className="flex gap-5 flex-col">
