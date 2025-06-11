@@ -278,7 +278,7 @@ export default function AIAssistantPage() {
                       Rango de fechas
                       <ChevronDown className="h-4 w-4 ml-2" />
                     </Button>
-                  </PopoverTrigger>
+              <Button className="bg-blue-600 hover:bg-blue-700" onClick={() => setShowContainerModal(true)}>
                   <PopoverContent className="bg-blue-800/90 border border-blue-700/50 p-4 w-72">
                     <DateRangeSelector
                       startDate={startDate}
