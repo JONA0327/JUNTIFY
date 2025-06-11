@@ -2,7 +2,8 @@
 
 import { useState, useEffect } from "react"
 import { NewNavbar } from "@/components/new-navbar"
-import { Search, Calendar, Clock, Users, ChevronDown, MessageSquare, Plus, Loader2 } from "lucide-react"
+import { Search, Calendar, Clock, Users, ChevronDown, MessageSquare, Plus, Loader2, CheckCircle } from "lucide-react"
+import { toast } from "@/components/ui/use-toast"
 import { motion, AnimatePresence } from "framer-motion"
 import { Button } from "@/components/ui/button"
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
@@ -12,7 +13,6 @@ import { addUsernameToHeaders } from "@/utils/user-helpers"
 import Link from "next/link"
 import { AIChatModal } from "@/components/ai-chat-modal"
 import { NewContainerModal } from "@/components/new-container-modal"
-import { ContainerPanel } from "@/components/container-panel"
 
 // Componente para el selector de rango de fechas
 const DateRangeSelector = ({ startDate, endDate, onStartDateChange, onEndDateChange }) => {
@@ -128,6 +128,7 @@ export default function AIAssistantPage() {
   const [error, setError] = useState(null)
   const [isCreatingContainer, setIsCreatingContainer] = useState(false)
   const [selectedForContainer, setSelectedForContainer] = useState<number[]>([])
+  const [showContainerModal, setShowContainerModal] = useState(false)
 
   // Cargar las reuniones del usuario
   useEffect(() => {
@@ -170,10 +171,8 @@ export default function AIAssistantPage() {
   }
 
 
-  const handleCreateContainer = async () => {
+  const handleCreateContainer = async (name: string) => {
     if (selectedForContainer.length === 0) return
-    const name = prompt("Nombre del nuevo contenedor")
-    if (!name) return
     try {
       const response = await fetch("/api/containers", {
         method: "POST",
@@ -189,13 +188,24 @@ export default function AIAssistantPage() {
             body: JSON.stringify({ meetingId }),
           })
         }
-        alert("Contenedor creado correctamente")
+        toast({
+          title: (
+            <div className="flex items-center gap-2 text-green-200">
+              <CheckCircle className="h-5 w-5 text-green-400" />
+              <span>Contenedor creado correctamente</span>
+            </div>
+          ),
+        })
+        setTimeout(() => {
+          window.location.reload()
+        }, 1000)
       }
     } catch (err) {
       console.error("Error creando contenedor", err)
     } finally {
       setIsCreatingContainer(false)
       setSelectedForContainer([])
+      setShowContainerModal(false)
     }
   }
 
@@ -221,7 +231,6 @@ export default function AIAssistantPage() {
     const dateB = b.date ? new Date(b.date) : new Date(0)
     return dateB - dateA
   })
- const [showContainerModal, setShowContainerModal] = useState(false);
 
   return (
     <div className="min-h-screen bg-blue-900">
@@ -301,7 +310,7 @@ export default function AIAssistantPage() {
             ) : (
               <>
 
-                <Button className="bg-blue-600 hover:bg-blue-700" onClick={handleCreateContainer}>
+                <Button className="bg-blue-600 hover:bg-blue-700" onClick={() => setShowContainerModal(true)}>
                   Guardar contenedor
                 </Button>
                 <Button variant="outline" onClick={() => { setIsCreatingContainer(false); setSelectedForContainer([]); }}>
@@ -378,7 +387,7 @@ export default function AIAssistantPage() {
       {showContainerModal && (
         <NewContainerModal
           onCancel={() => setShowContainerModal(false)}
-          onCreate={handleCreateContainer}
+          onCreate={(name) => handleCreateContainer(name)}
         />
       )}
 
