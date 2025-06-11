@@ -117,4 +117,46 @@ export const containerService = {
       return false
     }
   },
+
+  async getContainerDetails(id: number, username: string): Promise<any | null> {
+    try {
+      const container = await this.getContainerById(id, username)
+      if (!container) return null
+
+      const summaries = await query(
+        `SELECT m.id as meeting_id, m.title, m.summary
+         FROM container_meetings cm
+         JOIN meetings m ON cm.meeting_id = m.id
+         WHERE cm.container_id = ? AND m.username = ?
+         ORDER BY m.date DESC`,
+        [id, username],
+      )
+
+      const keyPoints = await query(
+        `SELECT kp.id, kp.meeting_id, kp.point_text, m.title as meeting_title
+         FROM key_points kp
+         JOIN meetings m ON kp.meeting_id = m.id
+         JOIN container_meetings cm ON cm.meeting_id = kp.meeting_id
+         WHERE cm.container_id = ? AND m.username = ?
+         ORDER BY kp.order_num`,
+        [id, username],
+      )
+
+      const tasks = await query(
+        `SELECT t.id, t.text as title, t.description, t.assignee, t.due_date, t.completed, t.priority, t.progress,
+                t.meeting_id, m.title as meeting_title
+         FROM tasks t
+         JOIN meetings m ON t.meeting_id = m.id
+         JOIN container_meetings cm ON cm.meeting_id = t.meeting_id
+         WHERE cm.container_id = ? AND m.username = ?
+         ORDER BY t.due_date ASC, t.priority DESC`,
+        [id, username],
+      )
+
+      return { summaries, keyPoints, tasks }
+    } catch (error) {
+      console.error("Error fetching container details:", error)
+      return null
+    }
+  },
 }

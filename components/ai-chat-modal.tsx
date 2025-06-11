@@ -25,7 +25,7 @@ interface ConversationsMap {
   [meetingId: string]: ChatMessage[]
 }
 
-export const AIChatModal = ({ meeting, onClose }) => {
+export const AIChatModal = ({ meeting, container = null, onClose }) => {
   const [activeTab, setActiveTab] = useState("chat")
   const [conversations, setConversations] = useState<ConversationsMap>({})
   const [inputValue, setInputValue] = useState("")
@@ -40,9 +40,15 @@ export const AIChatModal = ({ meeting, onClose }) => {
   const [availableMeetings, setAvailableMeetings] = useState([])
   const [isLoadingMeetings, setIsLoadingMeetings] = useState(false)
   const [selectedMeeting, setSelectedMeeting] = useState(meeting)
+  const [selectedContainer, setSelectedContainer] = useState(container)
+  const [containerDetails, setContainerDetails] = useState(null)
   const modalRef = useRef(null)
   const chatContainerRef = useRef(null)
   const { isMobile } = useDevice()
+
+  useEffect(() => {
+    setSelectedContainer(container)
+  }, [container?.id])
 
   // Inicializar las conversaciones al montar el componente
   useEffect(() => {
@@ -121,6 +127,8 @@ Puedo ayudarte con preguntas como:
   const handleChangeMeeting = (newMeeting) => {
     setSelectedMeeting(newMeeting)
     setMeetingDetails(null)
+    setSelectedContainer(null)
+    setContainerDetails(null)
     setIsLoadingDetails(true)
 
     // Si no hay conversación para esta reunión, inicializar con mensaje de bienvenida
@@ -180,6 +188,33 @@ Puedo ayudarte con preguntas como:
 
     selectedMeeting && fetchMeetingDetails()
   }, [selectedMeeting])
+
+  // Cargar los detalles del contenedor seleccionado
+  useEffect(() => {
+    const fetchContainerDetails = async () => {
+      if (!selectedContainer) return
+
+      setIsLoadingDetails(true)
+      try {
+        const response = await fetch(`/api/containers/${selectedContainer.id}/details`, {
+          headers: addUsernameToHeaders(),
+        })
+        if (!response.ok) throw new Error('Error al cargar los detalles del contenedor')
+        const data = await response.json()
+        setContainerDetails(data)
+      } catch (error) {
+        console.error('Error al cargar los detalles del contenedor:', error)
+      } finally {
+        setIsLoadingDetails(false)
+      }
+    }
+
+    if (selectedContainer) {
+      fetchContainerDetails()
+    } else {
+      setContainerDetails(null)
+    }
+  }, [selectedContainer])
 
   // Verificar la configuración de OpenAI
   useEffect(() => {
@@ -263,6 +298,7 @@ Puedo ayudarte con preguntas como:
         body: JSON.stringify({
           messages: recentMessages.map((msg) => ({ role: msg.role, content: msg.content })),
           meetingId: selectedMeeting.id,
+          containerId: selectedContainer?.id || null,
           searchWeb: isSearchingWeb,
         }),
       })
@@ -616,6 +652,24 @@ Puedo ayudarte con preguntas como:
                 <div className="flex justify-center items-center p-8">
                   <Loader2 className="h-8 w-8 text-blue-400 animate-spin" />
                 </div>
+              ) : containerDetails ? (
+                <div className="bg-blue-800/20 p-4 rounded-lg space-y-4">
+                  <h3 className="text-xl font-medium text-white mb-4">Resúmenes del contenedor</h3>
+                  {containerDetails.summaries && containerDetails.summaries.length > 0 ? (
+                    <ul className="space-y-4">
+                      {containerDetails.summaries.map((s) => (
+                        <li key={s.meeting_id}>
+                          <p className="text-white font-medium">{s.title}</p>
+                          <p className="text-blue-100 whitespace-pre-wrap">
+                            {s.summary || "No hay resumen disponible."}
+                          </p>
+                        </li>
+                      ))}
+                    </ul>
+                  ) : (
+                    <p className="text-blue-200">No hay resúmenes disponibles para este contenedor.</p>
+                  )}
+                </div>
               ) : (
                 <div className="bg-blue-800/20 p-4 rounded-lg">
                   <h3 className="text-xl font-medium text-white mb-4">Resumen de la reunión</h3>
@@ -630,6 +684,27 @@ Puedo ayudarte con preguntas como:
               {isLoadingDetails ? (
                 <div className="flex justify-center items-center p-8">
                   <Loader2 className="h-8 w-8 text-blue-400 animate-spin" />
+                </div>
+              ) : containerDetails ? (
+                <div className="bg-blue-800/20 p-4 rounded-lg">
+                  <h3 className="text-xl font-medium text-white mb-4">Puntos clave</h3>
+                  {containerDetails.keyPoints && containerDetails.keyPoints.length > 0 ? (
+                    <ul className="space-y-3">
+                      {containerDetails.keyPoints.map((point, index) => (
+                        <li key={point.id} className="flex items-start">
+                          <div className="h-6 w-6 rounded-full bg-blue-600 flex items-center justify-center text-white text-xs flex-shrink-0 mr-3 mt-0.5">
+                            {index + 1}
+                          </div>
+                          <div>
+                            <p className="text-white font-medium leading-tight">{point.meeting_title}</p>
+                            <span className="text-blue-100">{point.point_text}</span>
+                          </div>
+                        </li>
+                      ))}
+                    </ul>
+                  ) : (
+                    <p className="text-blue-200">No hay puntos clave disponibles para este contenedor.</p>
+                  )}
                 </div>
               ) : (
                 <div className="bg-blue-800/20 p-4 rounded-lg">
@@ -656,6 +731,51 @@ Puedo ayudarte con preguntas como:
               {isLoadingDetails ? (
                 <div className="flex justify-center items-center p-8">
                   <Loader2 className="h-8 w-8 text-blue-400 animate-spin" />
+                </div>
+              ) : containerDetails ? (
+                <div className="bg-blue-800/20 p-4 rounded-lg">
+                  <h3 className="text-xl font-medium text-white mb-4">Tareas asignadas</h3>
+                  {containerDetails.tasks && containerDetails.tasks.length > 0 ? (
+                    <ul className="space-y-4">
+                      {containerDetails.tasks.map((task) => (
+                        <li key={task.id} className="flex items-start">
+                          <div
+                            className={`h-6 w-6 rounded border flex-shrink-0 mr-3 mt-0.5 flex items-center justify-center ${
+                              task.completed ? "bg-green-500 border-green-600" : "border-blue-500"
+                            }`}
+                          >
+                            {task.completed && (
+                              <svg
+                                xmlns="http://www.w3.org/2000/svg"
+                                className="h-3 w-3 text-white"
+                                viewBox="0 0 20 20"
+                                fill="currentColor"
+                              >
+                                <path
+                                  fillRule="evenodd"
+                                  d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
+                                  clipRule="evenodd"
+                                />
+                              </svg>
+                            )}
+                          </div>
+                          <div className="flex-1">
+                            <p className="text-white font-medium">{task.title}</p>
+                            <div className="flex flex-col sm:flex-row sm:items-center text-sm text-blue-200/70 mt-1">
+                              <span className="mr-3">{task.meeting_title}</span>
+                              <span className="mr-3">Asignado a: {task.assignee || "No asignado"}</span>
+                              <span>
+                                Fecha límite:{" "}
+                                {task.due_date ? format(new Date(task.due_date), "dd/MM/yyyy") : "Sin fecha"}
+                              </span>
+                            </div>
+                          </div>
+                        </li>
+                      ))}
+                    </ul>
+                  ) : (
+                    <p className="text-blue-200">No hay tareas asignadas para este contenedor.</p>
+                  )}
                 </div>
               ) : (
                 <div className="bg-blue-800/20 p-4 rounded-lg">
