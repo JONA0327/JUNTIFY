@@ -50,6 +50,13 @@ export const AIChatModal = ({ meeting, container = null, onClose }) => {
   const chatContainerRef = useRef(null)
   const { isMobile } = useDevice()
 
+  const conversationKey =
+    selectedMeeting?.id !== undefined
+      ? String(selectedMeeting.id)
+      : selectedContainerId !== null
+      ? `container-${selectedContainerId}`
+      : null
+
 
   useEffect(() => {
     setSelectedContainer(container)
@@ -61,15 +68,17 @@ export const AIChatModal = ({ meeting, container = null, onClose }) => {
     const username = getUsername()
     if (!username) {
       setIsAuthenticated(false)
-      // Inicializar con mensaje de error de autenticación
-      setConversations({
-        [conversationKey as string]: [
-          {
-            role: "assistant",
-            content: "⚠️ Error de autenticación: No hay sesión activa. Por favor, inicia sesión de nuevo.",
-          },
-        ],
-      })
+      if (conversationKey) {
+        // Inicializar con mensaje de error de autenticación
+        setConversations({
+          [conversationKey]: [
+            {
+              role: "assistant",
+              content: "⚠️ Error de autenticación: No hay sesión activa. Por favor, inicia sesión de nuevo.",
+            },
+          ],
+        })
+      }
     } else {
       // Inicializar con mensaje de bienvenida solo si está autenticado
       const welcomeMessage = {
@@ -93,9 +102,11 @@ Puedo ayudarte con preguntas como:
 ¿En qué puedo ayudarte hoy?`,
       }
 
-      setConversations({
-        [conversationKey as string]: [welcomeMessage],
-      })
+      if (conversationKey) {
+        setConversations({
+          [conversationKey]: [welcomeMessage],
+        })
+      }
     }
   }, [])
 
