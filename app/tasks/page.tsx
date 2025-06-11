@@ -310,6 +310,7 @@ const GlobalTasksCalendar: React.FC<GlobalTasksCalendarProps> = ({
   onSelect,
   onTaskSelect,
 }) => {
+  const router = useRouter();
   const [filter, setFilter] =
     useState<"inProgress" | "pending" | "overdue" | "completed" | "noDate">(
       "inProgress"
@@ -520,12 +521,13 @@ const GlobalTasksCalendar: React.FC<GlobalTasksCalendarProps> = ({
                 upcomingTasks.map((task) => (
                   <button
                     key={task.id}
-                    className="p-6 rounded-xl bg-blue-800/30 border border-blue-700/30 text-left hover:bg-blue-700/30"
-                    onClick={() =>
-                      task.meeting_id &&
-                      onTaskSelect &&
-                      onTaskSelect(task.meeting_id.toString())
-                    }
+                    className="p-4 rounded-xl bg-blue-800/30 border border-blue-700/30 text-left hover:bg-blue-700/30"
+                    onClick={() => {
+                      if (task.meeting_id) {
+                        onTaskSelect && onTaskSelect(task.meeting_id.toString());
+                        router.push(`/tasks?meeting=${task.meeting_id}`);
+                      }
+                    }}
                   >
                     <div className="flex items-center justify-between mb-3">
                       <div className="flex items-center gap-2.5">
@@ -543,12 +545,17 @@ const GlobalTasksCalendar: React.FC<GlobalTasksCalendarProps> = ({
                         </p>
                       </div>
                     </div>
-                    <h6 className="text-xl leading-8 font-semibold text-white mb-1">
+                    <h6 className="text-lg leading-6 font-semibold text-white mb-1">
                       {task.text}
                     </h6>
                     {task.description && (
                       <p className="text-base font-normal text-blue-300">
                         {task.description}
+                      </p>
+                    )}
+                    {task.meeting_title && (
+                      <p className="text-sm text-blue-400 mt-1">
+                        {task.meeting_title}
                       </p>
                     )}
                   </button>
@@ -613,11 +620,12 @@ const GlobalTasksCalendar: React.FC<GlobalTasksCalendarProps> = ({
                     <li key={t.id}>
                       <button
                         className="flex items-center w-full text-left hover:bg-blue-700/30 p-1 rounded"
-                        onClick={() =>
-                          t.meeting_id &&
-                          onTaskSelect &&
-                          onTaskSelect(t.meeting_id.toString())
-                        }
+                        onClick={() => {
+                          if (t.meeting_id) {
+                            onTaskSelect && onTaskSelect(t.meeting_id.toString());
+                            router.push(`/tasks?meeting=${t.meeting_id}`);
+                          }
+                        }}
                       >
                         <span
                           className={`inline-block w-2 h-2 rounded-full mr-2 ${getPriorityColor(
@@ -625,6 +633,11 @@ const GlobalTasksCalendar: React.FC<GlobalTasksCalendarProps> = ({
                           )}`}
                         />
                         {t.text}
+                        {t.meeting_title && (
+                          <span className="ml-2 text-xs text-blue-400">
+                            {t.meeting_title}
+                          </span>
+                        )}
                       </button>
                     </li>
                   ))
