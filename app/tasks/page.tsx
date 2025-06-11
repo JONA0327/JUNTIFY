@@ -311,7 +311,7 @@ const GlobalTasksCalendar: React.FC<GlobalTasksCalendarProps> = ({
   onTaskSelect,
 }) => {
   const [filter, setFilter] =
-    useState<"inProgress" | "pending" | "overdue" | "completed">(
+    useState<"inProgress" | "pending" | "overdue" | "completed" | "noDate">(
       "inProgress",
     );
   const [page, setPage] = useState(0);
@@ -320,10 +320,11 @@ const GlobalTasksCalendar: React.FC<GlobalTasksCalendarProps> = ({
   const tasksThisYear = tasks.filter(
     (t) => t.dueDate && new Date(t.dueDate).getFullYear() === currentYear,
   );
+  const tasksWithoutDate = tasks.filter((t) => !t.dueDate);
 
   useEffect(() => {
     setPage(0);
-  }, [filter, tasksThisYear.length]);
+  }, [filter, tasksThisYear.length, tasksWithoutDate.length]);
   // Extrae fechas únicas de un array de tareas
   const uniqueDates = (items: Task[]) =>
     Array.from(new Set(items.map((t) => t.dueDate)))
@@ -371,35 +372,41 @@ const GlobalTasksCalendar: React.FC<GlobalTasksCalendarProps> = ({
 
   // Próximas tareas según filtro
   const tasksPerPage = 5;
-  const filteredTasks = tasksThisYear
-    .filter((t) => {
-      if (filter === "pending") {
-        return (
-          !t.completed &&
-          t.dueDate &&
-          t.progress === 0 &&
-          new Date(t.dueDate) >= new Date()
-        );
-      }
-      if (filter === "overdue") {
-        return !t.completed && t.dueDate && new Date(t.dueDate) < new Date();
-      }
-      if (filter === "completed") {
-        return t.completed;
-      }
-      return (
-        !t.completed &&
-        t.dueDate &&
-        t.progress > 0 &&
-        t.progress < 100 &&
-        new Date(t.dueDate) >= new Date()
-      );
-    })
-    .sort(
-      (a, b) =>
-        new Date(a.dueDate || "").getTime() -
-        new Date(b.dueDate || "").getTime(),
-    );
+  const baseTasks = filter === "noDate" ? tasksWithoutDate : tasksThisYear;
+  const filteredTasks =
+    filter === "noDate"
+      ? baseTasks
+      : baseTasks
+          .filter((t) => {
+            if (filter === "pending") {
+              return (
+                !t.completed &&
+                t.dueDate &&
+                t.progress === 0 &&
+                new Date(t.dueDate) >= new Date()
+              );
+            }
+            if (filter === "overdue") {
+              return (
+                !t.completed && t.dueDate && new Date(t.dueDate) < new Date()
+              );
+            }
+            if (filter === "completed") {
+              return t.completed;
+            }
+            return (
+              !t.completed &&
+              t.dueDate &&
+              t.progress > 0 &&
+              t.progress < 100 &&
+              new Date(t.dueDate) >= new Date()
+            );
+          })
+          .sort(
+            (a, b) =>
+              new Date(a.dueDate || "").getTime() -
+              new Date(b.dueDate || "").getTime(),
+          );
   const totalPages = Math.ceil(filteredTasks.length / tasksPerPage);
   const upcomingTasks = filteredTasks.slice(
     page * tasksPerPage,
@@ -442,13 +449,15 @@ const GlobalTasksCalendar: React.FC<GlobalTasksCalendarProps> = ({
           <p className="text-lg font-normal text-blue-300 mb-8">
             No pierdas tu agenda
           </p>
-          <div className="flex gap-2 mb-4">
+          <div className="flex flex-wrap gap-2 mb-4">
             <Button
               variant={filter === "inProgress" ? "default" : "outline"}
+              size="sm"
               className={
-                filter === "inProgress"
+                (filter === "inProgress"
                   ? "bg-blue-600 hover:bg-blue-700"
-                  : "border-blue-600/50 text-blue-300 hover:bg-blue-800/30"
+                  : "border-blue-600/50 text-blue-300 hover:bg-blue-800/30") +
+                " px-2 py-1 text-xs"
               }
               onClick={() => setFilter("inProgress")}
             >
@@ -456,10 +465,12 @@ const GlobalTasksCalendar: React.FC<GlobalTasksCalendarProps> = ({
             </Button>
             <Button
               variant={filter === "pending" ? "default" : "outline"}
+              size="sm"
               className={
-                filter === "pending"
+                (filter === "pending"
                   ? "bg-blue-600 hover:bg-blue-700"
-                  : "border-blue-600/50 text-blue-300 hover:bg-blue-800/30"
+                  : "border-blue-600/50 text-blue-300 hover:bg-blue-800/30") +
+                " px-2 py-1 text-xs"
               }
               onClick={() => setFilter("pending")}
             >
@@ -467,10 +478,12 @@ const GlobalTasksCalendar: React.FC<GlobalTasksCalendarProps> = ({
             </Button>
             <Button
               variant={filter === "overdue" ? "default" : "outline"}
+              size="sm"
               className={
-                filter === "overdue"
+                (filter === "overdue"
                   ? "bg-blue-600 hover:bg-blue-700"
-                  : "border-blue-600/50 text-blue-300 hover:bg-blue-800/30"
+                  : "border-blue-600/50 text-blue-300 hover:bg-blue-800/30") +
+                " px-2 py-1 text-xs"
               }
               onClick={() => setFilter("overdue")}
             >
@@ -478,50 +491,72 @@ const GlobalTasksCalendar: React.FC<GlobalTasksCalendarProps> = ({
             </Button>
             <Button
               variant={filter === "completed" ? "default" : "outline"}
+              size="sm"
               className={
-                filter === "completed"
+                (filter === "completed"
                   ? "bg-blue-600 hover:bg-blue-700"
-                  : "border-blue-600/50 text-blue-300 hover:bg-blue-800/30"
+                  : "border-blue-600/50 text-blue-300 hover:bg-blue-800/30") +
+                " px-2 py-1 text-xs"
               }
               onClick={() => setFilter("completed")}
             >
               Completadas
             </Button>
+            <Button
+              variant={filter === "noDate" ? "default" : "outline"}
+              size="sm"
+              className={
+                (filter === "noDate"
+                  ? "bg-blue-600 hover:bg-blue-700"
+                  : "border-blue-600/50 text-blue-300 hover:bg-blue-800/30") +
+                " px-2 py-1 text-xs"
+              }
+              onClick={() => setFilter("noDate")}
+            >
+              Sin fecha
+            </Button>
           </div>
           <div className="flex gap-5 flex-col">
-              {upcomingTasks.length > 0 ? (
-                upcomingTasks.map((task) => (
-                  <button
-                    key={task.id}
-                    className="p-6 rounded-xl bg-blue-800/30 border border-blue-700/30 text-left hover:bg-blue-700/30"
-                    onClick={() =>
-                      task.meeting_id &&
-                      onTaskSelect &&
-                      onTaskSelect(task.meeting_id.toString())
-                    }
-                  >
-                    <div className="flex items-center justify-between mb-3">
-                      <div className="flex items-center gap-2.5">
-                        <span
-                          className={`w-2.5 h-2.5 rounded-full ${getPriorityColor(
-                            task.priority
-                          )}`}
-                        />
-                        <p className="text-base font-medium text-white">
-                          {formatDate(task.dueDate)} – {formatTime(task.dueDate)}
-                        </p>
-                      </div>
-                    </div>
-                    <h6 className="text-xl leading-8 font-semibold text-white mb-1">
-                      {task.text}
-                    </h6>
-                    {task.description && (
-                      <p className="text-base font-normal text-blue-300">
-                        {task.description}
+            {upcomingTasks.length > 0 ? (
+              upcomingTasks.map((task) => (
+                <button
+                  key={task.id}
+                  className="p-4 rounded-lg bg-blue-800/30 border border-blue-700/30 text-left hover:bg-blue-700/30"
+                  onClick={() =>
+                    task.meeting_id &&
+                    onTaskSelect &&
+                    onTaskSelect(task.meeting_id.toString())
+                  }
+                >
+                  <div className="flex items-center justify-between mb-2">
+                    <div className="flex items-center gap-2">
+                      <span
+                        className={`w-2 h-2 rounded-full ${getPriorityColor(
+                          task.priority
+                        )}`}
+                      />
+                      <p className="text-sm font-medium text-white">
+                        {task.dueDate
+                          ? `${formatDate(task.dueDate)} – ${formatTime(task.dueDate)}`
+                          : "Sin fecha"}
                       </p>
+                    </div>
+                    {task.meeting_title && (
+                      <span className="text-xs text-blue-300 truncate">
+                        {task.meeting_title}
+                      </span>
                     )}
-                  </button>
-                ))
+                  </div>
+                  <h6 className="text-base leading-6 font-semibold text-white mb-1">
+                    {task.text}
+                  </h6>
+                  {task.description && (
+                    <p className="text-sm font-normal text-blue-300">
+                      {task.description}
+                    </p>
+                  )}
+                </button>
+              ))
               ) : (
                 <div className="p-6 rounded-xl bg-blue-800/30 border border-blue-700/30 text-blue-300">
                   No hay tareas en proceso
@@ -556,7 +591,7 @@ const GlobalTasksCalendar: React.FC<GlobalTasksCalendarProps> = ({
             <h5 className="text-xl leading-8 font-semibold text-white mb-4">
               Calendario
             </h5>
-            <div className="border border-blue-700/30 rounded-xl p-2 bg-blue-800/30">
+            <div className="border border-blue-700/30 rounded-xl p-2 bg-blue-800/30 w-full">
               <Calendar
                 mode="single"
                 selected={selected}
@@ -568,7 +603,7 @@ const GlobalTasksCalendar: React.FC<GlobalTasksCalendarProps> = ({
                   inProgress: "bg-yellow-500 text-black hover:bg-yellow-500",
                   pending: "bg-orange-500 text-white hover:bg-orange-500",
                 }}
-                className="rounded-lg"
+                className="w-full rounded-lg"
               />
             </div>
             <div className="mt-4 text-sm text-blue-300">
@@ -735,7 +770,12 @@ export default function TasksPage() {
 
         const data = await response.json();
         console.log(`Tareas recibidas: ${data.length}`);
-        setTasks(data);
+        const currentYear = new Date().getFullYear();
+        const filtered = data.filter(
+          (t: any) =>
+            !t.dueDate || new Date(t.dueDate).getFullYear() === currentYear,
+        );
+        setTasks(filtered);
       } catch (err) {
         console.error("Error en fetchTasks:", err);
         setError(`Error al cargar las tareas: ${err.message}`);
@@ -764,7 +804,12 @@ export default function TasksPage() {
         throw new Error(`Error ${response.status}`);
       }
       const data = await response.json();
-      setAllTasks(data);
+      const currentYear = new Date().getFullYear();
+      const filtered = data.filter(
+        (t: any) =>
+          !t.dueDate || new Date(t.dueDate).getFullYear() === currentYear,
+      );
+      setAllTasks(filtered);
     } catch (err) {
       console.error('Error fetching all tasks:', err);
     }
@@ -880,7 +925,9 @@ export default function TasksPage() {
 
   // Filtrar tareas según la pestaña activa y el término de búsqueda
   const currentYearTasks = viewFilteredTasks.filter(
-    (task) => task.dueDate && new Date(task.dueDate).getFullYear() === new Date().getFullYear(),
+    (task) =>
+      !task.dueDate ||
+      new Date(task.dueDate).getFullYear() === new Date().getFullYear(),
   );
   const filteredTasks = currentYearTasks.filter((task) => {
     // Filtrar por término de búsqueda
