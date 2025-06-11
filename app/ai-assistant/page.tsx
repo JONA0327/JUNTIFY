@@ -2,17 +2,71 @@
 
 import { useState, useEffect } from "react"
 import { NewNavbar } from "@/components/new-navbar"
-import { Search, Plus, Loader2, MessageSquare } from "lucide-react"
+import { Search, Calendar, Clock, Users, ChevronDown, MessageSquare, Plus, Loader2 } from "lucide-react"
 import { motion, AnimatePresence } from "framer-motion"
 import { Button } from "@/components/ui/button"
-
-
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
+import { format } from "date-fns"
+import { es } from "date-fns/locale"
 import { addUsernameToHeaders } from "@/utils/user-helpers"
+import Link from "next/link"
 import { AIChatModal } from "@/components/ai-chat-modal"
 
+// Componente para el selector de rango de fechas
+const DateRangeSelector = ({ startDate, endDate, onStartDateChange, onEndDateChange }) => {
+  return (
+    <div className="space-y-4">
+      <div className="space-y-2">
+        <label className="text-sm text-blue-200">Fecha inicial</label>
+        <div className="relative">
+          <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+            <Calendar className="h-4 w-4 text-blue-300" />
+          </div>
+          <input
+            type="date"
+            value={startDate ? format(startDate, "yyyy-MM-dd") : ""}
+            onChange={(e) => onStartDateChange(e.target.value ? new Date(e.target.value) : null)}
+            className="pl-10 w-full bg-blue-700/40 border border-blue-600/50 text-white rounded-lg p-2.5"
+          />
+        </div>
+      </div>
+      <div className="space-y-2">
+        <label className="text-sm text-blue-200">Fecha final</label>
+        <div className="relative">
+          <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+            <Calendar className="h-4 w-4 text-blue-300" />
+          </div>
+          <input
+            type="date"
+            value={endDate ? format(endDate, "yyyy-MM-dd") : ""}
+            onChange={(e) => onEndDateChange(e.target.value ? new Date(e.target.value) : null)}
+            className="pl-10 w-full bg-blue-700/40 border border-blue-600/50 text-white rounded-lg p-2.5"
+          />
+        </div>
+      </div>
+    </div>
+  )
+}
 
-// Tarjeta para un contenedor de reuniones
-const ContainerCard = ({ container, onClick, isSelected }) => {
+// Componente para la tarjeta de transcripción
+const TranscriptionCard = ({ meeting, onClick, isSelected, creationMode, onToggle }) => {
+  // Formatear la fecha
+  const formattedDate = meeting.date
+    ? format(new Date(meeting.date), "dd MMM yyyy", { locale: es })
+    : "Fecha desconocida"
+
+  // Extraer la hora de la fecha
+  const meetingTime = meeting.date ? format(new Date(meeting.date), "HH:mm") : "--:--"
+
+  // Usar la duración si está disponible, o un valor por defecto
+  const duration = meeting.duration || "00:00"
+
+  // Usar el número de participantes si está disponible, o un valor por defecto
+  const participants = meeting.participants || 0
+
+  // Extraer palabras clave si están disponibles
+  const keywords = meeting.keywords || []
+
   return (
     <motion.div
       className={`border ${isSelected ? "border-blue-500" : "border-blue-700/30"} rounded-lg p-3 sm:p-4 cursor-pointer transition-all ${
@@ -20,58 +74,101 @@ const ContainerCard = ({ container, onClick, isSelected }) => {
       }`}
       whileHover={{ scale: 1.01 }}
       whileTap={{ scale: 0.99 }}
-      onClick={() => onClick(container)}
+      onClick={() => (creationMode ? onToggle(meeting.id) : onClick(meeting))}
     >
-      <h3 className="text-base sm:text-lg font-medium text-white mb-1 sm:mb-2 line-clamp-2">
-        {container.name}
-      </h3>
+      <div className="flex items-start">
+        {creationMode && (
+          <input
+            type="checkbox"
+            className="mr-2 mt-1"
+            checked={isSelected}
+            onChange={() => onToggle(meeting.id)}
+            onClick={(e) => e.stopPropagation()}
+          />
+        )}
+        <h3 className="text-base sm:text-lg font-medium text-white mb-1 sm:mb-2 line-clamp-2">
+          {meeting.title}
+        </h3>
+      </div>
+      <div className="flex items-center text-blue-200/70 text-xs sm:text-sm mb-1 sm:mb-2">
+        <Calendar className="h-4 w-4 mr-1" />
+        <span className="mr-3">{formattedDate}</span>
+        <Clock className="h-4 w-4 mr-1" />
+        <span>
+          {meetingTime} ({duration})
+        </span>
+      </div>
+      <div className="flex items-center text-blue-200/70 text-xs sm:text-sm mb-2 sm:mb-3">
+        <Users className="h-4 w-4 mr-1" />
+        <span>{participants} participantes</span>
+      </div>
+      {keywords && keywords.length > 0 && (
+        <div className="flex flex-wrap gap-1">
+          {keywords.map((keyword, idx) => (
+            <span key={idx} className="px-2 py-0.5 bg-blue-600/30 text-blue-200 text-xs rounded-full">
+              {keyword}
+            </span>
+          ))}
+        </div>
+      )}
     </motion.div>
   )
 }
 
 export default function AIAssistantPage() {
   const [searchTerm, setSearchTerm] = useState("")
-  const [selectedContainer, setSelectedContainer] = useState(null)
+  const [startDate, setStartDate] = useState(null)
+  const [endDate, setEndDate] = useState(null)
+  const [selectedMeeting, setSelectedMeeting] = useState(null)
   const [showChatModal, setShowChatModal] = useState(false)
-  const [containers, setContainers] = useState([])
+  const [meetings, setMeetings] = useState([])
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState(null)
+  const [isCreatingContainer, setIsCreatingContainer] = useState(false)
+  const [selectedForContainer, setSelectedForContainer] = useState<number[]>([])
 
-  // Cargar los contenedores del usuario
+  // Cargar las reuniones del usuario
   useEffect(() => {
-    const fetchContainers = async () => {
+    const fetchMeetings = async () => {
       setIsLoading(true)
       setError(null)
 
       try {
-        const response = await fetch("/api/containers", {
+        const response = await fetch("/api/meetings", {
           headers: addUsernameToHeaders(),
         })
 
         if (!response.ok) {
-          throw new Error("Error al cargar los contenedores")
+          throw new Error("Error al cargar las reuniones")
         }
 
         const data = await response.json()
-        setContainers(data)
+        setMeetings(data)
       } catch (error) {
-        console.error("Error al cargar los contenedores:", error)
-        setError("No se pudieron cargar los contenedores. Por favor, inténtalo de nuevo más tarde.")
+        console.error("Error al cargar las reuniones:", error)
+        setError("No se pudieron cargar las reuniones. Por favor, inténtalo de nuevo más tarde.")
       } finally {
         setIsLoading(false)
       }
     }
 
-    fetchContainers()
+    fetchMeetings()
   }, [])
 
-  // Función para seleccionar un contenedor y mostrar el modal
-  const handleSelectContainer = (container) => {
-    setSelectedContainer(container)
+  // Función para seleccionar una reunión y mostrar el modal
+  const handleSelectMeeting = (meeting) => {
+    setSelectedMeeting(meeting)
     setShowChatModal(true)
   }
 
+  const toggleSelectForContainer = (id: number) => {
+    setSelectedForContainer((prev) =>
+      prev.includes(id) ? prev.filter((m) => m !== id) : [...prev, id],
+    )
+  }
+
   const handleCreateContainer = async () => {
+    if (selectedForContainer.length === 0) return
     const name = prompt("Nombre del nuevo contenedor")
     if (!name) return
     try {
@@ -82,20 +179,45 @@ export default function AIAssistantPage() {
       })
       if (response.ok) {
         const created = await response.json()
-        setContainers((prev) => [...prev, created])
+        for (const meetingId of selectedForContainer) {
+          await fetch(`/api/containers/${created.id}/meetings`, {
+            method: "POST",
+            headers: addUsernameToHeaders({ "Content-Type": "application/json" }),
+            body: JSON.stringify({ meetingId }),
+          })
+        }
+        alert("Contenedor creado correctamente")
       }
     } catch (err) {
       console.error("Error creando contenedor", err)
+    } finally {
+      setIsCreatingContainer(false)
+      setSelectedForContainer([])
     }
   }
 
-  // Filtrar contenedores según el término de búsqueda
-  const filteredContainers = containers.filter((c) =>
-    searchTerm === "" || c.name.toLowerCase().includes(searchTerm.toLowerCase()),
-  )
+  // Filtrar reuniones según los criterios de búsqueda
+  const filteredMeetings = meetings.filter((meeting) => {
+    // Filtrar por término de búsqueda
+    const matchesSearchTerm =
+      searchTerm === "" ||
+      meeting.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      (meeting.summary && meeting.summary.toLowerCase().includes(searchTerm.toLowerCase()))
 
-  // Ordenar contenedores alfabéticamente
-  const sortedContainers = [...filteredContainers].sort((a, b) => a.name.localeCompare(b.name))
+    // Filtrar por rango de fechas
+    const meetingDate = meeting.date ? new Date(meeting.date) : null
+    const matchesDateRange =
+      (!startDate || (meetingDate && meetingDate >= startDate)) && (!endDate || (meetingDate && meetingDate <= endDate))
+
+    return matchesSearchTerm && matchesDateRange
+  })
+
+  // Ordenar reuniones por fecha (más recientes primero)
+  const sortedMeetings = [...filteredMeetings].sort((a, b) => {
+    const dateA = a.date ? new Date(a.date) : new Date(0)
+    const dateB = b.date ? new Date(b.date) : new Date(0)
+    return dateB - dateA
+  })
 
   return (
     <div className="min-h-screen bg-blue-900">
@@ -120,8 +242,67 @@ export default function AIAssistantPage() {
                 </div>
               </div>
 
-              {/* Sección para futuros filtros */}
+              {/* Filtros */}
+              <div className="flex flex-wrap gap-3">
+                {/* Filtro por rango de fechas */}
+                <Popover>
+                  <PopoverTrigger asChild>
+                    <Button
+                      variant="outline"
+                      className="border-blue-600/50 text-blue-300 hover:bg-blue-800/30 w-full sm:w-auto"
+                    >
+                      <Calendar className="h-4 w-4 mr-2" />
+                      Rango de fechas
+                      <ChevronDown className="h-4 w-4 ml-2" />
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="bg-blue-800/90 border border-blue-700/50 p-4 w-72">
+                    <DateRangeSelector
+                      startDate={startDate}
+                      endDate={endDate}
+                      onStartDateChange={setStartDate}
+                      onEndDateChange={setEndDate}
+                    />
+                    <div className="flex justify-between mt-4">
+                      <Button
+                        variant="ghost"
+                        className="text-blue-300 hover:text-blue-100"
+                        onClick={() => {
+                          setStartDate(null)
+                          setEndDate(null)
+                        }}
+                      >
+                        Limpiar
+                      </Button>
+                      <Button
+                        className="bg-blue-600 hover:bg-blue-700 text-white"
+                        onClick={() => {
+                          // Cerrar el popover (en una implementación real)
+                        }}
+                      >
+                        Aplicar filtros
+                      </Button>
+                    </div>
+                  </PopoverContent>
+                </Popover>
+              </div>
             </div>
+          </div>
+          <div className="mt-4 flex gap-3">
+            {!isCreatingContainer ? (
+              <Button className="bg-blue-600 hover:bg-blue-700" onClick={() => setIsCreatingContainer(true)}>
+                <Plus className="mr-2 h-4 w-4" /> Nuevo contenedor
+              </Button>
+            ) : (
+              <>
+                <Button className="bg-blue-600 hover:bg-blue-700" onClick={handleCreateContainer}>
+                  Guardar contenedor
+                </Button>
+                <Button variant="outline" onClick={() => { setIsCreatingContainer(false); setSelectedForContainer([]); }}>
+                  Cancelar
+                </Button>
+              </>
+            )}
           </div>
 
           {/* Estado de carga */}
@@ -138,16 +319,18 @@ export default function AIAssistantPage() {
             </div>
           )}
 
-          {/* Grid de contenedores */}
+          {/* Grid de transcripciones */}
           {!isLoading && !error && (
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4 mb-6 sm:mb-8">
-              {sortedContainers.length > 0 ? (
-                sortedContainers.map((container) => (
-                  <ContainerCard
-                    key={container.id}
-                    container={container}
-                    onClick={handleSelectContainer}
-                    isSelected={selectedContainer?.id === container.id}
+              {sortedMeetings.length > 0 ? (
+                sortedMeetings.map((meeting) => (
+                  <TranscriptionCard
+                    key={meeting.id}
+                    meeting={meeting}
+                    onClick={handleSelectMeeting}
+                    isSelected={isCreatingContainer ? selectedForContainer.includes(meeting.id) : selectedMeeting?.id === meeting.id}
+                    creationMode={isCreatingContainer}
+                    onToggle={toggleSelectForContainer}
                   />
                 ))
               ) : (
@@ -156,15 +339,17 @@ export default function AIAssistantPage() {
                     <MessageSquare className="h-8 w-8 sm:h-10 sm:w-10 text-blue-300" />
                   </div>
                   <h3 className="text-lg sm:text-xl font-medium text-white mb-1 sm:mb-2">
-                    No hay contenedores disponibles
+                    No hay transcripciones disponibles
                   </h3>
                   <p className="text-blue-300/70 max-w-md text-sm sm:text-base px-4">
-                    Crea un contenedor para agrupar varias reuniones y conversar con la IA.
+                    Para interactuar con el asistente AI, primero debes crear algunas transcripciones de reuniones.
                   </p>
-                  <Button className="mt-4 bg-blue-600 hover:bg-blue-700" onClick={handleCreateContainer}>
-                    <Plus className="mr-2 h-4 w-4" />
-                    Nuevo contenedor
-                  </Button>
+                  <Link href="/new-meeting">
+                    <Button className="mt-4 bg-blue-600 hover:bg-blue-700">
+                      <Plus className="mr-2 h-4 w-4" />
+                      Nueva reunión
+                    </Button>
+                  </Link>
                 </div>
               )}
             </div>
@@ -174,9 +359,9 @@ export default function AIAssistantPage() {
 
       {/* Modal de chat con IA */}
       <AnimatePresence>
-        {showChatModal && selectedContainer && (
+        {showChatModal && selectedMeeting && (
           <AIChatModal
-            meeting={{ id: selectedContainer.id, title: selectedContainer.name }}
+            meeting={selectedMeeting}
             onClose={() => {
               setShowChatModal(false)
             }}
