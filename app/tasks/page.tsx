@@ -312,7 +312,9 @@ const GlobalTasksCalendar: React.FC<GlobalTasksCalendarProps> = ({
 }) => {
   const [filter, setFilter] =
     useState<"inProgress" | "pending" | "overdue" | "completed" | "noDate">(
+
       "inProgress"
+
     );
   const [page, setPage] = useState(0);
 
@@ -325,7 +327,6 @@ const GlobalTasksCalendar: React.FC<GlobalTasksCalendarProps> = ({
   useEffect(() => {
     setPage(0);
   }, [filter, tasksThisYear.length, tasksWithoutDate.length]);
-
   // Extrae fechas únicas de un array de tareas
   const uniqueDates = (items: Task[]) =>
     Array.from(new Set(items.map((t) => t.dueDate)))
@@ -388,7 +389,9 @@ const GlobalTasksCalendar: React.FC<GlobalTasksCalendarProps> = ({
               );
             }
             if (filter === "overdue") {
+
               return !t.completed && t.dueDate && new Date(t.dueDate) < new Date();
+
             }
             if (filter === "completed") {
               return t.completed;
@@ -404,7 +407,9 @@ const GlobalTasksCalendar: React.FC<GlobalTasksCalendarProps> = ({
           .sort(
             (a, b) =>
               new Date(a.dueDate || "").getTime() -
+
               new Date(b.dueDate || "").getTime()
+
           );
   const totalPages = Math.ceil(filteredTasks.length / tasksPerPage);
   const upcomingTasks = filteredTasks.slice(
@@ -549,7 +554,6 @@ const GlobalTasksCalendar: React.FC<GlobalTasksCalendarProps> = ({
                     {task.description && (
                       <p className="text-base font-normal text-blue-300">
                         {task.description}
-
                       </p>
                     </div>
                     {task.meeting_title && (
@@ -602,7 +606,7 @@ const GlobalTasksCalendar: React.FC<GlobalTasksCalendarProps> = ({
             <h5 className="text-xl leading-8 font-semibold text-white mb-4">
               Calendario
             </h5>
-            <div className="border border-blue-700/30 rounded-xl p-2 bg-blue-800/30">
+            <div className="border border-blue-700/30 rounded-xl p-2 bg-blue-800/30 w-full">
               <Calendar
                 mode="single"
                 selected={selected}
@@ -614,7 +618,7 @@ const GlobalTasksCalendar: React.FC<GlobalTasksCalendarProps> = ({
                   inProgress: "bg-yellow-500 text-black hover:bg-yellow-500",
                   pending: "bg-orange-500 text-white hover:bg-orange-500",
                 }}
-                className="rounded-lg"
+                className="w-full rounded-lg"
               />
             </div>
             <div className="mt-4 text-sm text-blue-300">
