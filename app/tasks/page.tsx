@@ -548,10 +548,25 @@ const GlobalTasksCalendar: React.FC<GlobalTasksCalendarProps> = ({
                     {task.description && (
                       <p className="text-base font-normal text-blue-300">
                         {task.description}
+
                       </p>
+                    </div>
+                    {task.meeting_title && (
+                      <span className="text-xs text-blue-300 truncate">
+                        {task.meeting_title}
+                      </span>
                     )}
-                  </button>
-                ))
+                  </div>
+                  <h6 className="text-base leading-6 font-semibold text-white mb-1">
+                    {task.text}
+                  </h6>
+                  {task.description && (
+                    <p className="text-sm font-normal text-blue-300">
+                      {task.description}
+                    </p>
+                  )}
+                </button>
+              ))
               ) : (
                 <div className="p-6 rounded-xl bg-blue-800/30 border border-blue-700/30 text-blue-300">
                   No hay tareas en proceso
@@ -586,7 +601,7 @@ const GlobalTasksCalendar: React.FC<GlobalTasksCalendarProps> = ({
             <h5 className="text-xl leading-8 font-semibold text-white mb-4">
               Calendario
             </h5>
-            <div className="border border-blue-700/30 rounded-xl p-2 bg-blue-800/30">
+            <div className="border border-blue-700/30 rounded-xl p-2 bg-blue-800/30 w-full">
               <Calendar
                 mode="single"
                 selected={selected}
@@ -598,7 +613,7 @@ const GlobalTasksCalendar: React.FC<GlobalTasksCalendarProps> = ({
                   inProgress: "bg-yellow-500 text-black hover:bg-yellow-500",
                   pending: "bg-orange-500 text-white hover:bg-orange-500",
                 }}
-                className="rounded-lg"
+                className="w-full rounded-lg"
               />
             </div>
             <div className="mt-4 text-sm text-blue-300">
