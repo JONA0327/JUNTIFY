@@ -170,10 +170,8 @@ export default function AIAssistantPage() {
   }
 
 
-  const handleCreateContainer = async () => {
+  const handleCreateContainer = async (name: string) => {
     if (selectedForContainer.length === 0) return
-    const name = prompt("Nombre del nuevo contenedor")
-    if (!name) return
     try {
       const response = await fetch("/api/containers", {
         method: "POST",
@@ -196,6 +194,7 @@ export default function AIAssistantPage() {
     } finally {
       setIsCreatingContainer(false)
       setSelectedForContainer([])
+      setShowContainerModal(false)
     }
   }
 
@@ -294,14 +293,14 @@ export default function AIAssistantPage() {
           </div>
           <div className="mt-4 flex gap-3">
             {!isCreatingContainer ? (
-              <Button className="bg-blue-600 hover:bg-blue-700" onClick={() => setIsCreatingContainer(true)}>
+              <Button className="bg-blue-600 hover:bg-blue-700" onClick={() => setShowContainerModal(true)}>
 
                 <Plus className="mr-2 h-4 w-4" /> Nuevo contenedor
               </Button>
             ) : (
               <>
 
-                <Button className="bg-blue-600 hover:bg-blue-700" onClick={handleCreateContainer}>
+                <Button className="bg-blue-600 hover:bg-blue-700" onClick={() => setShowContainerModal(true)}>
                   Guardar contenedor
                 </Button>
                 <Button variant="outline" onClick={() => { setIsCreatingContainer(false); setSelectedForContainer([]); }}>
@@ -378,7 +377,7 @@ export default function AIAssistantPage() {
       {showContainerModal && (
         <NewContainerModal
           onCancel={() => setShowContainerModal(false)}
-          onCreate={handleCreateContainer}
+          onCreate={(name) => handleCreateContainer(name)}
         />
       )}
 
