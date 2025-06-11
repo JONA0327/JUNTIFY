@@ -10,7 +10,7 @@ import { Label } from "@/components/ui/label"
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
 import {
   User, Settings, CloudUpload, AlertCircle, Mail, LogOut,
-  Award, Gem, Crown, Star, Shield, Code, UserCog, ChevronRight
+  Award, Gem, Crown, Star, Shield, Code, UserCog, ChevronRight, History
 } from "lucide-react"
 import { GoogleDriveSetup } from "@/components/google-drive-setup"
 import { getUsername, storeUsername } from "@/utils/user-helpers"
@@ -66,6 +66,7 @@ const sidebarItems = [
   { id: "account", label: "Mi Cuenta", icon: User },
   { id: "storage", label: "Almacenamiento", icon: CloudUpload },
   { id: "settings", label: "Configuración", icon: Settings },
+  { id: "changes", label: "Cambios", icon: History },
 ]
 
 export default function ProfilePage() {
@@ -328,6 +329,27 @@ export default function ProfilePage() {
           </div>
         )
 
+      case "changes":
+        return (
+          <div className="space-y-6">
+            <div>
+              <h2 className="text-2xl font-bold text-white mb-2">Cambios de la versión 0.1.1</h2>
+              <p className="text-blue-300">Resumen de las novedades más recientes</p>
+            </div>
+            <Card className="bg-blue-800/30 border border-blue-700/30">
+              <CardContent className="text-blue-200 space-y-2">
+                <ul className="list-disc pl-5 space-y-1">
+                  <li>Se implementó un calendario global en la vista de tareas para visualizar tareas en proceso, pendientes, completadas y vencidas.</li>
+                  <li>Al seleccionar una tarea se abre la conversación asociada con un calendario exclusivo para esa reunión.</li>
+                  <li>En el asistente virtual ahora se pueden crear contenedores de conversaciones para mantener el contexto.</li>
+                  <li>Se añadió un buscador de conversaciones dentro de los contenedores y la opción para agregar o eliminar conversaciones.</li>
+                </ul>
+                <p className="text-yellow-300 mt-4">Nota: Actualmente la aplicación se encuentra en fase beta, si detectas algún error repórtalo en el botón amarillo de sugerencias.</p>
+              </CardContent>
+            </Card>
+          </div>
+        )
+
       default:
         return null
     }
@@ -377,7 +399,7 @@ export default function ProfilePage() {
                   {/* Versión al final, centrada */}
                   <div className="mt-auto py-4 flex justify-center">
                     <span className="text-xs text-blue-300 font-mono text-center opacity-80">
-                      Juntify v0.1.0-Demo
+                      Juntify v0.1.1
                     </span>
                   </div>
                 </CardContent>
