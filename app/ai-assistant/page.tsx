@@ -127,7 +127,6 @@ export default function AIAssistantPage() {
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState(null)
   const [isCreatingContainer, setIsCreatingContainer] = useState(false)
-  const [showContainerModal, setShowContainerModal] = useState(false)
   const [selectedForContainer, setSelectedForContainer] = useState<number[]>([])
 
   // Cargar las reuniones del usuario
@@ -170,8 +169,11 @@ export default function AIAssistantPage() {
     )
   }
 
-  const handleCreateContainer = async (name: string) => {
+
+  const handleCreateContainer = async () => {
     if (selectedForContainer.length === 0) return
+    const name = prompt("Nombre del nuevo contenedor")
+    if (!name) return
     try {
       const response = await fetch("/api/containers", {
         method: "POST",
@@ -187,13 +189,13 @@ export default function AIAssistantPage() {
             body: JSON.stringify({ meetingId }),
           })
         }
+        alert("Contenedor creado correctamente")
       }
     } catch (err) {
       console.error("Error creando contenedor", err)
     } finally {
       setIsCreatingContainer(false)
       setSelectedForContainer([])
-      setShowContainerModal(false)
     }
   }
 
@@ -291,32 +293,21 @@ export default function AIAssistantPage() {
           </div>
           <div className="mt-4 flex gap-3">
             {!isCreatingContainer ? (
-              <Button
-                className="bg-blue-600 hover:bg-blue-700"
-                onClick={() => setIsCreatingContainer(true)}
-              >
+              <Button className="bg-blue-600 hover:bg-blue-700" onClick={() => setIsCreatingContainer(true)}>
+
                 <Plus className="mr-2 h-4 w-4" /> Nuevo contenedor
               </Button>
             ) : (
               <>
-                <Button
-                  className="bg-blue-600 hover:bg-blue-700"
-                  onClick={() => setShowContainerModal(true)}
-                >
+
+                <Button className="bg-blue-600 hover:bg-blue-700" onClick={handleCreateContainer}>
                   Guardar contenedor
                 </Button>
-                <Button
-                  variant="outline"
-                  onClick={() => {
-                    setIsCreatingContainer(false)
-                    setSelectedForContainer([])
-                  }}
-                >
+                <Button variant="outline" onClick={() => { setIsCreatingContainer(false); setSelectedForContainer([]); }}>
                   Cancelar
                 </Button>
               </>
             )}
-            <ContainerPanel />
           </div>
 
           {/* Estado de carga */}
