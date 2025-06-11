@@ -14,9 +14,6 @@ import { addUsernameToHeaders } from "@/utils/user-helpers";
 import { ChevronDown, Plus, Trash2 } from "lucide-react";
 import { AddToContainerModal } from "./add-to-container-modal";
 import { DeleteContainerModal } from "./delete-container-modal";
-
-
-
 interface Container {
   id: number;
   name: string;
@@ -37,10 +34,10 @@ export function ContainerPanel({ onMeetingSelect }: ContainerPanelProps) {
   const [expanded, setExpanded] = useState<number | null>(null);
   const [searchTerm, setSearchTerm] = useState("");
   const [showAddModal, setShowAddModal] = useState<Container | null>(null);
-
   const [deleteTarget, setDeleteTarget] = useState<Container | null>(null);
 
 
+  const [deleteTarget, setDeleteTarget] = useState<Container | null>(null);
 
   const fetchContainers = async () => {
     try {
@@ -85,7 +82,6 @@ export function ContainerPanel({ onMeetingSelect }: ContainerPanelProps) {
 
 
   const confirmDelete = async (id: number) => {
-
     try {
       const res = await fetch(`/api/containers/${id}`, {
         method: "DELETE",

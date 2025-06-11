@@ -17,11 +17,9 @@ interface AddToContainerModalProps {
 
 export function AddToContainerModal({ containerId, onClose, onAdded }: AddToContainerModalProps) {
   const [meetings, setMeetings] = useState<Meeting[]>([])
-
   const [selected, setSelected] = useState<Set<number>>(new Set())
   const [adding, setAdding] = useState(false)
   const [showSuccess, setShowSuccess] = useState(false)
-
 
   useEffect(() => {
     const fetchMeetings = async () => {
@@ -37,7 +35,6 @@ export function AddToContainerModal({ containerId, onClose, onAdded }: AddToCont
     }
     fetchMeetings()
   }, [])
-
 
   const toggleSelect = (id: number) => {
     setSelected((prev) => {
@@ -75,14 +72,7 @@ export function AddToContainerModal({ containerId, onClose, onAdded }: AddToCont
     <>
       <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60">
         <div className="bg-blue-800/95 border border-blue-700/30 rounded-lg p-6 w-full max-w-sm">
-            <Button
-              className="bg-blue-600 hover:bg-blue-700"
-              onClick={() => {
-                setShowSuccess(false)
-                onClose()
-                window.location.reload()
-              }}
-            >
+          <div className="flex justify-between items-center mb-4">
             <h2 className="text-lg font-semibold text-white">Añadir reunión</h2>
             <Button variant="ghost" size="icon" className="text-blue-200 hover:text-white" onClick={onClose}>
               <X className="h-5 w-5" />
@@ -112,7 +102,14 @@ export function AddToContainerModal({ containerId, onClose, onAdded }: AddToCont
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60">
           <div className="bg-blue-800/95 border border-blue-700/30 rounded-lg p-6 w-full max-w-sm text-center">
             <p className="text-white mb-4">Reuniones añadidas correctamente</p>
-            <Button className="bg-blue-600 hover:bg-blue-700" onClick={() => { setShowSuccess(false); onClose(); }}>
+            <Button
+              className="bg-blue-600 hover:bg-blue-700"
+              onClick={() => {
+                setShowSuccess(false)
+                onClose()
+                window.location.reload()
+              }}
+            >
               Aceptar
             </Button>
           </div>
