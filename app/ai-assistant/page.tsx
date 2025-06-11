@@ -128,6 +128,7 @@ export default function AIAssistantPage() {
   const [error, setError] = useState(null)
   const [isCreatingContainer, setIsCreatingContainer] = useState(false)
   const [selectedForContainer, setSelectedForContainer] = useState<number[]>([])
+  const [showContainerModal, setShowContainerModal] = useState(false)
 
   // Cargar las reuniones del usuario
   useEffect(() => {
@@ -220,7 +221,6 @@ export default function AIAssistantPage() {
     const dateB = b.date ? new Date(b.date) : new Date(0)
     return dateB - dateA
   })
- const [showContainerModal, setShowContainerModal] = useState(false);
 
   return (
     <div className="min-h-screen bg-blue-900">
@@ -301,8 +301,7 @@ export default function AIAssistantPage() {
               </Button>
             ) : (
               <>
-
-                <Button className="bg-blue-600 hover:bg-blue-700" onClick={handleCreateContainer}>
+                <Button className="bg-blue-600 hover:bg-blue-700" onClick={() => setShowContainerModal(true)}>
 
                   Guardar contenedor
                 </Button>
