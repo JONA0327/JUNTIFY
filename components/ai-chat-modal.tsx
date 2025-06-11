@@ -39,6 +39,10 @@ export const AIChatModal = ({ meeting, container = null, onClose }) => {
   const [showMeetingSelector, setShowMeetingSelector] = useState(false)
   const [availableMeetings, setAvailableMeetings] = useState([])
   const [isLoadingMeetings, setIsLoadingMeetings] = useState(false)
+  const [showContainerSelector, setShowContainerSelector] = useState(false)
+  const [availableContainers, setAvailableContainers] = useState([])
+  const [isLoadingContainers, setIsLoadingContainers] = useState(false)
+  const [selectedContainerId, setSelectedContainerId] = useState<number | null>(null)
   const [selectedMeeting, setSelectedMeeting] = useState(meeting)
   const [selectedContainer, setSelectedContainer] = useState(container)
   const [containerDetails, setContainerDetails] = useState(null)
@@ -46,9 +50,11 @@ export const AIChatModal = ({ meeting, container = null, onClose }) => {
   const chatContainerRef = useRef(null)
   const { isMobile } = useDevice()
 
+
   useEffect(() => {
     setSelectedContainer(container)
   }, [container?.id])
+
 
   // Inicializar las conversaciones al montar el componente
   useEffect(() => {
@@ -57,7 +63,7 @@ export const AIChatModal = ({ meeting, container = null, onClose }) => {
       setIsAuthenticated(false)
       // Inicializar con mensaje de error de autenticación
       setConversations({
-        [selectedMeeting.id]: [
+        [conversationKey as string]: [
           {
             role: "assistant",
             content: "⚠️ Error de autenticación: No hay sesión activa. Por favor, inicia sesión de nuevo.",
@@ -88,7 +94,7 @@ Puedo ayudarte con preguntas como:
       }
 
       setConversations({
-        [selectedMeeting.id]: [welcomeMessage],
+        [conversationKey as string]: [welcomeMessage],
       })
     }
   }, [])
@@ -123,8 +129,29 @@ Puedo ayudarte con preguntas como:
     fetchAvailableMeetings()
   }, [])
 
+  // Cargar los contenedores disponibles
+  useEffect(() => {
+    const fetchContainers = async () => {
+      setIsLoadingContainers(true)
+      try {
+        const res = await fetch("/api/containers", {
+          headers: addUsernameToHeaders(),
+        })
+        if (!res.ok) throw new Error("Error al cargar los contenedores")
+        const data = await res.json()
+        setAvailableContainers(data)
+      } catch (err) {
+        console.error("Error al cargar los contenedores", err)
+      } finally {
+        setIsLoadingContainers(false)
+      }
+    }
+    fetchContainers()
+  }, [])
+
   // Función para cambiar a otra reunión
   const handleChangeMeeting = (newMeeting) => {
+    setSelectedContainerId(null)
     setSelectedMeeting(newMeeting)
     setMeetingDetails(null)
     setSelectedContainer(null)
@@ -163,10 +190,32 @@ Puedo ayudarte con preguntas como:
     setShowMeetingSelector(false)
   }
 
+  const handleSelectContainer = (container) => {
+    setSelectedContainerId(container.id)
+    setSelectedMeeting(null)
+    setMeetingDetails(null)
+    setIsLoadingDetails(false)
+
+    if (!conversations[`container-${container.id}`]) {
+      setConversations((prev) => ({
+        ...prev,
+        [`container-${container.id}`]: [
+          {
+            role: "assistant",
+            content:
+              "Hola, soy tu asistente IA para reuniones. Ahora tengo acceso completo a las reuniones de este contenedor.",
+          },
+        ],
+      }))
+    }
+
+    setShowContainerSelector(false)
+  }
+
   // Cargar los detalles de la reunión
   useEffect(() => {
     const fetchMeetingDetails = async () => {
-      if (!selectedMeeting) return
+      if (!selectedMeeting || selectedContainerId) return
       if (!selectedMeeting.id) return
 
       setIsLoadingDetails(true)
@@ -186,8 +235,8 @@ Puedo ayudarte con preguntas como:
       }
     }
 
-    selectedMeeting && fetchMeetingDetails()
-  }, [selectedMeeting])
+    selectedMeeting && !selectedContainerId && fetchMeetingDetails()
+  }, [selectedMeeting, selectedContainerId])
 
   // Cargar los detalles del contenedor seleccionado
   useEffect(() => {
@@ -231,13 +280,13 @@ Puedo ayudarte con preguntas como:
         const data = await response.json()
         setIsOpenAIConfigured(data.isConfigured)
 
-        if (!data.isConfigured && selectedMeeting?.id) {
+        if (!data.isConfigured && conversationKey) {
           // Añadir mensaje de advertencia a la conversación actual
           setConversations((prev) => {
-            const currentMsgs = prev[selectedMeeting.id] || []
+            const currentMsgs = prev[conversationKey] || []
             return {
               ...prev,
-              [selectedMeeting.id]: [
+              [conversationKey]: [
                 ...currentMsgs,
                 {
                   role: "assistant",
@@ -254,22 +303,22 @@ Puedo ayudarte con preguntas como:
     }
 
     checkOpenAIConfig()
-  }, [selectedMeeting?.id])
+  }, [selectedMeeting?.id, selectedContainerId])
 
   // Función para enviar un mensaje a la API de chat
   const handleSendMessage = useCallback(async () => {
-    if (!inputValue.trim() || isSendingMessage || !selectedMeeting?.id) return
+    if (!inputValue.trim() || isSendingMessage || !conversationKey) return
 
-    // Obtener los mensajes actuales para la reunión seleccionada
-    const currentMessages = conversations[selectedMeeting.id] || []
+    // Obtener los mensajes actuales para la conversación actual
+    const currentMessages = conversations[conversationKey] || []
 
     // Añadir mensaje del usuario a la conversación actual
     const userMessage: ChatMessage = { role: "user", content: inputValue }
     setConversations((prev) => {
-      const currentMsgs = prev[selectedMeeting.id] || []
+      const currentMsgs = prev[conversationKey] || []
       return {
         ...prev,
-        [selectedMeeting.id]: [...currentMsgs, userMessage],
+        [conversationKey]: [...currentMsgs, userMessage],
       }
     })
 
@@ -297,8 +346,10 @@ Puedo ayudarte con preguntas como:
         headers,
         body: JSON.stringify({
           messages: recentMessages.map((msg) => ({ role: msg.role, content: msg.content })),
+
           meetingId: selectedMeeting.id,
           containerId: selectedContainer?.id || null,
+
           searchWeb: isSearchingWeb,
         }),
       })
@@ -320,20 +371,20 @@ Puedo ayudarte con preguntas como:
 
       // Añadir la respuesta de la IA a la conversación actual
       setConversations((prev) => {
-        const currentMsgs = prev[selectedMeeting.id] || []
+        const currentMsgs = prev[conversationKey] || []
         return {
           ...prev,
-          [selectedMeeting.id]: [...currentMsgs, { role: "assistant", content: data.response }],
+          [conversationKey]: [...currentMsgs, { role: "assistant", content: data.response }],
         }
       })
     } catch (error) {
       console.error("Error al enviar mensaje:", error)
       // Añadir mensaje de error a la conversación actual
       setConversations((prev) => {
-        const currentMsgs = prev[selectedMeeting.id] || []
+        const currentMsgs = prev[conversationKey] || []
         return {
           ...prev,
-          [selectedMeeting.id]: [
+          [conversationKey]: [
             ...currentMsgs,
             {
               role: "assistant",
@@ -345,15 +396,15 @@ Puedo ayudarte con preguntas como:
     } finally {
       setIsSendingMessage(false)
     }
-  }, [inputValue, conversations, selectedMeeting?.id, isSearchingWeb, isSendingMessage])
+  }, [inputValue, conversations, conversationKey, isSearchingWeb, isSendingMessage])
 
   // Scroll al último mensaje cuando se añade uno nuevo
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" })
-  }, [conversations, selectedMeeting?.id])
+  }, [conversations, conversationKey])
 
   // Obtener los mensajes actuales para la reunión seleccionada
-  const currentMessages = selectedMeeting?.id ? conversations[selectedMeeting.id] || [] : []
+  const currentMessages = conversationKey ? conversations[conversationKey] || [] : []
 
   return (
     <motion.div
@@ -373,23 +424,31 @@ Puedo ayudarte con preguntas como:
         <div className="sticky top-0 z-30 border-b border-blue-800 bg-blue-900">
           {/* Título y fecha en móvil - centrados */}
           <div className="flex flex-col items-center sm:items-start p-3 sm:hidden">
-            <h2 className="text-lg font-semibold text-white">{selectedMeeting.title}</h2>
-            <div className="text-blue-200/70 text-sm mt-1">
-              {selectedMeeting.date
-                ? format(new Date(selectedMeeting.date), "dd/MM/yyyy HH:mm", { locale: es })
-                : "Fecha desconocida"}
-            </div>
-          </div>
-
-          {/* Versión desktop del header */}
-          <div className="hidden sm:flex flex-row items-center justify-between p-4">
-            <div className="flex flex-col">
-              <h2 className="text-xl font-semibold text-white">{selectedMeeting.title}</h2>
+            <h2 className="text-lg font-semibold text-white">
+              {selectedMeeting ? selectedMeeting.title : `Contenedor ${selectedContainerId}`}
+            </h2>
+            {selectedMeeting && (
               <div className="text-blue-200/70 text-sm mt-1">
                 {selectedMeeting.date
                   ? format(new Date(selectedMeeting.date), "dd/MM/yyyy HH:mm", { locale: es })
                   : "Fecha desconocida"}
               </div>
+            )}
+          </div>
+
+          {/* Versión desktop del header */}
+          <div className="hidden sm:flex flex-row items-center justify-between p-4">
+            <div className="flex flex-col">
+              <h2 className="text-xl font-semibold text-white">
+                {selectedMeeting ? selectedMeeting.title : `Contenedor ${selectedContainerId}`}
+              </h2>
+              {selectedMeeting && (
+                <div className="text-blue-200/70 text-sm mt-1">
+                  {selectedMeeting.date
+                    ? format(new Date(selectedMeeting.date), "dd/MM/yyyy HH:mm", { locale: es })
+                    : "Fecha desconocida"}
+                </div>
+              )}
             </div>
             <div className="flex items-center gap-2">
               <Button
@@ -400,6 +459,14 @@ Puedo ayudarte con preguntas como:
               >
                 <ListFilter className="h-4 w-4 mr-1" />
                 Cambiar reunión
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                className="text-blue-300 border-blue-700/50 text-sm"
+                onClick={() => setShowContainerSelector(!showContainerSelector)}
+              >
+                Contenedores
               </Button>
               <Button
                 variant="outline"
@@ -431,6 +498,14 @@ Puedo ayudarte con preguntas como:
             >
               <ListFilter className="h-3 w-3 mr-1" />
               Cambiar reunión
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              className="text-blue-300 border-blue-700/50 text-xs"
+              onClick={() => setShowContainerSelector(!showContainerSelector)}
+            >
+              Contenedores
             </Button>
             <Button variant="outline" size="sm" className="text-blue-300 border-blue-700/50 text-xs" onClick={onClose}>
               <ArrowLeft className="h-3 w-3 mr-1" />
@@ -473,7 +548,7 @@ Puedo ayudarte con preguntas como:
                       <div
                         key={availableMeeting.id}
                         className={`p-3 rounded-lg cursor-pointer transition-colors mb-2 ${
-                          availableMeeting.id === selectedMeeting.id
+                          availableMeeting.id === selectedMeeting?.id
                             ? "bg-blue-600 border border-blue-500"
                             : "hover:bg-blue-700/60 bg-blue-800/60 border border-blue-700/30"
                         }`}
@@ -492,6 +567,49 @@ Puedo ayudarte con preguntas como:
               </div>
               <div className="p-3 border-t border-blue-700/30 bg-blue-800/95">
                 <Button className="w-full" variant="outline" onClick={() => setShowMeetingSelector(false)}>
+                  Cancelar
+                </Button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Selector de contenedores */}
+        {showContainerSelector && (
+          <div className="fixed inset-0 z-40 flex items-center justify-center bg-black/50">
+            <div className="bg-blue-800 border border-blue-700 rounded-lg shadow-lg w-[90%] max-w-md max-h-[80vh] overflow-hidden">
+              <div className="p-3 sticky top-0 bg-blue-800/95 backdrop-blur-sm border-b border-blue-700/30 flex justify-between items-center">
+                <h3 className="text-white font-medium">Seleccionar contenedor</h3>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="text-blue-300 hover:text-white"
+                  onClick={() => setShowContainerSelector(false)}
+                >
+                  <X className="h-4 w-4" />
+                </Button>
+              </div>
+              <div className="overflow-y-auto max-h-[60vh]">
+                {isLoadingContainers ? (
+                  <div className="flex justify-center items-center p-4">
+                    <Loader2 className="h-6 w-6 text-blue-400 animate-spin" />
+                  </div>
+                ) : (
+                  <div className="p-3">
+                    {availableContainers.map((c) => (
+                      <div
+                        key={c.id}
+                        className="p-3 rounded-lg cursor-pointer transition-colors mb-2 hover:bg-blue-700/60 bg-blue-800/60 border border-blue-700/30"
+                        onClick={() => handleSelectContainer(c)}
+                      >
+                        <div className="font-medium text-white">{c.name}</div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+              <div className="p-3 border-t border-blue-700/30 bg-blue-800/95">
+                <Button className="w-full" variant="outline" onClick={() => setShowContainerSelector(false)}>
                   Cancelar
                 </Button>
               </div>
@@ -805,7 +923,10 @@ Puedo ayudarte con preguntas como:
                             )}
                           </div>
                           <div className="flex-1">
-                            <p className="text-white font-medium">{task.title}</p>
+                            <p className="text-white font-medium">{task.text}</p>
+                            {task.description && (
+                              <p className="text-blue-200/70 text-sm mt-1">{task.description}</p>
+                            )}
                             <div className="flex flex-col sm:flex-row sm:items-center text-sm text-blue-200/70 mt-1">
                               <span className="mr-3">Asignado a: {task.assignee || "No asignado"}</span>
                               <span>

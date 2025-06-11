@@ -118,6 +118,7 @@ export const containerService = {
     }
   },
 
+
   async getContainerDetails(id: number, username: string): Promise<any | null> {
     try {
       const container = await this.getContainerById(id, username)
@@ -157,6 +158,7 @@ export const containerService = {
     } catch (error) {
       console.error("Error fetching container details:", error)
       return null
+
     }
   },
 }
