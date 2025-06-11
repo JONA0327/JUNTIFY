@@ -2,7 +2,9 @@
 
 import { useEffect, useState } from "react"
 import { Button } from "@/components/ui/button"
+
 import { Check, X } from "lucide-react"
+
 import { addUsernameToHeaders } from "@/utils/user-helpers"
 
 interface Meeting { id: number; title: string }
@@ -15,9 +17,11 @@ interface AddToContainerModalProps {
 
 export function AddToContainerModal({ containerId, onClose, onAdded }: AddToContainerModalProps) {
   const [meetings, setMeetings] = useState<Meeting[]>([])
+
   const [selected, setSelected] = useState<Set<number>>(new Set())
   const [adding, setAdding] = useState(false)
   const [showSuccess, setShowSuccess] = useState(false)
+
 
   useEffect(() => {
     const fetchMeetings = async () => {
@@ -33,6 +37,7 @@ export function AddToContainerModal({ containerId, onClose, onAdded }: AddToCont
     }
     fetchMeetings()
   }, [])
+
 
   const toggleSelect = (id: number) => {
     setSelected((prev) => {

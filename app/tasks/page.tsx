@@ -24,7 +24,13 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
-import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
+import {
+  Dialog,
+  DialogContent,
+  DialogTitle,
+  DialogHeader,
+  DialogDescription,
+} from "@/components/ui/dialog";
 import { NewTaskModal } from "@/components/new-task-modal";
 import { EditTaskModal } from "@/components/edit-task-modal";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
@@ -730,6 +736,28 @@ export default function TasksPage() {
     };
 
     checkAuth();
+  }, []);
+
+  // Suscribirse a eliminaciones en tiempo real de la tabla de tareas
+  useEffect(() => {
+    const supabase = getSupabaseClient();
+    const channel = supabase
+      .channel("tasks-page")
+      .on(
+        "postgres_changes",
+        { event: "DELETE", schema: "public", table: "tasks" },
+        (payload) => {
+          const deletedId = payload.old.id;
+          setTasks((prev) => prev.filter((t) => t.id !== deletedId));
+          setAllTasks((prev) => prev.filter((t) => t.id !== deletedId));
+        },
+      );
+
+    channel.subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
   }, []);
 
   // Función para obtener las tareas
