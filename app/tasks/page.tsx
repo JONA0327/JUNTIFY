@@ -311,7 +311,7 @@ const GlobalTasksCalendar: React.FC<GlobalTasksCalendarProps> = ({
   onTaskSelect,
 }) => {
   const [filter, setFilter] =
-    useState<"inProgress" | "pending" | "overdue" | "completed">(
+    useState<"inProgress" | "pending" | "overdue" | "completed" | "noDate">(
       "inProgress",
     );
   const [page, setPage] = useState(0);
@@ -320,10 +320,11 @@ const GlobalTasksCalendar: React.FC<GlobalTasksCalendarProps> = ({
   const tasksThisYear = tasks.filter(
     (t) => t.dueDate && new Date(t.dueDate).getFullYear() === currentYear,
   );
+  const tasksWithoutDate = tasks.filter((t) => !t.dueDate);
 
   useEffect(() => {
     setPage(0);
-  }, [filter, tasksThisYear.length]);
+  }, [filter, tasksThisYear.length, tasksWithoutDate.length]);
   // Extrae fechas únicas de un array de tareas
   const uniqueDates = (items: Task[]) =>
     Array.from(new Set(items.map((t) => t.dueDate)))
@@ -371,35 +372,41 @@ const GlobalTasksCalendar: React.FC<GlobalTasksCalendarProps> = ({
 
   // Próximas tareas según filtro
   const tasksPerPage = 5;
-  const filteredTasks = tasksThisYear
-    .filter((t) => {
-      if (filter === "pending") {
-        return (
-          !t.completed &&
-          t.dueDate &&
-          t.progress === 0 &&
-          new Date(t.dueDate) >= new Date()
-        );
-      }
-      if (filter === "overdue") {
-        return !t.completed && t.dueDate && new Date(t.dueDate) < new Date();
-      }
-      if (filter === "completed") {
-        return t.completed;
-      }
-      return (
-        !t.completed &&
-        t.dueDate &&
-        t.progress > 0 &&
-        t.progress < 100 &&
-        new Date(t.dueDate) >= new Date()
-      );
-    })
-    .sort(
-      (a, b) =>
-        new Date(a.dueDate || "").getTime() -
-        new Date(b.dueDate || "").getTime(),
-    );
+  const baseTasks = filter === "noDate" ? tasksWithoutDate : tasksThisYear;
+  const filteredTasks =
+    filter === "noDate"
+      ? baseTasks
+      : baseTasks
+          .filter((t) => {
+            if (filter === "pending") {
+              return (
+                !t.completed &&
+                t.dueDate &&
+                t.progress === 0 &&
+                new Date(t.dueDate) >= new Date()
+              );
+            }
+            if (filter === "overdue") {
+              return (
+                !t.completed && t.dueDate && new Date(t.dueDate) < new Date()
+              );
+            }
+            if (filter === "completed") {
+              return t.completed;
+            }
+            return (
+              !t.completed &&
+              t.dueDate &&
+              t.progress > 0 &&
+              t.progress < 100 &&
+              new Date(t.dueDate) >= new Date()
+            );
+          })
+          .sort(
+            (a, b) =>
+              new Date(a.dueDate || "").getTime() -
+              new Date(b.dueDate || "").getTime(),
+          );
   const totalPages = Math.ceil(filteredTasks.length / tasksPerPage);
   const upcomingTasks = filteredTasks.slice(
     page * tasksPerPage,
@@ -487,6 +494,17 @@ const GlobalTasksCalendar: React.FC<GlobalTasksCalendarProps> = ({
             >
               Completadas
             </Button>
+            <Button
+              variant={filter === "noDate" ? "default" : "outline"}
+              className={
+                filter === "noDate"
+                  ? "bg-blue-600 hover:bg-blue-700"
+                  : "border-blue-600/50 text-blue-300 hover:bg-blue-800/30"
+              }
+              onClick={() => setFilter("noDate")}
+            >
+              Sin fecha
+            </Button>
           </div>
           <div className="flex gap-5 flex-col">
               {upcomingTasks.length > 0 ? (
@@ -508,7 +526,9 @@ const GlobalTasksCalendar: React.FC<GlobalTasksCalendarProps> = ({
                           )}`}
                         />
                         <p className="text-base font-medium text-white">
-                          {formatDate(task.dueDate)} – {formatTime(task.dueDate)}
+                          {task.dueDate
+                            ? `${formatDate(task.dueDate)} – ${formatTime(task.dueDate)}`
+                            : "Sin fecha"}
                         </p>
                       </div>
                     </div>
@@ -735,7 +755,12 @@ export default function TasksPage() {
 
         const data = await response.json();
         console.log(`Tareas recibidas: ${data.length}`);
-        setTasks(data);
+        const currentYear = new Date().getFullYear();
+        const filtered = data.filter(
+          (t: any) =>
+            !t.dueDate || new Date(t.dueDate).getFullYear() === currentYear,
+        );
+        setTasks(filtered);
       } catch (err) {
         console.error("Error en fetchTasks:", err);
         setError(`Error al cargar las tareas: ${err.message}`);
@@ -764,7 +789,12 @@ export default function TasksPage() {
         throw new Error(`Error ${response.status}`);
       }
       const data = await response.json();
-      setAllTasks(data);
+      const currentYear = new Date().getFullYear();
+      const filtered = data.filter(
+        (t: any) =>
+          !t.dueDate || new Date(t.dueDate).getFullYear() === currentYear,
+      );
+      setAllTasks(filtered);
     } catch (err) {
       console.error('Error fetching all tasks:', err);
     }
@@ -880,7 +910,9 @@ export default function TasksPage() {
 
   // Filtrar tareas según la pestaña activa y el término de búsqueda
   const currentYearTasks = viewFilteredTasks.filter(
-    (task) => task.dueDate && new Date(task.dueDate).getFullYear() === new Date().getFullYear(),
+    (task) =>
+      !task.dueDate ||
+      new Date(task.dueDate).getFullYear() === new Date().getFullYear(),
   );
   const filteredTasks = currentYearTasks.filter((task) => {
     // Filtrar por término de búsqueda
