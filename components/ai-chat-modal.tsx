@@ -262,7 +262,7 @@ Puedo ayudarte con preguntas como:
         headers,
         body: JSON.stringify({
           messages: recentMessages.map((msg) => ({ role: msg.role, content: msg.content })),
-          containerId: selectedMeeting.id,
+          meetingId: selectedMeeting.id,
           searchWeb: isSearchingWeb,
         }),
       })
