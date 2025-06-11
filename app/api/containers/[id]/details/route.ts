@@ -8,7 +8,13 @@ export async function GET(request: Request, { params }: { params: { id: string }
 
   const id = Number.parseInt(params.id)
   if (isNaN(id)) return NextResponse.json({ error: "Invalid id" }, { status: 400 })
+  try {
+    const details = await containerService.getContainerDetails(id, username)
+    if (!details) return NextResponse.json({ error: "Not found" }, { status: 404 })
+    return NextResponse.json(details)
+  } catch (error) {
+    console.error("Error fetching container details:", error)
+    return NextResponse.json({ error: "Error fetching container details" }, { status: 500 })
+  }
 
-  const details = await containerService.getContainerDetails(id, username)
-  return NextResponse.json(details)
 }
