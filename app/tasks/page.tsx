@@ -1522,7 +1522,10 @@ export default function TasksPage() {
       {/* Modal para nueva tarea */}
       <Dialog open={showNewTaskModal} onOpenChange={setShowNewTaskModal}>
         <DialogContent className="bg-blue-800/90 border border-blue-700/50 p-0 max-w-md overflow-hidden">
-          <DialogTitle className="sr-only">Nueva Tarea</DialogTitle>
+          <DialogHeader>
+            <DialogTitle className="sr-only">Nueva Tarea</DialogTitle>
+            <DialogDescription className="sr-only">Crear una nueva tarea</DialogDescription>
+          </DialogHeader>
           <NewTaskModal
             onCancel={() => setShowNewTaskModal(false)}
             onSave={handleCreateTask}
@@ -1537,7 +1540,10 @@ export default function TasksPage() {
       {currentTask && (
         <Dialog open={showEditTaskModal} onOpenChange={setShowEditTaskModal}>
           <DialogContent className="bg-blue-800/90 border border-blue-700/50 p-0 max-w-md max-h-[85vh] overflow-hidden">
-            <DialogTitle className="sr-only">Editar Tarea</DialogTitle>
+            <DialogHeader>
+              <DialogTitle className="sr-only">Editar Tarea</DialogTitle>
+              <DialogDescription className="sr-only">Modificar la tarea seleccionada</DialogDescription>
+            </DialogHeader>
             <EditTaskModal
               task={currentTask}
               onCancel={() => {
