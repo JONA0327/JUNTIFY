@@ -44,6 +44,7 @@ import type { AnalyzerType } from "@/utils/analyzers"
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Edit2 } from "lucide-react";
+import { getUsername } from "@/utils/user-helpers";
 
 // Lista de idiomas soportados
 const supportedLanguages = [
@@ -1487,6 +1488,7 @@ export default function NewMeetingPage() {
   const [savedSuccessfully, setSavedSuccessfully] = useState(false)
   const [audioUrl, setAudioUrl] = useState(null)
   const [driveUploadSuccess, setDriveUploadSuccess] = useState(false)
+  const [driveConnected, setDriveConnected] = useState<boolean | null>(null)
   const [audioFile, setAudioFile] = useState(null)
   const [selectedAnalyzerType, setSelectedAnalyzerType] = useState("standard");
   const [error, setError] = useState(null)
@@ -1568,6 +1570,37 @@ export default function NewMeetingPage() {
     }
 
     fetchUsageData()
+  }, [])
+
+  // Verificar conexión de Google Drive y carpeta de grabaciones
+  useEffect(() => {
+    const checkDriveStatus = async () => {
+      try {
+        const username = getUsername()
+        if (!username) {
+          setDriveConnected(false)
+          return
+        }
+
+        const response = await fetch("/api/auth/google/status", {
+          headers: {
+            "X-Username": username,
+          },
+        })
+        const data = await response.json()
+
+        if (response.ok && data.connected && data.recordings_folder_id) {
+          setDriveConnected(true)
+        } else {
+          setDriveConnected(false)
+        }
+      } catch (err) {
+        console.error("Error checking Google Drive status:", err)
+        setDriveConnected(false)
+      }
+    }
+
+    checkDriveStatus()
   }, [])
 
   // Detectar dispositivos de audio disponibles
@@ -2147,6 +2180,24 @@ export default function NewMeetingPage() {
       <main className="container mx-auto px-4 pb-24 pt-8">
         <div className="max-w-7xl mx-auto">
           <h1 className="text-3xl font-bold text-white mb-8 glow-text">Crear una nueva reunión</h1>
+
+          {driveConnected !== null && (
+            driveConnected ? (
+              <Alert className="mb-6 bg-green-900/50 border-green-800 text-white">
+                <Check className="h-4 w-4" />
+                <AlertDescription className="text-green-400">
+                  Tu carpeta de Drive está conectada correctamente.
+                </AlertDescription>
+              </Alert>
+            ) : (
+              <Alert variant="destructive" className="mb-6 bg-red-900/50 border-red-800 text-white">
+                <AlertCircle className="h-4 w-4" />
+                <AlertDescription className="text-red-400">
+                  Alerta: no se ha conectado tu carpeta de Drive. Esto puede ocasionar que tus audios no se guarden. Para guardarlos correctamente, conecta tu carpeta de Drive.
+                </AlertDescription>
+              </Alert>
+            )
+          )}
 
           {error && (
             <Alert variant="destructive" className="mb-6 bg-red-900/50 border-red-800 text-white">
