@@ -517,28 +517,38 @@ const GlobalTasksCalendar: React.FC<GlobalTasksCalendarProps> = ({
             </Button>
           </div>
           <div className="flex gap-5 flex-col">
-            {upcomingTasks.length > 0 ? (
-              upcomingTasks.map((task) => (
-                <button
-                  key={task.id}
-                  className="p-4 rounded-lg bg-blue-800/30 border border-blue-700/30 text-left hover:bg-blue-700/30"
-                  onClick={() =>
-                    task.meeting_id &&
-                    onTaskSelect &&
-                    onTaskSelect(task.meeting_id.toString())
-                  }
-                >
-                  <div className="flex items-center justify-between mb-2">
-                    <div className="flex items-center gap-2">
-                      <span
-                        className={`w-2 h-2 rounded-full ${getPriorityColor(
-                          task.priority
-                        )}`}
-                      />
-                      <p className="text-sm font-medium text-white">
-                        {task.dueDate
-                          ? `${formatDate(task.dueDate)} – ${formatTime(task.dueDate)}`
-                          : "Sin fecha"}
+              {upcomingTasks.length > 0 ? (
+                upcomingTasks.map((task) => (
+                  <button
+                    key={task.id}
+                    className="p-6 rounded-xl bg-blue-800/30 border border-blue-700/30 text-left hover:bg-blue-700/30"
+                    onClick={() =>
+                      task.meeting_id &&
+                      onTaskSelect &&
+                      onTaskSelect(task.meeting_id.toString())
+                    }
+                  >
+                    <div className="flex items-center justify-between mb-3">
+                      <div className="flex items-center gap-2.5">
+                        <span
+                          className={`w-2.5 h-2.5 rounded-full ${getPriorityColor(
+                            task.priority
+                          )}`}
+                        />
+                        <p className="text-base font-medium text-white">
+                          {task.dueDate
+                            ? `${formatDate(task.dueDate)} – ${formatTime(task.dueDate)}`
+                            : "Sin fecha"}
+                        </p>
+                      </div>
+                    </div>
+                    <h6 className="text-xl leading-8 font-semibold text-white mb-1">
+                      {task.text}
+                    </h6>
+                    {task.description && (
+                      <p className="text-base font-normal text-blue-300">
+                        {task.description}
+
                       </p>
                     </div>
                     {task.meeting_title && (
