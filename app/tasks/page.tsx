@@ -449,13 +449,15 @@ const GlobalTasksCalendar: React.FC<GlobalTasksCalendarProps> = ({
           <p className="text-lg font-normal text-blue-300 mb-8">
             No pierdas tu agenda
           </p>
-          <div className="flex gap-2 mb-4">
+          <div className="flex flex-wrap gap-2 mb-4">
             <Button
               variant={filter === "inProgress" ? "default" : "outline"}
+              size="sm"
               className={
-                filter === "inProgress"
+                (filter === "inProgress"
                   ? "bg-blue-600 hover:bg-blue-700"
-                  : "border-blue-600/50 text-blue-300 hover:bg-blue-800/30"
+                  : "border-blue-600/50 text-blue-300 hover:bg-blue-800/30") +
+                " px-2 py-1 text-xs"
               }
               onClick={() => setFilter("inProgress")}
             >
@@ -463,10 +465,12 @@ const GlobalTasksCalendar: React.FC<GlobalTasksCalendarProps> = ({
             </Button>
             <Button
               variant={filter === "pending" ? "default" : "outline"}
+              size="sm"
               className={
-                filter === "pending"
+                (filter === "pending"
                   ? "bg-blue-600 hover:bg-blue-700"
-                  : "border-blue-600/50 text-blue-300 hover:bg-blue-800/30"
+                  : "border-blue-600/50 text-blue-300 hover:bg-blue-800/30") +
+                " px-2 py-1 text-xs"
               }
               onClick={() => setFilter("pending")}
             >
@@ -474,10 +478,12 @@ const GlobalTasksCalendar: React.FC<GlobalTasksCalendarProps> = ({
             </Button>
             <Button
               variant={filter === "overdue" ? "default" : "outline"}
+              size="sm"
               className={
-                filter === "overdue"
+                (filter === "overdue"
                   ? "bg-blue-600 hover:bg-blue-700"
-                  : "border-blue-600/50 text-blue-300 hover:bg-blue-800/30"
+                  : "border-blue-600/50 text-blue-300 hover:bg-blue-800/30") +
+                " px-2 py-1 text-xs"
               }
               onClick={() => setFilter("overdue")}
             >
@@ -485,10 +491,12 @@ const GlobalTasksCalendar: React.FC<GlobalTasksCalendarProps> = ({
             </Button>
             <Button
               variant={filter === "completed" ? "default" : "outline"}
+              size="sm"
               className={
-                filter === "completed"
+                (filter === "completed"
                   ? "bg-blue-600 hover:bg-blue-700"
-                  : "border-blue-600/50 text-blue-300 hover:bg-blue-800/30"
+                  : "border-blue-600/50 text-blue-300 hover:bg-blue-800/30") +
+                " px-2 py-1 text-xs"
               }
               onClick={() => setFilter("completed")}
             >
@@ -496,10 +504,12 @@ const GlobalTasksCalendar: React.FC<GlobalTasksCalendarProps> = ({
             </Button>
             <Button
               variant={filter === "noDate" ? "default" : "outline"}
+              size="sm"
               className={
-                filter === "noDate"
+                (filter === "noDate"
                   ? "bg-blue-600 hover:bg-blue-700"
-                  : "border-blue-600/50 text-blue-300 hover:bg-blue-800/30"
+                  : "border-blue-600/50 text-blue-300 hover:bg-blue-800/30") +
+                " px-2 py-1 text-xs"
               }
               onClick={() => setFilter("noDate")}
             >
