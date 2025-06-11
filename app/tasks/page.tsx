@@ -312,19 +312,20 @@ const GlobalTasksCalendar: React.FC<GlobalTasksCalendarProps> = ({
 }) => {
   const [filter, setFilter] =
     useState<"inProgress" | "pending" | "overdue" | "completed" | "noDate">(
-      "inProgress",
+      "inProgress"
     );
   const [page, setPage] = useState(0);
 
   const currentYear = new Date().getFullYear();
   const tasksThisYear = tasks.filter(
-    (t) => t.dueDate && new Date(t.dueDate).getFullYear() === currentYear,
+    (t) => t.dueDate && new Date(t.dueDate).getFullYear() === currentYear
   );
   const tasksWithoutDate = tasks.filter((t) => !t.dueDate);
 
   useEffect(() => {
     setPage(0);
   }, [filter, tasksThisYear.length, tasksWithoutDate.length]);
+
   // Extrae fechas únicas de un array de tareas
   const uniqueDates = (items: Task[]) =>
     Array.from(new Set(items.map((t) => t.dueDate)))
@@ -333,12 +334,12 @@ const GlobalTasksCalendar: React.FC<GlobalTasksCalendarProps> = ({
   // Modificadores según estado
   const modifiers = {
     completed: uniqueDates(
-      tasksThisYear.filter((t) => t.completed && t.dueDate),
+      tasksThisYear.filter((t) => t.completed && t.dueDate)
     ),
     overdue: uniqueDates(
       tasksThisYear.filter(
-        (t) => !t.completed && t.dueDate && new Date(t.dueDate) < new Date(),
-      ),
+        (t) => !t.completed && t.dueDate && new Date(t.dueDate) < new Date()
+      )
     ),
     inProgress: uniqueDates(
       tasksThisYear.filter(
@@ -347,8 +348,8 @@ const GlobalTasksCalendar: React.FC<GlobalTasksCalendarProps> = ({
           t.dueDate &&
           t.progress > 0 &&
           t.progress < 100 &&
-          new Date(t.dueDate) >= new Date(),
-      ),
+          new Date(t.dueDate) >= new Date()
+      )
     ),
     pending: uniqueDates(
       tasksThisYear.filter(
@@ -356,8 +357,8 @@ const GlobalTasksCalendar: React.FC<GlobalTasksCalendarProps> = ({
           !t.completed &&
           t.dueDate &&
           t.progress === 0 &&
-          new Date(t.dueDate) >= new Date(),
-      ),
+          new Date(t.dueDate) >= new Date()
+      )
     ),
   };
 
@@ -387,9 +388,7 @@ const GlobalTasksCalendar: React.FC<GlobalTasksCalendarProps> = ({
               );
             }
             if (filter === "overdue") {
-              return (
-                !t.completed && t.dueDate && new Date(t.dueDate) < new Date()
-              );
+              return !t.completed && t.dueDate && new Date(t.dueDate) < new Date();
             }
             if (filter === "completed") {
               return t.completed;
@@ -405,12 +404,12 @@ const GlobalTasksCalendar: React.FC<GlobalTasksCalendarProps> = ({
           .sort(
             (a, b) =>
               new Date(a.dueDate || "").getTime() -
-              new Date(b.dueDate || "").getTime(),
+              new Date(b.dueDate || "").getTime()
           );
   const totalPages = Math.ceil(filteredTasks.length / tasksPerPage);
   const upcomingTasks = filteredTasks.slice(
     page * tasksPerPage,
-    page * tasksPerPage + tasksPerPage,
+    page * tasksPerPage + tasksPerPage
   );
 
   // Helpers
@@ -440,83 +439,83 @@ const GlobalTasksCalendar: React.FC<GlobalTasksCalendarProps> = ({
   return (
     <section className="bg-blue-800/20 border border-blue-700/30 rounded-xl p-6">
       <div className="w-full max-w-7xl mx-auto px-2 lg:px-8">
-        <div className="grid grid-cols-12 gap-8 max-w-4xl mx-auto xl:max-w-full">
+        <div className="grid grid-cols-12 gap-8 w-full mx-auto">
           {/* Próximas tareas */}
           <div className="col-span-12 xl:col-span-5">
             <h2 className="font-manrope text-2xl leading-tight text-white mb-1.5">
               Próximas tareas
             </h2>
-          <p className="text-lg font-normal text-blue-300 mb-8">
-            No pierdas tu agenda
-          </p>
-          <div className="flex flex-wrap gap-2 mb-4">
-            <Button
-              variant={filter === "inProgress" ? "default" : "outline"}
-              size="sm"
-              className={
-                (filter === "inProgress"
-                  ? "bg-blue-600 hover:bg-blue-700"
-                  : "border-blue-600/50 text-blue-300 hover:bg-blue-800/30") +
-                " px-2 py-1 text-xs"
-              }
-              onClick={() => setFilter("inProgress")}
-            >
-              En progreso
-            </Button>
-            <Button
-              variant={filter === "pending" ? "default" : "outline"}
-              size="sm"
-              className={
-                (filter === "pending"
-                  ? "bg-blue-600 hover:bg-blue-700"
-                  : "border-blue-600/50 text-blue-300 hover:bg-blue-800/30") +
-                " px-2 py-1 text-xs"
-              }
-              onClick={() => setFilter("pending")}
-            >
-              Pendientes
-            </Button>
-            <Button
-              variant={filter === "overdue" ? "default" : "outline"}
-              size="sm"
-              className={
-                (filter === "overdue"
-                  ? "bg-blue-600 hover:bg-blue-700"
-                  : "border-blue-600/50 text-blue-300 hover:bg-blue-800/30") +
-                " px-2 py-1 text-xs"
-              }
-              onClick={() => setFilter("overdue")}
-            >
-              Vencidas
-            </Button>
-            <Button
-              variant={filter === "completed" ? "default" : "outline"}
-              size="sm"
-              className={
-                (filter === "completed"
-                  ? "bg-blue-600 hover:bg-blue-700"
-                  : "border-blue-600/50 text-blue-300 hover:bg-blue-800/30") +
-                " px-2 py-1 text-xs"
-              }
-              onClick={() => setFilter("completed")}
-            >
-              Completadas
-            </Button>
-            <Button
-              variant={filter === "noDate" ? "default" : "outline"}
-              size="sm"
-              className={
-                (filter === "noDate"
-                  ? "bg-blue-600 hover:bg-blue-700"
-                  : "border-blue-600/50 text-blue-300 hover:bg-blue-800/30") +
-                " px-2 py-1 text-xs"
-              }
-              onClick={() => setFilter("noDate")}
-            >
-              Sin fecha
-            </Button>
-          </div>
-          <div className="flex gap-5 flex-col">
+            <p className="text-lg font-normal text-blue-300 mb-8">
+              No pierdas tu agenda
+            </p>
+            <div className="flex flex-wrap gap-2 mb-4">
+              <Button
+                variant={filter === "inProgress" ? "default" : "outline"}
+                size="sm"
+                className={
+                  (filter === "inProgress"
+                    ? "bg-blue-600 hover:bg-blue-700"
+                    : "border-blue-600/50 text-blue-300 hover:bg-blue-800/30") +
+                  " px-2 py-1 text-xs"
+                }
+                onClick={() => setFilter("inProgress")}
+              >
+                En progreso
+              </Button>
+              <Button
+                variant={filter === "pending" ? "default" : "outline"}
+                size="sm"
+                className={
+                  (filter === "pending"
+                    ? "bg-blue-600 hover:bg-blue-700"
+                    : "border-blue-600/50 text-blue-300 hover:bg-blue-800/30") +
+                  " px-2 py-1 text-xs"
+                }
+                onClick={() => setFilter("pending")}
+              >
+                Pendientes
+              </Button>
+              <Button
+                variant={filter === "overdue" ? "default" : "outline"}
+                size="sm"
+                className={
+                  (filter === "overdue"
+                    ? "bg-blue-600 hover:bg-blue-700"
+                    : "border-blue-600/50 text-blue-300 hover:bg-blue-800/30") +
+                  " px-2 py-1 text-xs"
+                }
+                onClick={() => setFilter("overdue")}
+              >
+                Vencidas
+              </Button>
+              <Button
+                variant={filter === "completed" ? "default" : "outline"}
+                size="sm"
+                className={
+                  (filter === "completed"
+                    ? "bg-blue-600 hover:bg-blue-700"
+                    : "border-blue-600/50 text-blue-300 hover:bg-blue-800/30") +
+                  " px-2 py-1 text-xs"
+                }
+                onClick={() => setFilter("completed")}
+              >
+                Completadas
+              </Button>
+              <Button
+                variant={filter === "noDate" ? "default" : "outline"}
+                size="sm"
+                className={
+                  (filter === "noDate"
+                    ? "bg-blue-600 hover:bg-blue-700"
+                    : "border-blue-600/50 text-blue-300 hover:bg-blue-800/30") +
+                  " px-2 py-1 text-xs"
+                }
+                onClick={() => setFilter("noDate")}
+              >
+                Sin fecha
+              </Button>
+            </div>
+            <div className="flex gap-5 flex-col">
               {upcomingTasks.length > 0 ? (
                 upcomingTasks.map((task) => (
                   <button
@@ -537,7 +536,9 @@ const GlobalTasksCalendar: React.FC<GlobalTasksCalendarProps> = ({
                         />
                         <p className="text-base font-medium text-white">
                           {task.dueDate
-                            ? `${formatDate(task.dueDate)} – ${formatTime(task.dueDate)}`
+                            ? `${formatDate(task.dueDate)} – ${formatTime(
+                                task.dueDate
+                              )}`
                             : "Sin fecha"}
                         </p>
                       </div>
@@ -586,7 +587,7 @@ const GlobalTasksCalendar: React.FC<GlobalTasksCalendarProps> = ({
             <h5 className="text-xl leading-8 font-semibold text-white mb-4">
               Calendario
             </h5>
-            <div className="border border-blue-700/30 rounded-xl p-2 bg-blue-800/30">
+            <div className="w-full border border-blue-700/30 rounded-xl p-2 bg-blue-800/30">
               <Calendar
                 mode="single"
                 selected={selected}
@@ -598,7 +599,8 @@ const GlobalTasksCalendar: React.FC<GlobalTasksCalendarProps> = ({
                   inProgress: "bg-yellow-500 text-black hover:bg-yellow-500",
                   pending: "bg-orange-500 text-white hover:bg-orange-500",
                 }}
-                className="rounded-lg"
+                className="w-full rounded-lg"
+                style={{ width: "100%" }}
               />
             </div>
             <div className="mt-4 text-sm text-blue-300">
@@ -612,7 +614,9 @@ const GlobalTasksCalendar: React.FC<GlobalTasksCalendarProps> = ({
                       <button
                         className="flex items-center w-full text-left hover:bg-blue-700/30 p-1 rounded"
                         onClick={() =>
-                          t.meeting_id && onTaskSelect && onTaskSelect(t.meeting_id.toString())
+                          t.meeting_id &&
+                          onTaskSelect &&
+                          onTaskSelect(t.meeting_id.toString())
                         }
                       >
                         <span
@@ -635,7 +639,6 @@ const GlobalTasksCalendar: React.FC<GlobalTasksCalendarProps> = ({
     </section>
   );
 };
-
 
 export default function TasksPage() {
   const [viewMode, setViewMode] = useState<"my-tasks" | "organization-tasks">(
