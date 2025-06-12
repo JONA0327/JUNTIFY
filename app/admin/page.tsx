@@ -19,7 +19,7 @@ import {
 
 export default function AdminPage() {
   const options = [
-    { title: "Feedbacks", icon: MessageSquare, available: false },
+    { title: "Feedbacks", icon: MessageSquare, available: true, href: "/admin/feedbacks" },
     {
       title: "Cambios de Juntify",
       icon: History,
