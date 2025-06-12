@@ -3,6 +3,10 @@ import { google } from "googleapis"
 import { query } from "@/utils/mysql"
 import { getUsernameFromRequest } from "@/utils/user-helpers"
 
+const GOOGLE_CALLBACK_URL =
+  process.env.GOOGLE_CALLBACK_URL ??
+  "https://juntify.com/api/auth/google/callback"
+
 // Cuenta de servicio de Juntify
 const SERVICE_ACCOUNT_EMAIL = "juntify@numeric-replica-450010-h9.iam.gserviceaccount.com"
 
@@ -27,7 +31,7 @@ export async function POST(request: Request) {
     const oauth2Client = new google.auth.OAuth2(
       "632914395060-1bbtbbis41qb65ac4fpbut7js05s95ch.apps.googleusercontent.com",
       "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",
-      "https://juntify.com/api/auth/google/callback",
+      GOOGLE_CALLBACK_URL,
     )
 
     oauth2Client.setCredentials({

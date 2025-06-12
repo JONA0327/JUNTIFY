@@ -4,12 +4,16 @@ import { query } from "@/utils/mysql"
 import { google } from "googleapis"
 import { Readable } from "stream"
 
+const GOOGLE_CALLBACK_URL =
+  process.env.GOOGLE_CALLBACK_URL ??
+  "https://juntify.com/api/auth/google/callback"
+
 // Reemplazar la función verifyGoogleDriveCredentials para usar credenciales hardcodeadas
 async function verifyGoogleDriveCredentials() {
   // Usar credenciales hardcodeadas directamente del JSON proporcionado
   const clientId = "632914395060-1bbtbbis41qb65ac4fpbut7js05s95ch.apps.googleusercontent.com"
   const clientSecret = "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"
-  const redirectUri = "https://juntify.com/api/auth/google/callback"
+  const redirectUri = GOOGLE_CALLBACK_URL
   const projectId = "numeric-replica-450010-h9"
   const clientEmail = "juntify@numeric-replica-450010-h9.iam.gserviceaccount.com"
 
@@ -139,7 +143,7 @@ async function fixFolderPermissions(folderId: string, username: string): Promise
     const oauth2Client = new google.auth.OAuth2(
       "632914395060-1bbtbbis41qb65ac4fpbut7js05s95ch.apps.googleusercontent.com",
       "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",
-      "https://juntify.com/api/auth/google/callback",
+      GOOGLE_CALLBACK_URL,
     )
 
     oauth2Client.setCredentials({
