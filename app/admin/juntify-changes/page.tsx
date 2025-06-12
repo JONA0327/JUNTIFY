@@ -1,13 +1,13 @@
-"use client";
+"use client"
 
-import { useEffect, useState, FormEvent } from "react";
-import { NewNavbar } from "@/components/new-navbar";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
-import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import { Edit, Trash2 } from "lucide-react";
+import { useEffect, useState, FormEvent } from "react"
+import { NewNavbar } from "@/components/new-navbar"
+import { Button } from "@/components/ui/button"
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { Input } from "@/components/ui/input"
+import { Textarea } from "@/components/ui/textarea"
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
+import { Edit, Trash2 } from "lucide-react"
 import {
   Dialog,
   DialogContent,
@@ -15,7 +15,8 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-} from "@/components/ui/dialog";
+} from "@/components/ui/dialog"
+
 
 function formatDescription(text: string) {
   const lines = text.split(/\r?\n/).filter((l) => l.trim() !== "");
@@ -45,94 +46,79 @@ function formatDescription(text: string) {
       ))}
     </>
   );
-  id: number;
-  version: string;
-  description: string;
+}
 
-  const [changes, setChanges] = useState<Change[]>([]);
-  const [version, setVersion] = useState("");
-  const [description, setDescription] = useState("");
-  const [error, setError] = useState("");
-  const [editingId, setEditingId] = useState<number | null>(null);
-  const [showDeleteModal, setShowDeleteModal] = useState(false);
-  const [deleteId, setDeleteId] = useState<number | null>(null);
-    const res = await fetch("/api/juntify-changes");
-      const data = await res.json();
-      setChanges(data);
-  };
-    fetchChanges();
-  }, []);
-    e.preventDefault();
-      setError("Versión y descripción son requeridas");
-      return;
-      body: JSON.stringify({ version: version.trim(), description }),
-    });
-      setVersion("");
-      setDescription("");
-      setError("");
-      fetchChanges();
-      const data = await res.json();
-      setError(data.error || "Error al guardar");
-  };
-    e.preventDefault();
-    if (editingId === null) return;
-      setError("Versión y descripción son requeridas");
-      return;
-      body: JSON.stringify({ version: version.trim(), description }),
-    });
-      setVersion("");
-      setDescription("");
-      setEditingId(null);
-      setError("");
-      fetchChanges();
-      const data = await res.json();
-      setError(data.error || "Error al actualizar");
-  };
-    setDeleteId(id);
-    setShowDeleteModal(true);
-  };
-    if (deleteId === null) return;
-    });
-      fetchChanges();
-    setShowDeleteModal(false);
-    setDeleteId(null);
-  };
 
-    setEditingId(change.id);
-    setVersion(change.version);
-    setDescription(change.description);
-  };
-    setEditingId(null);
-    setVersion("");
-    setDescription("");
-    setError("");
-  };
-          <h1 className="text-3xl font-bold text-white mb-4 glow-text">
-            Cambios de Juntify
-          </h1>
-              <CardTitle>
-                {editingId ? "Editar Cambio" : "Nuevo Cambio"}
-              </CardTitle>
-                <Alert
-                  variant="destructive"
-                  className="mb-4 bg-red-900/40 border-red-800 text-white"
-                >
-              <form
-                onSubmit={editingId ? handleUpdate : handleCreate}
-                className="space-y-4"
-              >
-                  <Button
-                    type="submit"
-                    className="bg-blue-600 hover:bg-blue-700"
-                  >
-                    <td className="py-2 px-4 align-top whitespace-nowrap">
-                      {chg.version}
-                    </td>
-                    <td className="py-2 px-4 align-top whitespace-pre-wrap">
-                      {formatDescription(chg.description)}
-                    </td>
-  );
-      fetchChanges()
+interface Change {
+  id: number
+  version: string
+  description: string
+}
+
+export default function JuntifyChangesPage() {
+  const [changes, setChanges] = useState<Change[]>([])
+  const [version, setVersion] = useState("")
+  const [description, setDescription] = useState("")
+  const [error, setError] = useState("")
+  const [editingId, setEditingId] = useState<number | null>(null)
+  const [showDeleteModal, setShowDeleteModal] = useState(false)
+  const [deleteId, setDeleteId] = useState<number | null>(null)
+
+  const refreshChanges = async () => {
+    const res = await fetch("/api/juntify-changes")
+    if (res.ok) {
+      const data = await res.json()
+      setChanges(data)
+    }
+  }
+
+  useEffect(() => {
+    async function fetchChanges() {
+      await refreshChanges()
+    }
+    fetchChanges()
+  }, [])
+
+  const handleCreate = async (e: FormEvent) => {
+    e.preventDefault()
+    if (!version.trim() || !description.trim()) {
+      setError("Versión y descripción son requeridas")
+      return
+    }
+    const res = await fetch("/api/juntify-changes", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ version: version.trim(), description })
+    })
+    if (res.ok) {
+      setVersion("")
+      setDescription("")
+      setError("")
+      refreshChanges()
+    } else {
+      const data = await res.json()
+      setError(data.error || "Error al guardar")
+    }
+  }
+
+  const handleUpdate = async (e: FormEvent) => {
+    e.preventDefault()
+    if (editingId === null) return
+    if (!version.trim() || !description.trim()) {
+      setError("Versión y descripción son requeridas")
+      return
+    }
+    const res = await fetch(`/api/juntify-changes/${editingId}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ version: version.trim(), description })
+    })
+    if (res.ok) {
+      setVersion("")
+      setDescription("")
+      setEditingId(null)
+      setError("")
+      refreshChanges()
     } else {
       const data = await res.json()
       setError(data.error || "Error al actualizar")
@@ -150,7 +136,7 @@ function formatDescription(text: string) {
       method: "DELETE",
     })
     if (res.ok) {
-      fetchChanges()
+      refreshChanges()
     }
     setShowDeleteModal(false)
     setDeleteId(null)
@@ -228,7 +214,7 @@ function formatDescription(text: string) {
                   <tr key={chg.id} className="border-t border-blue-700/30">
 
                     <td className="py-2 px-4 align-top whitespace-nowrap">{chg.version}</td>
-                    <td className="py-2 px-4 align-top whitespace-pre-wrap">{highlightNotes(chg.description)}</td>
+                    <td className="py-2 px-4 align-top whitespace-pre-wrap">{formatDescription(chg.description)}</td>
                     <td className="py-2 px-4">
 
                       <div className="flex items-center gap-2">
