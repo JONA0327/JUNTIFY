@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server"
 import { getUsernameFromRequest } from "@/utils/user-helpers"
 import type { NextRequest } from "next/server"
-import { createServerSupabaseClient } from "@/utils/supabase"
+import { queryOne } from "@/utils/mysql"
 
 export async function GET(request: NextRequest) {
   try {
@@ -12,18 +12,12 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: "Unauthorized - Username not provided" }, { status: 401 })
     }
 
-    // Obtener el cliente de Supabase
-    const supabase = createServerSupabaseClient()
+    const userData = await queryOne(
+      "SELECT id, username, full_name, email, organization FROM users WHERE username = ? OR email = ?",
+      [username, username],
+    )
 
-    // Buscar el usuario por email en Supabase (asumiendo que el username es el email)
-    const { data: userData, error: userError } = await supabase
-      .from("users")
-      .select("id, email, raw_user_meta_data")
-      .eq("email", username)
-      .single()
-
-    if (userError || !userData) {
-      // Si no se encuentra en la base de datos, devolver información básica
+    if (!userData) {
       return NextResponse.json({
         id: "temp-id",
         name: username,
@@ -32,12 +26,11 @@ export async function GET(request: NextRequest) {
       })
     }
 
-    // Extraer información relevante
     const userInfo = {
       id: userData.id,
       email: userData.email,
-      name: userData.raw_user_meta_data?.full_name || "",
-      organization: userData.raw_user_meta_data?.organization || "",
+      name: userData.full_name || "",
+      organization: userData.organization || "",
     }
 
     return NextResponse.json(userInfo)
@@ -56,17 +49,26 @@ export async function PUT(request: NextRequest) {
       return NextResponse.json({ error: "Unauthorized - Username not provided" }, { status: 401 })
     }
 
-    // Obtener los datos del cuerpo de la solicitud
     const data = await request.json()
     const { name } = data
 
-    // Aquí normalmente actualizarías los datos en la base de datos
-    // Por ahora, simplemente devolvemos los datos actualizados
+    if (name) {
+      await queryOne(
+        "UPDATE users SET full_name = ? WHERE username = ? OR email = ?",
+        [name, username, username],
+      )
+    }
+
+    const updated = await queryOne(
+      "SELECT id, username, full_name, email, organization FROM users WHERE username = ? OR email = ?",
+      [username, username],
+    )
+
     return NextResponse.json({
-      id: "temp-id",
-      name: name || username,
-      email: username,
-      organization: "Default Organization",
+      id: updated?.id || "temp-id",
+      name: updated?.full_name || username,
+      email: updated?.email || username,
+      organization: updated?.organization || "",
     })
   } catch (error) {
     console.error("Error updating user info:", error)

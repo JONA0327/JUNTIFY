@@ -1,5 +1,4 @@
 import { NextResponse } from "next/server"
-import { getSupabaseClient } from "@/utils/supabase"
 import { taskService } from "@/services/taskService"
 
 export async function GET(request: Request, { params }: { params: { id: string } }) {

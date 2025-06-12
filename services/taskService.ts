@@ -1,5 +1,4 @@
 import { query, queryOne, type Task, type TaskComment } from "@/utils/mysql"
-import { createServerSupabaseClient } from "@/utils/supabase"
 
 export const taskService = {
   // Get tasks for a user
@@ -102,19 +101,13 @@ export const taskService = {
     try {
       const createdTasks: Task[] = []
 
-      // Get organization members from Supabase
-      const supabase = createServerSupabaseClient()
-      const { data: profiles } = await supabase.from("profiles").select("username, full_name")
-
-      // Create a map of usernames to full names
+      const profiles = await query(
+        "SELECT username, full_name FROM users WHERE username IS NOT NULL AND full_name IS NOT NULL",
+      )
       const userMap = new Map()
-      if (profiles) {
-        profiles.forEach((profile) => {
-          if (profile.username && profile.full_name) {
-            userMap.set(profile.username.toLowerCase(), profile.full_name)
-          }
-        })
-      }
+      profiles.forEach((p: any) => {
+        userMap.set(p.username.toLowerCase(), p.full_name)
+      })
 
       // Obtener el grupo del usuario
       const user = await queryOne("SELECT organization FROM users WHERE username = ?", [username])

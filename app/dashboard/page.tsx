@@ -24,7 +24,6 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { useRouter } from "next/navigation"
 import { format } from "date-fns"
 import { es } from "date-fns/locale"
-import { getSupabaseClient } from "@/utils/supabase"
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
 import { getUsername, storeUsername } from "@/utils/user-helpers"
 import { TemporaryAudioPlayer } from "@/components/temporary-audio-player"
@@ -109,6 +108,7 @@ const ConversationDetail = ({ conversation, onClose }) => {
         "Content-Type": "application/json",
       },
       body: JSON.stringify({ newTitle: editedTitle }),
+      credentials: "include",
     });
     setIsSavingTitle(false);
     setIsEditingTitle(false);
@@ -473,6 +473,7 @@ const UsageIndicator = () => {
         const response = await fetch("/api/user/usage", {
           headers: {
           },
+          credentials: "include",
         })
 
         if (!response.ok) {
@@ -571,27 +572,17 @@ export default function DashboardPage() {
           return;
         }
 
-        // Si no hay username en localStorage, intenta obtenerlo de Supabase
-        const supabase = getSupabaseClient();
-        const { data, error } = await supabase.auth.getSession();
-
-        if (error || !data.session) {
-          console.error("Auth error:", error);
-          setAuthError(true);
-          return;
-        }
-
-        // Obtiene el username del perfil
-        const { data: profileData } = await supabase
-          .from("profiles")
-          .select("username")
-          .eq("id", data.session.user.id)
-          .single();
-
-        if (profileData?.username) {
-          storeUsername(profileData.username);
-          setUsername(profileData.username);
-          setAuthError(false);
+        const res = await fetch("/api/users/me", { credentials: "include" });
+        if (res.ok) {
+          const data = await res.json();
+          const name = data.username || data.email || data.name;
+          if (name) {
+            storeUsername(name);
+            setUsername(name);
+            setAuthError(false);
+          } else {
+            setAuthError(true);
+          }
         } else {
           setAuthError(true);
         }
@@ -619,6 +610,7 @@ export default function DashboardPage() {
       const response = await fetch("/api/meetings", {
         headers: {
         },
+        credentials: "include",
       });
 
       if (!response.ok) {
@@ -643,6 +635,7 @@ export default function DashboardPage() {
               const detailResponse = await fetch(`/api/meetings/${conversation.id}/transcription`, {
                 headers: {
                 },
+                credentials: "include",
               });
 
               if (detailResponse.ok) {
@@ -699,6 +692,7 @@ export default function DashboardPage() {
       const response = await fetch(`/api/meetings/${conversation.id}`, {
         headers: {
         },
+        credentials: "include",
       })
 
       if (!response.ok) {
@@ -736,6 +730,7 @@ export default function DashboardPage() {
         method: "DELETE",
         headers: {
         },
+        credentials: "include",
       })
 
       if (!response.ok) {

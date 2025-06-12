@@ -37,7 +37,6 @@ import {
 import { NewTaskModal } from "@/components/new-task-modal";
 import { EditTaskModal } from "@/components/edit-task-modal";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import { getSupabaseClient } from "@/utils/supabase";
 import { getUsername, storeUsername } from "@/utils/user-helpers";
 import { useRouter } from "next/navigation";
 import { toast } from "@/components/ui/use-toast";
@@ -707,31 +706,18 @@ export default function TasksPage() {
           return;
         }
 
-        // If no username in localStorage, try to get it from Supabase session
-        const supabase = getSupabaseClient();
-        const { data, error } = await supabase.auth.getSession();
-
-        if (error || !data.session) {
-          console.error("Error de autenticación:", error);
-          setAuthError(true);
-          return;
-        }
-
-        // Get username from profile
-        const { data: profileData } = await supabase
-          .from("profiles")
-          .select("username")
-          .eq("id", data.session.user.id)
-          .single();
-
-        if (profileData?.username) {
-          console.log("Username obtenido de Supabase:", profileData.username);
-          // Store username in localStorage for future use
-          storeUsername(profileData.username);
-          setUsername(profileData.username);
-          setAuthError(false);
+        const res = await fetch("/api/users/me", { credentials: "include" });
+        if (res.ok) {
+          const data = await res.json();
+          const name = data.username || data.email || data.name;
+          if (name) {
+            storeUsername(name);
+            setUsername(name);
+            setAuthError(false);
+          } else {
+            setAuthError(true);
+          }
         } else {
-          console.error("No se encontró username en el perfil");
           setAuthError(true);
         }
       } catch (error) {
@@ -743,27 +729,7 @@ export default function TasksPage() {
     checkAuth();
   }, []);
 
-  // Suscribirse a eliminaciones en tiempo real de la tabla de tareas
-  useEffect(() => {
-    const supabase = getSupabaseClient();
-    const channel = supabase
-      .channel("tasks-page")
-      .on(
-        "postgres_changes",
-        { event: "DELETE", schema: "public", table: "tasks" },
-        (payload) => {
-          const deletedId = payload.old.id;
-          setTasks((prev) => prev.filter((t) => t.id !== deletedId));
-          setAllTasks((prev) => prev.filter((t) => t.id !== deletedId));
-        },
-      );
 
-    channel.subscribe();
-
-    return () => {
-      supabase.removeChannel(channel);
-    };
-  }, []);
 
   // Función para obtener las tareas
   const fetchTasks = async (username: string) => {
@@ -796,6 +762,7 @@ export default function TasksPage() {
           headers: {
           },
           cache: "no-store",
+          credentials: "include",
         });
 
         console.log("Response status:", response.status);
@@ -841,6 +808,7 @@ export default function TasksPage() {
         headers: {
         },
         cache: 'no-store',
+        credentials: 'include',
       });
       if (!response.ok) {
         throw new Error(`Error ${response.status}`);
@@ -883,6 +851,7 @@ export default function TasksPage() {
             headers: {
             },
             cache: "no-store",
+            credentials: "include",
           });
 
           if (userResponse.ok) {
@@ -907,6 +876,7 @@ export default function TasksPage() {
             headers: {
             },
             cache: "no-store",
+            credentials: "include",
           });
 
           if (meetingsResponse.ok) {
@@ -1014,6 +984,7 @@ export default function TasksPage() {
           completed: !taskToUpdate.completed,
           progress: !taskToUpdate.completed ? 100 : taskToUpdate.progress,
         }),
+        credentials: "include",
       });
 
       if (!response.ok) {
@@ -1091,6 +1062,7 @@ export default function TasksPage() {
         method: "DELETE",
         headers: {
         },
+        credentials: "include",
       });
 
       if (!response.ok) {
@@ -1148,6 +1120,7 @@ export default function TasksPage() {
           progress: 0,
           completed: false,
         }),
+        credentials: "include",
       });
 
       if (!response.ok) {

@@ -34,7 +34,6 @@ import {
 } from "lucide-react";
 import { GoogleDriveSetup } from "@/components/google-drive-setup";
 import { getUsername, storeUsername } from "@/utils/user-helpers";
-import { getSupabaseClient } from "@/utils/supabase";
 import { UserBadge } from "@/components/user-badge";
 
 function formatDescription(text: string) {
@@ -148,24 +147,12 @@ export default function ProfilePage() {
           setUsername(storedUsername);
         }
 
-        const supabase = getSupabaseClient();
-        const {
-          data: { user },
-        } = await supabase.auth.getUser();
-
-        if (user) {
-          setEmail(user.email || "");
-          const metadata = user.user_metadata || {};
-          setFullName(metadata.full_name || "");
-
-          const { data: profile } = await supabase
-            .from("profiles")
-            .select("role")
-            .eq("id", user.id)
-            .single();
-          setRole(profile?.role);
-          console.log("Perfil obtenido:", profile);
-          console.log("Rol obtenido:", profile?.role);
+        const res = await fetch("/api/users/me", { credentials: "include" });
+        if (res.ok) {
+          const data = await res.json();
+          setEmail(data.email || "");
+          setFullName(data.name || "");
+          setRole(data.role);
         }
       } catch (err) {
         console.error("Error al cargar datos del usuario:", err);
@@ -205,14 +192,16 @@ export default function ProfilePage() {
 
     try {
       storeUsername(username.trim());
-      const supabase = getSupabaseClient();
-      const { error: updateError } = await supabase.auth.updateUser({
-        data: {
-          full_name: fullName.trim(),
+      const res = await fetch("/api/users/me", {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
         },
+        credentials: "include",
+        body: JSON.stringify({ name: fullName.trim() }),
       });
 
-      if (updateError) throw updateError;
+      if (!res.ok) throw new Error("Update failed");
 
       setSuccess("Perfil actualizado correctamente");
       setError(null);
@@ -229,9 +218,7 @@ export default function ProfilePage() {
   const handleLogout = async () => {
     setLoggingOut(true);
     try {
-      const supabase = getSupabaseClient();
-      await supabase.auth.signOut();
-
+      document.cookie = "auth_token=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT";
       localStorage.removeItem("juntify_username");
       localStorage.removeItem("juntify_token");
 
