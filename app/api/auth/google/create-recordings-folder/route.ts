@@ -3,12 +3,12 @@ import { google } from "googleapis"
 import { query } from "@/utils/mysql"
 import { getUsernameFromRequest } from "@/utils/user-helpers"
 
-const GOOGLE_CALLBACK_URL =
-  process.env.GOOGLE_CALLBACK_URL ??
+const GOOGLE_REDIRECT_URI =
+  process.env.GOOGLE_REDIRECT_URI ??
   "https://juntify.com/api/auth/google/callback"
 
 // Cuenta de servicio de Juntify
-const SERVICE_ACCOUNT_EMAIL = "juntify@numeric-replica-450010-h9.iam.gserviceaccount.com"
+const SERVICE_ACCOUNT_EMAIL = process.env.GOOGLE_SERVICE_ACCOUNT_CLIENT_EMAIL || ""
 
 export async function POST(request: Request) {
   try {
@@ -29,9 +29,10 @@ export async function POST(request: Request) {
 
     // Configurar OAuth2 con los tokens del usuario
     const oauth2Client = new google.auth.OAuth2(
-      "632914395060-1bbtbbis41qb65ac4fpbut7js05s95ch.apps.googleusercontent.com",
-      "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",
-      GOOGLE_CALLBACK_URL,
+      process.env.GOOGLE_CLIENT_ID || "",
+      process.env.GOOGLE_CLIENT_SECRET || "",
+      GOOGLE_REDIRECT_URI,
+
     )
 
     oauth2Client.setCredentials({
