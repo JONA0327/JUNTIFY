@@ -1,13 +1,13 @@
-"use client"
+"use client";
 
-import { useEffect, useState, FormEvent } from "react"
-import { NewNavbar } from "@/components/new-navbar"
-import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { Input } from "@/components/ui/input"
-import { Textarea } from "@/components/ui/textarea"
-import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
-import { Edit, Trash2 } from "lucide-react"
+import { useEffect, useState, FormEvent } from "react";
+import { NewNavbar } from "@/components/new-navbar";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { Edit, Trash2 } from "lucide-react";
 import {
   Dialog,
   DialogContent,
@@ -15,89 +15,123 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-} from "@/components/ui/dialog"
+} from "@/components/ui/dialog";
 
-
-function highlightNotes(text: string) {
-  const parts = text.split(/(Notas?:)/gi)
-  return parts.map((p, i) =>
-    /^Notas?:/i.test(p) ? (
-      <span key={i} className="text-yellow-300">
-        {p}
-      </span>
-    ) : (
-      <span key={i}>{p}</span>
-    )
-  )
-}
-
-
-interface Change {
-  id: number
-  version: string
-  description: string
-}
-
-export default function JuntifyChangesPage() {
-  const [changes, setChanges] = useState<Change[]>([])
-  const [version, setVersion] = useState("")
-  const [description, setDescription] = useState("")
-  const [error, setError] = useState("")
-  const [editingId, setEditingId] = useState<number | null>(null)
-  const [showDeleteModal, setShowDeleteModal] = useState(false)
-  const [deleteId, setDeleteId] = useState<number | null>(null)
-
-  const fetchChanges = async () => {
-    const res = await fetch("/api/juntify-changes")
-    if (res.ok) {
-      const data = await res.json()
-      setChanges(data)
-    }
-  }
-
-  useEffect(() => {
-    fetchChanges()
-  }, [])
-
-  const handleCreate = async (e: FormEvent) => {
-    e.preventDefault()
-    if (!version.trim() || !description.trim()) {
-      setError("Versión y descripción son requeridas")
-      return
-    }
-    const res = await fetch("/api/juntify-changes", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ version: version.trim(), description })
-    })
-    if (res.ok) {
-      setVersion("")
-      setDescription("")
-      setError("")
-      fetchChanges()
+function formatDescription(text: string) {
+  const lines = text.split(/\r?\n/).filter((l) => l.trim() !== "");
+  const bullets: string[] = [];
+  const notes: string[] = [];
+  for (const line of lines) {
+    const match = line.match(/^Notas?:\s*(.*)/i);
+    if (match) {
+      notes.push(match[1]);
     } else {
-      const data = await res.json()
-      setError(data.error || "Error al guardar")
+      bullets.push(line);
     }
   }
+  return (
+    <>
+      {bullets.length > 0 && (
+        <ul className="list-disc pl-5 space-y-1">
+          {bullets.map((b, i) => (
+            <li key={i}>{b}</li>
+          ))}
+        </ul>
+      )}
+      {notes.map((n, i) => (
+        <p key={`note-${i}`} className="text-yellow-300 mt-2">
+          Notas: {n}
+        </p>
+      ))}
+    </>
+  );
+  id: number;
+  version: string;
+  description: string;
 
-  const handleUpdate = async (e: FormEvent) => {
-    e.preventDefault()
-    if (editingId === null) return
-    if (!version.trim() || !description.trim()) {
-      setError("Versión y descripción son requeridas")
-      return
-    }
-    const res = await fetch(`/api/juntify-changes/${editingId}`, {
-      method: "PATCH",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ version: version.trim(), description })
-    })
-    if (res.ok) {
-      setVersion("")
-      setDescription("")
-      setEditingId(null)
-      setError("")
+  const [changes, setChanges] = useState<Change[]>([]);
+  const [version, setVersion] = useState("");
+  const [description, setDescription] = useState("");
+  const [error, setError] = useState("");
+  const [editingId, setEditingId] = useState<number | null>(null);
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [deleteId, setDeleteId] = useState<number | null>(null);
+    const res = await fetch("/api/juntify-changes");
+      const data = await res.json();
+      setChanges(data);
+  };
+    fetchChanges();
+  }, []);
+    e.preventDefault();
+      setError("Versión y descripción son requeridas");
+      return;
+      body: JSON.stringify({ version: version.trim(), description }),
+    });
+      setVersion("");
+      setDescription("");
+      setError("");
+      fetchChanges();
+      const data = await res.json();
+      setError(data.error || "Error al guardar");
+  };
+    e.preventDefault();
+    if (editingId === null) return;
+      setError("Versión y descripción son requeridas");
+      return;
+      body: JSON.stringify({ version: version.trim(), description }),
+    });
+      setVersion("");
+      setDescription("");
+      setEditingId(null);
+      setError("");
+      fetchChanges();
+      const data = await res.json();
+      setError(data.error || "Error al actualizar");
+  };
+    setDeleteId(id);
+    setShowDeleteModal(true);
+  };
+    if (deleteId === null) return;
+    });
+      fetchChanges();
+    setShowDeleteModal(false);
+    setDeleteId(null);
+  };
+
+    setEditingId(change.id);
+    setVersion(change.version);
+    setDescription(change.description);
+  };
+    setEditingId(null);
+    setVersion("");
+    setDescription("");
+    setError("");
+  };
+          <h1 className="text-3xl font-bold text-white mb-4 glow-text">
+            Cambios de Juntify
+          </h1>
+              <CardTitle>
+                {editingId ? "Editar Cambio" : "Nuevo Cambio"}
+              </CardTitle>
+                <Alert
+                  variant="destructive"
+                  className="mb-4 bg-red-900/40 border-red-800 text-white"
+                >
+              <form
+                onSubmit={editingId ? handleUpdate : handleCreate}
+                className="space-y-4"
+              >
+                  <Button
+                    type="submit"
+                    className="bg-blue-600 hover:bg-blue-700"
+                  >
+                    <td className="py-2 px-4 align-top whitespace-nowrap">
+                      {chg.version}
+                    </td>
+                    <td className="py-2 px-4 align-top whitespace-pre-wrap">
+                      {formatDescription(chg.description)}
+                    </td>
+  );
       fetchChanges()
     } else {
       const data = await res.json()
