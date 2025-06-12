@@ -289,8 +289,6 @@ export default function LoginPage() {
             // } else {
             //   console.warn("Facebook Pixel (fbq) not found. Make sure the base code is loaded.");
             // }
-          }
-
           setSuccess("¡Cuenta creada exitosamente! Ahora puedes iniciar sesión.")
 
           // Limpiar formulario y cambiar a inicio de sesión
@@ -302,6 +300,7 @@ export default function LoginPage() {
             setGroupCode("")
             setIsLogin(true)
           }, 2000)
+          }
         } catch (error: any) {
           // Verificar si el error es de username duplicado
           if (error.message?.includes("duplicate key") && error.message?.includes("username")) {
