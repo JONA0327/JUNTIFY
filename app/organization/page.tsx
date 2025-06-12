@@ -80,7 +80,6 @@ export default function OrganizationPage() {
 
       const response = await fetch("/api/organizations/me", {
         headers: {
-          "X-Username": username,
         },
       })
 
@@ -124,7 +123,6 @@ export default function OrganizationPage() {
       // Obtener el ID del usuario
       const userResponse = await fetch("/api/users/me", {
         headers: {
-          "X-Username": username,
         },
       })
 
@@ -194,7 +192,6 @@ export default function OrganizationPage() {
       // Obtener el ID del usuario
       const userResponse = await fetch("/api/users/me", {
         headers: {
-          "X-Username": username,
         },
       })
 
@@ -242,7 +239,6 @@ export default function OrganizationPage() {
       // Obtener el ID del usuario
       const userResponse = await fetch("/api/users/me", {
         headers: {
-          "X-Username": username,
         },
       })
 
@@ -256,7 +252,6 @@ export default function OrganizationPage() {
       const response = await fetch(`/api/groups/${organization.id}/members/${userData.id}`, {
         method: "DELETE",
         headers: {
-          "X-Username": username,
         },
       })
 
@@ -289,7 +284,6 @@ export default function OrganizationPage() {
       const response = await fetch(`/api/groups/${organization.id}/members/${selectedMember.id}`, {
         method: "DELETE",
         headers: {
-          "X-Username": username,
         },
       })
 
@@ -321,7 +315,6 @@ export default function OrganizationPage() {
       const response = await fetch(`/api/groups/${organization.id}/members/${selectedMember.id}/promote`, {
         method: "PUT",
         headers: {
-          "X-Username": username,
         },
       })
 

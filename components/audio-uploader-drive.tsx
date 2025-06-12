@@ -110,7 +110,6 @@ export function AudioUploaderDrive({ onFileSelected, disabled, meetingId }: Audi
       const response = await fetch("/api/upload/google-drive", {
         method: "POST",
         headers: {
-          "X-Username": username,
         },
         body: formData,
       })

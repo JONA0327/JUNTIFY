@@ -53,7 +53,6 @@ export default function SpeakerAudioSegment({
 
         const response = await fetch(`/api/meetings/${meetingId}/audio-file`, {
           headers: {
-            "X-Username": username,
           },
         })
 

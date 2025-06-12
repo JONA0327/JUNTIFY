@@ -102,7 +102,6 @@ export default function TranscriptionsPage() {
 
       const response = await fetch(url, {
         headers: {
-          "X-Username": username,
         },
       })
 
@@ -153,7 +152,6 @@ export default function TranscriptionsPage() {
 
       const response = await fetch(url, {
         headers: {
-          "X-Username": username,
         },
       })
 

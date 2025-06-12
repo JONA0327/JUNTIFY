@@ -348,9 +348,7 @@ Puedo ayudarte con preguntas como:
         "Content-Type": "application/json",
       })
 
-      // Verificar si el objeto headers contiene el encabezado X-Username
       const headersObj = headers instanceof Headers ? headers : new Headers(headers)
-      if (!headersObj.has("X-Username")) {
         throw new Error("No hay usuario autenticado. Por favor, inicia sesión de nuevo.")
       }
 

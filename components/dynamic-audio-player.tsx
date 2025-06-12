@@ -24,7 +24,6 @@ export default function DynamicAudioPlayer({ meetingId, username }: DynamicAudio
 
       const response = await fetch(`/api/meetings/${meetingId}/audio-file`, {
         headers: {
-          "X-Username": username,
         },
       })
 

@@ -1550,7 +1550,6 @@ export default function NewMeetingPage() {
         // Fetch usage data from API
         const response = await fetch("/api/user/usage", {
           headers: {
-            "X-Username": username,
           },
         })
 
@@ -1584,7 +1583,6 @@ export default function NewMeetingPage() {
 
         const response = await fetch("/api/auth/google/status", {
           headers: {
-            "X-Username": username,
           },
         })
         const data = await response.json()
@@ -1843,7 +1841,6 @@ export default function NewMeetingPage() {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          "X-Username": username,
         },
         body: JSON.stringify({
           transcription: finalTranscription,
@@ -1962,7 +1959,6 @@ export default function NewMeetingPage() {
       const response = await fetch("/api/upload/google-drive", {
         method: "POST",
         headers: {
-          "X-Username": username,
         },
         body: formData,
       })
@@ -2063,7 +2059,6 @@ export default function NewMeetingPage() {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          "X-Username": username,
         },
         body: JSON.stringify(meetingDataToSave),
       })
@@ -2121,7 +2116,6 @@ export default function NewMeetingPage() {
           const driveResponse = await fetch("/api/upload/meeting-audio", {
             method: "POST",
             headers: {
-              "X-Username": username,
             },
             body: formData,
           })

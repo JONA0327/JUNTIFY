@@ -65,7 +65,6 @@ export function TemporaryAudioPlayer({ meetingId, username, onClose }: Temporary
       // Primero obtenemos la información del archivo
       const infoResponse = await fetch(`/api/meetings/${meetingId}/audio-file`, {
         headers: {
-          "X-Username": username,
         },
       })
 
@@ -85,7 +84,6 @@ export function TemporaryAudioPlayer({ meetingId, username, onClose }: Temporary
       // Ahora descargamos el contenido del archivo directamente
       const fileResponse = await fetch(`/api/meetings/${meetingId}/audio-direct-download`, {
         headers: {
-          "X-Username": username,
         },
       })
 
