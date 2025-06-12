@@ -22,7 +22,6 @@ export default function DriveIframeOnly({ meetingId, username }: DriveIframeOnly
 
         const response = await fetch(`/api/meetings/${meetingId}/audio-file`, {
           headers: {
-            "X-Username": username,
           },
         })
 

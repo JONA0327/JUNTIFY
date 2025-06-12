@@ -794,7 +794,6 @@ export default function TasksPage() {
       try {
         const response = await fetch(url, {
           headers: {
-            "X-Username": username,
           },
           cache: "no-store",
         });
@@ -840,7 +839,6 @@ export default function TasksPage() {
     try {
       const response = await fetch('/api/tasks', {
         headers: {
-          'X-Username': username,
         },
         cache: 'no-store',
       });
@@ -883,7 +881,6 @@ export default function TasksPage() {
           console.log("Obteniendo información adicional del usuario");
           const userResponse = await fetch("/api/users/me", {
             headers: {
-              "X-Username": username,
             },
             cache: "no-store",
           });
@@ -908,7 +905,6 @@ export default function TasksPage() {
           console.log("Obteniendo reuniones");
           const meetingsResponse = await fetch("/api/meetings", {
             headers: {
-              "X-Username": username,
             },
             cache: "no-store",
           });
@@ -1013,7 +1009,6 @@ export default function TasksPage() {
         method: "PATCH",
         headers: {
           "Content-Type": "application/json",
-          "X-Username": username,
         },
         body: JSON.stringify({
           completed: !taskToUpdate.completed,
@@ -1095,7 +1090,6 @@ export default function TasksPage() {
       const response = await fetch(`/api/tasks/${taskToDelete}`, {
         method: "DELETE",
         headers: {
-          "X-Username": username,
         },
       });
 
@@ -1143,7 +1137,6 @@ export default function TasksPage() {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          "X-Username": username,
         },
         body: JSON.stringify({
           text: newTask.text,
@@ -1241,7 +1234,6 @@ export default function TasksPage() {
         method: "PATCH",
         headers: {
           "Content-Type": "application/json",
-          "X-Username": username,
         },
         body: JSON.stringify(apiPayload),
         credentials: "same-origin", // Importante para las cookies

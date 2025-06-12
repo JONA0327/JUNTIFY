@@ -32,7 +32,6 @@ export function FeedbackButton() {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          ...(username && { "X-Username": username }),
         },
         body: JSON.stringify({ message }),
       })

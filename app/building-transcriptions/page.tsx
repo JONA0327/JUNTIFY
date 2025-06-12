@@ -314,7 +314,6 @@ export default function BuildingTranscriptionPage() {
     try {
       const response = await fetch(`/api/meetings/${id}`, {
         headers: {
-          "X-Username": username,
         },
       })
 
@@ -345,7 +344,6 @@ export default function BuildingTranscriptionPage() {
         method: "PATCH",
         headers: {
           "Content-Type": "application/json",
-          "X-Username": username,
         },
         body: JSON.stringify({ title: editedTitle.trim() }),
       })
@@ -376,7 +374,6 @@ export default function BuildingTranscriptionPage() {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          "X-Username": username,
         },
         body: JSON.stringify({
           meetingId: id,
@@ -431,7 +428,6 @@ export default function BuildingTranscriptionPage() {
         method: "PATCH",
         headers: {
           "Content-Type": "application/json",
-          "X-Username": username,
         },
         body: JSON.stringify({ speakerMap }),
       })

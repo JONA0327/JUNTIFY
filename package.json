@@ -57,6 +57,7 @@
     "fs": "latest",
     "googleapis": "latest",
     "input-otp": "1.4.1",
+    "jose": "^5.10.0",
     "jspdf": "latest",
     "jspdf-autotable": "latest",
     "jszip": "latest",

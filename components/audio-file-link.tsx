@@ -20,7 +20,6 @@ export default function AudioFileLink({ meetingId, username }: AudioFileLinkProp
         setIsLoading(true)
         const response = await fetch(`/api/meetings/${meetingId}/audio-file`, {
           headers: {
-            "X-Username": username,
           },
         })
 
@@ -49,7 +48,6 @@ export default function AudioFileLink({ meetingId, username }: AudioFileLinkProp
     // Re-fetch the data
     fetch(`/api/meetings/${meetingId}/audio-file`, {
       headers: {
-        "X-Username": username,
       },
     })
       .then((response) => response.json())
