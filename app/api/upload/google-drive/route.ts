@@ -4,14 +4,19 @@ import { query } from "@/utils/mysql"
 import { google } from "googleapis"
 import { Readable } from "stream"
 
+const GOOGLE_REDIRECT_URI =
+  process.env.GOOGLE_REDIRECT_URI ??
+  process.env.GOOGLE_CALLBACK_URL ??
+  "https://juntify.com/api/auth/google/callback"
+
 // Reemplazar la función verifyGoogleDriveCredentials para usar credenciales hardcodeadas
 async function verifyGoogleDriveCredentials() {
-  // Usar credenciales hardcodeadas directamente del JSON proporcionado
-  const clientId = "632914395060-1bbtbbis41qb65ac4fpbut7js05s95ch.apps.googleusercontent.com"
-  const clientSecret = "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"
-  const redirectUri = "https://juntify.com/api/auth/google/callback"
-  const projectId = "numeric-replica-450010-h9"
-  const clientEmail = "juntify@numeric-replica-450010-h9.iam.gserviceaccount.com"
+  // Leer credenciales desde variables de entorno
+  const clientId = process.env.GOOGLE_CLIENT_ID
+  const clientSecret = process.env.GOOGLE_CLIENT_SECRET
+  const redirectUri = GOOGLE_REDIRECT_URI
+  const projectId = process.env.GOOGLE_SERVICE_ACCOUNT_PROJECT_ID
+  const clientEmail = process.env.GOOGLE_SERVICE_ACCOUNT_CLIENT_EMAIL
 
   console.log("Verificando credenciales de Google Drive:")
   console.log("- Client ID:", clientId ? "Configurado" : "No configurado")
@@ -137,9 +142,9 @@ async function fixFolderPermissions(folderId: string, username: string): Promise
 
     // Configurar OAuth2 con los tokens del usuario
     const oauth2Client = new google.auth.OAuth2(
-      "632914395060-1bbtbbis41qb65ac4fpbut7js05s95ch.apps.googleusercontent.com",
-      "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",
-      "https://juntify.com/api/auth/google/callback",
+      process.env.GOOGLE_CLIENT_ID || "",
+      process.env.GOOGLE_CLIENT_SECRET || "",
+      GOOGLE_REDIRECT_URI,
     )
 
     oauth2Client.setCredentials({
@@ -158,7 +163,7 @@ async function fixFolderPermissions(folderId: string, username: string): Promise
       })
 
       // Añadir permiso a la cuenta de servicio
-      const serviceAccountEmail = "juntify@numeric-replica-450010-h9.iam.gserviceaccount.com"
+      const serviceAccountEmail = process.env.GOOGLE_SERVICE_ACCOUNT_CLIENT_EMAIL || ""
 
       await userDrive.permissions.create({
         fileId: folderId,
@@ -258,11 +263,9 @@ export async function POST(request: Request) {
 
     // Configurar autenticación directamente
     const auth = new google.auth.JWT({
-      email: "juntify@numeric-replica-450010-h9.iam.gserviceaccount.com",
-      key: "-----BEGIN PRIVATE KEY-----\nMIIEvgIBADANBgkqhkiG9w0BAQEFAASCBKgwggSkAgEAAoIBAQC3fJ1n1m1aE+ZA\ncRwFjbEgm8tx5pZW8DP2jWoCnF/VhakfSzvKEOI0r/VjtuHdVlWV21r2OPD34D5N\nqeztEkJnqiZObJHOQXtc6/XSaNwXVPTxXpSieyjRX8UhouUtpZRP0GcW7+Q3VQ/Z\nDzsK19I6HeFeo4/s8vIqrOwUBKrkXeSv3iFsF1bbBpSwL0razboEk8va0byRs7Tw\no/eK1TeGufetSDSkDkWwXTfz55lOAoiFeknfnQIEAgFkFFQrIv/dpaEIbE7zJ/iO\nWPeF7CtCL3fzeVKpEmOYn7zyy4lqP/LIjYQb4LVvd1bwzrgT5vBaY/EZMyPZL2nN\nfYLD+7/nAgMBAAECggEAAmz7HBA0RTUesDCJdJLS2ph9cr1wcm7JL0VbbQ0vLg7+\ncivusJhjrKmj0Sjlo7370VDKoeGM/dmom8fhhcqPgXADXcqqAS+cAsDoaHO3PYuH\ntSD8mPx2ci5JP6QW91ANeaZjdLNAs55/7LNA3L8LYtDy297OjvyUE0xCGV35EyqG\nvUcyzIrwpBg+LfxmNtdXlupP07bUMlLwPNtBiL9RpMEU5ZZq9Q4op134C58kF+Vf\n+RjxtJDxIk/Q0C9keaW8wnIlKn69AI8DhAqEcM94/sPR3Ib5Ni6GzdhIE20Bt9hO\nOw8zRnki2QTtT9d7QSCKDLGxePJUTrGp6K8dnn5JqQKBgQDjKWfsvwR+8djCgPgT\nPL59VkY89VBtJI09pL/onhdZ7kqRN0cSSb/ELgrCBHz1L7sPi1Hr0QA9u7UZR5b/\nuyjJMKAhl2PS8zlJLwcugoabTyQWuCvNF4mKrQmvxN6NuobdnpkBeRQODhISjnDD\ndnMgPppGzDDYjb8rs7iDm888yQKBgQDOx83Fp3cZESee7GpHqzXl35+5S06jkU0c\nrgTRGSATjONUTlZCroousASGMWK/W5Ngb+jevh+hn2YzFJ4m0B2H/J9vfzTBAV8l\n9K1BFX5y+aIHmHlEZPPO+pUWoWhxtJ/pYNVrglLLgZ8GbAknkQ0PPN3Hnv62JQpC\nWpEDY9lfLwKBgQCuG9NawsG4ZreDxQPfAsTiHhkxqbieHtDeuYKZ0WoGdLzUdrDT\nlJEV1VBLitMXviC69kaw3v03U8KngJZ8pb/KDKn/dSB+1AtJS3FOtZ5kNZFslHaF\n+I9kKeJtxQ/rQ1cRT/joBxxW9XPmoyRMvGHbCgCHWQPrRyGKZnJ69RYu+QKBgQDH\nGc3BNjlP8puiw2KmNW2FNGg34xIKHrsQFWLf7wBasrqlD3Sxahv1Tlhc2aqKNGPY\nZIjmCEyus6uVHZIWLydwK8dcdTBXcrmp80jrNQX3MPRZue9x8n5rWg45pxrI+TFM\nZoe4p9iOyPVVGqtJ5LmdZW7qaeY5fbq+HzQn/nlr0wKBgET6AN2Y/Pa8hxSiCCzb\nUHPOH2MjEY1Qez2VA7zt6P4pYFg1O2gV8EmywM82Jc4r8Z51EJA7ZPcgEcDuDSbw\nzt1k0yFk3Uvph/DSg+xvnNcu+lD67xckEfXAPgsnIk46VbOncecirBTEksurJYHh\ntFbpnxZyELFDD7BuSfAYND6x\n-----END PRIVATE KEY-----\n".replace(
-        /\\n/g,
-        "\n",
-      ),
+      email: process.env.GOOGLE_SERVICE_ACCOUNT_CLIENT_EMAIL || "",
+      key: (process.env.GOOGLE_SERVICE_ACCOUNT_PRIVATE_KEY || "").replace(/\n/g, "\n"),
+      keyId: process.env.GOOGLE_SERVICE_ACCOUNT_PRIVATE_KEY_ID,
       scopes: ["https://www.googleapis.com/auth/drive"],
     })
 

@@ -4,6 +4,11 @@ import { query } from "@/utils/mysql"
 import { google } from "googleapis"
 import type { NextRequest } from "next/server"
 
+const GOOGLE_REDIRECT_URI =
+  process.env.GOOGLE_REDIRECT_URI ??
+  process.env.GOOGLE_CALLBACK_URL ??
+  "https://juntify.com/api/auth/google/callback"
+
 export async function POST(request: NextRequest) {
   try {
     // Obtener el username del request
@@ -54,9 +59,9 @@ export async function POST(request: NextRequest) {
 
     // Configurar OAuth2 con los tokens del usuario
     const oauth2Client = new google.auth.OAuth2(
-      "632914395060-1bbtbbis41qb65ac4fpbut7js05s95ch.apps.googleusercontent.com",
-      "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",
-      "https://juntify.com/api/auth/google/callback",
+      process.env.GOOGLE_CLIENT_ID || "",
+      process.env.GOOGLE_CLIENT_SECRET || "",
+      GOOGLE_REDIRECT_URI,
     )
 
     oauth2Client.setCredentials({
@@ -98,7 +103,7 @@ export async function POST(request: NextRequest) {
 
     // Añadir permiso de editor a la cuenta de servicio de Juntify
     try {
-      const serviceAccountEmail = "juntify@numeric-replica-450010-h9.iam.gserviceaccount.com"
+      const serviceAccountEmail = process.env.GOOGLE_SERVICE_ACCOUNT_CLIENT_EMAIL || ""
 
       console.log(`Añadiendo permiso de editor a ${serviceAccountEmail} para la carpeta ${folderId}`)
 

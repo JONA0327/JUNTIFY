@@ -2,16 +2,22 @@ import { google } from "googleapis"
 import { query } from "@/utils/mysql"
 import { Readable } from "stream"
 
+// Callback URL for Google OAuth
+const GOOGLE_REDIRECT_URI =
+  process.env.GOOGLE_REDIRECT_URI ??
+  process.env.GOOGLE_CALLBACK_URL ??
+  "https://juntify.com/api/auth/google/callback"
+
 // Configuración para la API de Google Drive
 const SCOPES = ["https://www.googleapis.com/auth/drive.file"]
 
-// Credenciales actualizadas (SOLO PARA PRUEBAS)
-const HARDCODED_CREDENTIALS = {
-  client_id: "632914395060-1bbtbbis41qb65ac4fpbut7js05s95ch.apps.googleusercontent.com",
-  client_secret: "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",
-  redirect_uri: "https://juntify.com/api/auth/google/callback",
-  project_id: "numeric-replica-450010-h9",
-  client_email: "juntify@numeric-replica-450010-h9.iam.gserviceaccount.com",
+// Credenciales obtenidas desde variables de entorno
+const OAUTH_CREDENTIALS = {
+  client_id: process.env.GOOGLE_CLIENT_ID || "",
+  client_secret: process.env.GOOGLE_CLIENT_SECRET || "",
+  redirect_uri: GOOGLE_REDIRECT_URI,
+  project_id: process.env.GOOGLE_SERVICE_ACCOUNT_PROJECT_ID,
+  client_email: process.env.GOOGLE_SERVICE_ACCOUNT_CLIENT_EMAIL,
 }
 
 // Credenciales para la API de Google
@@ -126,7 +132,7 @@ export class GoogleDriveService {
         requestBody: {
           role: "owner",
           type: "user",
-          emailAddress: "juntify@numeric-replica-450010-h9.iam.gserviceaccount.com", // El correo del propietario
+          emailAddress: process.env.GOOGLE_SERVICE_ACCOUNT_CLIENT_EMAIL || "",
         },
       })
 
@@ -247,16 +253,7 @@ export class GoogleDriveService {
 
 // Función para crear una instancia del servicio
 export function createGoogleDriveService(): GoogleDriveService {
-  // Usar credenciales hardcodeadas directamente del JSON proporcionado
-  const credentials = {
-    client_id: "632914395060-1bbtbbis41qb65ac4fpbut7js05s95ch.apps.googleusercontent.com",
-    client_secret: "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",
-    redirect_uri: "https://juntify.com/api/auth/google/callback",
-    project_id: "numeric-replica-450010-h9",
-    client_email: "juntify@numeric-replica-450010-h9.iam.gserviceaccount.com",
-  }
-
-  return new GoogleDriveService(credentials)
+  return new GoogleDriveService(OAUTH_CREDENTIALS)
 }
 
 // Función para obtener el cliente de Google Drive
@@ -273,9 +270,9 @@ export async function getGoogleDriveClient(username: string) {
 
     // Configurar OAuth2 con los tokens del usuario
     const oauth2Client = new google.auth.OAuth2(
-      "632914395060-1bbtbbis41qb65ac4fpbut7js05s95ch.apps.googleusercontent.com",
-      "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",
-      "https://juntify.com/api/auth/google/callback",
+      process.env.GOOGLE_CLIENT_ID || "",
+      process.env.GOOGLE_CLIENT_SECRET || "",
+      GOOGLE_REDIRECT_URI,
     )
 
     oauth2Client.setCredentials({
