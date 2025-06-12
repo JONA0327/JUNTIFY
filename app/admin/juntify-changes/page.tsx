@@ -17,6 +17,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog"
 
+
 function highlightNotes(text: string) {
   const parts = text.split(/(Notas?:)/gi)
   return parts.map((p, i) =>
@@ -29,6 +30,7 @@ function highlightNotes(text: string) {
     )
   )
 }
+
 
 interface Change {
   id: number
@@ -177,20 +179,24 @@ export default function JuntifyChangesPage() {
           </Card>
 
           <div className="overflow-x-auto">
+
             <table className="w-full text-left text-sm text-blue-200 table-auto">
               <thead>
                 <tr className="text-blue-300">
                   <th className="pb-2 px-4">Versión</th>
                   <th className="pb-2 px-4">Cambios</th>
                   <th className="pb-2 px-4">Acciones</th>
+
                 </tr>
               </thead>
               <tbody>
                 {changes.map((chg) => (
                   <tr key={chg.id} className="border-t border-blue-700/30">
+
                     <td className="py-2 px-4 align-top whitespace-nowrap">{chg.version}</td>
                     <td className="py-2 px-4 align-top whitespace-pre-wrap">{highlightNotes(chg.description)}</td>
                     <td className="py-2 px-4">
+
                       <div className="flex items-center gap-2">
                         <Button
                           variant="ghost"
