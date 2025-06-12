@@ -73,7 +73,6 @@ export function MeetingAnalysis({ transcription, summary, keyPoints, audioBlob, 
       const response = await fetch("/api/meetings", {
         method: "POST",
         headers: {
-          "X-Username": localStorage.getItem("username") || "",
         },
         body: formData,
       })

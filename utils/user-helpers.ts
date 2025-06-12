@@ -65,18 +65,9 @@ export function ensureAuthenticated(): boolean {
 
 // Update the addUsernameToHeaders function to be more robust
 export function addUsernameToHeaders(headers: HeadersInit = {}): HeadersInit {
-  const username = getUsername()
-
-  // Create a new Headers object to ensure we can modify it
-  const newHeaders = new Headers(headers)
-
-  if (username) {
-    newHeaders.append("X-Username", username)
-    return newHeaders
-  } else {
-    console.warn("No username available for request headers")
-    return headers
-  }
+  // The X-Username header is now added by middleware using the auth_token
+  // cookie, so we simply return the provided headers without modification.
+  return headers
 }
 
 export async function getUsernameFromCookie(): Promise<string | null> {

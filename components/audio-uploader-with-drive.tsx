@@ -106,7 +106,6 @@ export function AudioUploaderWithDrive({ onFileSelected, disabled, useGoogleDriv
       const response = await fetch("/api/upload/google-drive", {
         method: "POST",
         headers: {
-          "X-Username": username,
         },
         body: formData,
       })

@@ -27,7 +27,6 @@ export default function DirectAudioLink({ meetingId, username }: DirectAudioLink
 
         const response = await fetch(`/api/meetings/${meetingId}/audio-file`, {
           headers: {
-            "X-Username": username,
           },
         })
 

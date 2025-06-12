@@ -113,7 +113,6 @@ export function GoogleDriveSetup() {
       console.log("Verificando conexión para el usuario:", user)
       const response = await fetch("/api/auth/google/status", {
         headers: {
-          "X-Username": user,
         },
       })
 
@@ -194,7 +193,6 @@ export function GoogleDriveSetup() {
 
       const response = await fetch(`/api/auth/google?username=${encodeURIComponent(username)}`, {
         headers: {
-          "X-Username": username,
         },
       })
       const data = await response.json()
@@ -232,7 +230,6 @@ export function GoogleDriveSetup() {
       const response = await fetch("/api/auth/google/disconnect", {
         method: "POST",
         headers: {
-          "X-Username": username,
         },
       })
 
@@ -314,7 +311,6 @@ export function GoogleDriveSetup() {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          "X-Username": username,
         },
         body: JSON.stringify({ folderId }),
       })
@@ -363,7 +359,6 @@ export function GoogleDriveSetup() {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          "X-Username": username,
         },
         body: JSON.stringify({ folderName }),
       })

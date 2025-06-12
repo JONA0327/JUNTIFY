@@ -1,3 +1,4 @@
+
 import { NextResponse } from "next/server"
 import { query } from "@/utils/mysql"
 import bcrypt from "bcryptjs"
@@ -19,5 +20,6 @@ export async function POST(request: Request) {
   } catch (error) {
     console.error("Error registrando usuario:", error)
     return NextResponse.json({ error: "Error registering user" }, { status: 500 })
+
   }
 }

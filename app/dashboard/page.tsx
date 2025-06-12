@@ -107,7 +107,6 @@ const ConversationDetail = ({ conversation, onClose }) => {
       method: "PATCH",
       headers: {
         "Content-Type": "application/json",
-        "X-Username": username,
       },
       body: JSON.stringify({ newTitle: editedTitle }),
     });
@@ -473,7 +472,6 @@ const UsageIndicator = () => {
         setLoading(true)
         const response = await fetch("/api/user/usage", {
           headers: {
-            "X-Username": username,
           },
         })
 
@@ -620,7 +618,6 @@ export default function DashboardPage() {
 
       const response = await fetch("/api/meetings", {
         headers: {
-          "X-Username": user,
         },
       });
 
@@ -645,7 +642,6 @@ export default function DashboardPage() {
             try {
               const detailResponse = await fetch(`/api/meetings/${conversation.id}/transcription`, {
                 headers: {
-                  "X-Username": user,
                 },
               });
 
@@ -702,7 +698,6 @@ export default function DashboardPage() {
       // Fetch full conversation details
       const response = await fetch(`/api/meetings/${conversation.id}`, {
         headers: {
-          "X-Username": username,
         },
       })
 
@@ -740,7 +735,6 @@ export default function DashboardPage() {
       const response = await fetch(`/api/meetings/${conversationId}`, {
         method: "DELETE",
         headers: {
-          "X-Username": username,
         },
       })
 

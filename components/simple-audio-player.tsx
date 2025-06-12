@@ -27,7 +27,6 @@ export default function SimpleAudioPlayer({ meetingId, username }: SimpleAudioPl
 
         const response = await fetch(`/api/meetings/${meetingId}/audio-file`, {
           headers: {
-            "X-Username": username,
           },
         })
 

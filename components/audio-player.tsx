@@ -32,7 +32,6 @@ export default function AudioPlayer({ meetingId, username }: AudioPlayerProps) {
 
       const response = await fetch(`/api/meetings/${meetingId}/audio-file`, {
         headers: {
-          "X-Username": username,
         },
       })
 
