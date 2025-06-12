@@ -2,7 +2,6 @@
 
 import { useState, useEffect } from "react"
 import { Progress } from "@/components/ui/progress"
-import { getSupabaseClient } from "@/utils/supabase"
 
 export function UsageIndicator() {
   const [usageData, setUsageData] = useState<{ used: number; limit: number; remaining: number } | null>(null)
@@ -14,19 +13,7 @@ export function UsageIndicator() {
       try {
         setLoading(true)
 
-        // Check if user is authenticated
-        const supabase = getSupabaseClient()
-        const {
-          data: { session },
-        } = await supabase.auth.getSession()
-
-        if (!session) {
-          setUsageData({ used: 0, limit: 10, remaining: 10 })
-          return
-        }
-
-        // Fetch usage data from API
-        const response = await fetch("/api/user/usage")
+        const response = await fetch("/api/user/usage", { credentials: "include" })
 
         if (!response.ok) {
           throw new Error("Failed to fetch usage data")

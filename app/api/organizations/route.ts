@@ -1,6 +1,5 @@
 import { type NextRequest, NextResponse } from "next/server"
 import { organizationService } from "@/services/organizationService"
-import { createServerSupabaseClient } from "@/utils/supabase"
 import { query } from "@/lib/db"
 
 // Endpoint para crear una nueva organización
@@ -28,17 +27,16 @@ export async function POST(request: NextRequest) {
 // Endpoint para obtener todas las organizaciones (solo para administradores)
 export async function GET(request: NextRequest) {
   try {
-    const supabase = createServerSupabaseClient()
-    const {
-      data: { session },
-    } = await supabase.auth.getSession()
-
-    if (!session) {
+    const username = request.headers.get("X-Username")
+    if (!username) {
       return NextResponse.json({ error: "No autorizado" }, { status: 401 })
     }
 
-    // Verificar si el usuario es superadmin (implementar según necesidad)
-    // Por ahora, simplemente devolvemos todas las organizaciones
+    const user = await query("SELECT is_admin FROM users WHERE username = ? OR email = ?", [username, username])
+    if (!user[0] || user[0].is_admin !== 1) {
+      return NextResponse.json({ error: "No autorizado" }, { status: 403 })
+    }
+
     const organizations = await query("SELECT * FROM organizations ORDER BY name")
 
     return NextResponse.json(organizations)
