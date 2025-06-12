@@ -1,37 +1,76 @@
-"use client"
+"use client";
 
-import { useState, useEffect } from "react"
-import { useRouter } from "next/navigation"
-import { NewNavbar } from "@/components/new-navbar"
-import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
-import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
-import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
+import { useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
+import { NewNavbar } from "@/components/new-navbar";
+import { Button } from "@/components/ui/button";
 import {
-  User, Settings, CloudUpload, AlertCircle, Mail, LogOut,
-  Award, Gem, Crown, Star, Shield, Code, UserCog, ChevronRight, History
-} from "lucide-react"
-import { GoogleDriveSetup } from "@/components/google-drive-setup"
-import { getUsername, storeUsername } from "@/utils/user-helpers"
-import { getSupabaseClient } from "@/utils/supabase"
-import { UserBadge } from "@/components/user-badge"
+  Card,
+  CardContent,
+  CardDescription,
+  CardFooter,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import {
+  User,
+  Settings,
+  CloudUpload,
+  AlertCircle,
+  Mail,
+  LogOut,
+  Award,
+  Gem,
+  Crown,
+  Star,
+  Shield,
+  Code,
+  UserCog,
+  ChevronRight,
+  History,
+} from "lucide-react";
+import { GoogleDriveSetup } from "@/components/google-drive-setup";
+import { getUsername, storeUsername } from "@/utils/user-helpers";
+import { getSupabaseClient } from "@/utils/supabase";
+import { UserBadge } from "@/components/user-badge";
 
-function highlightNotes(text: string) {
-  const parts = text.split(/(Notas?:)/gi)
-  return parts.map((part, idx) => {
-    if (/^Notas?:/i.test(part)) {
-      return (
-        <span key={idx} className="text-yellow-300">
-          {part}
-        </span>
-      )
+function formatDescription(text: string) {
+  const lines = text.split(/\r?\n/).filter((l) => l.trim() !== "");
+  const bullets: string[] = [];
+  const notes: string[] = [];
+  for (const line of lines) {
+    const match = line.match(/^Notas?:\s*(.*)/i);
+    if (match) {
+      notes.push(match[1]);
+    } else {
+      bullets.push(line);
     }
-    return <span key={idx}>{part}</span>
-  })
+  }
+  return (
+    <>
+      {bullets.length > 0 && (
+        <ul className="list-disc pl-5 space-y-1">
+          {bullets.map((b, i) => (
+            <li key={i}>{b}</li>
+          ))}
+        </ul>
+      )}
+      {notes.map((n, i) => (
+        <p key={`note-${i}`} className="text-yellow-300 mt-2">
+          Notas: {n}
+        </p>
+      ))}
+    </>
+  );
 }
 
-const roleInfo: Record<string, { label: string; color: string; icon: JSX.Element }> = {
+const roleInfo: Record<
+  string,
+  { label: string; color: string; icon: JSX.Element }
+> = {
   free: {
     label: "Free",
     // #F4E8F8 (muy claro) → texto oscuro
@@ -81,126 +120,128 @@ const sidebarItems = [
   { id: "storage", label: "Almacenamiento", icon: CloudUpload },
   { id: "settings", label: "Configuración", icon: Settings },
   { id: "changes", label: "Cambios", icon: History },
-]
+];
 
 export default function ProfilePage() {
-  const [username, setUsername] = useState("")
-  const [fullName, setFullName] = useState("")
-  const [email, setEmail] = useState("")
-  const [role, setRole] = useState("free")
-  const [error, setError] = useState<string | null>(null)
-  const [success, setSuccess] = useState<string | null>(null)
-  const [activeTab, setActiveTab] = useState("account")
-  const [loading, setLoading] = useState(true)
-  const [loggingOut, setLoggingOut] = useState(false)
-  const [changes, setChanges] = useState<{ id: number; version: string; description: string }[]>([])
-  const [changesLoading, setChangesLoading] = useState(false)
-  const [changesError, setChangesError] = useState<string | null>(null)
-  const router = useRouter()
+  const [username, setUsername] = useState("");
+  const [fullName, setFullName] = useState("");
+  const [email, setEmail] = useState("");
+  const [role, setRole] = useState("free");
+  const [error, setError] = useState<string | null>(null);
+  const [success, setSuccess] = useState<string | null>(null);
+  const [activeTab, setActiveTab] = useState("account");
+  const [loading, setLoading] = useState(true);
+  const [loggingOut, setLoggingOut] = useState(false);
+  const [changes, setChanges] = useState<
+    { id: number; version: string; description: string }[]
+  >([]);
+  const [changesLoading, setChangesLoading] = useState(false);
+  const [changesError, setChangesError] = useState<string | null>(null);
+  const router = useRouter();
 
   useEffect(() => {
     const fetchUserData = async () => {
-      setLoading(true)
+      setLoading(true);
       try {
-        const storedUsername = getUsername()
+        const storedUsername = getUsername();
         if (storedUsername) {
-          setUsername(storedUsername)
+          setUsername(storedUsername);
         }
 
-        const supabase = getSupabaseClient()
+        const supabase = getSupabaseClient();
         const {
           data: { user },
-        } = await supabase.auth.getUser()
+        } = await supabase.auth.getUser();
 
         if (user) {
-          setEmail(user.email || "")
-          const metadata = user.user_metadata || {}
-          setFullName(metadata.full_name || "")
+          setEmail(user.email || "");
+          const metadata = user.user_metadata || {};
+          setFullName(metadata.full_name || "");
 
           const { data: profile } = await supabase
             .from("profiles")
             .select("role")
             .eq("id", user.id)
-            .single()
-          setRole(profile?.role)
-          console.log("Perfil obtenido:", profile)
-          console.log("Rol obtenido:", profile?.role)
+            .single();
+          setRole(profile?.role);
+          console.log("Perfil obtenido:", profile);
+          console.log("Rol obtenido:", profile?.role);
         }
       } catch (err) {
-        console.error("Error al cargar datos del usuario:", err)
-        setError("No se pudieron cargar los datos del usuario")
+        console.error("Error al cargar datos del usuario:", err);
+        setError("No se pudieron cargar los datos del usuario");
       } finally {
-        setLoading(false)
+        setLoading(false);
       }
-    }
+    };
 
-    fetchUserData()
-  }, [])
+    fetchUserData();
+  }, []);
 
   useEffect(() => {
     const loadChanges = async () => {
-      setChangesLoading(true)
-      setChangesError(null)
+      setChangesLoading(true);
+      setChangesError(null);
       try {
-        const res = await fetch('/api/juntify-changes')
-        if (!res.ok) throw new Error('Error al obtener cambios')
-        const data = await res.json()
-        setChanges(data)
+        const res = await fetch("/api/juntify-changes");
+        if (!res.ok) throw new Error("Error al obtener cambios");
+        const data = await res.json();
+        setChanges(data);
       } catch (err) {
-        console.error('Error al cargar cambios:', err)
-        setChangesError('No se pudieron cargar los cambios')
+        console.error("Error al cargar cambios:", err);
+        setChangesError("No se pudieron cargar los cambios");
       } finally {
-        setChangesLoading(false)
+        setChangesLoading(false);
       }
-    }
-    loadChanges()
-  }, [])
+    };
+    loadChanges();
+  }, []);
 
   const handleSaveProfile = async () => {
     if (!fullName.trim()) {
-      setError("El nombre completo no puede estar vacío")
-      return
+      setError("El nombre completo no puede estar vacío");
+      return;
     }
 
     try {
-      storeUsername(username.trim())
-      const supabase = getSupabaseClient()
+      storeUsername(username.trim());
+      const supabase = getSupabaseClient();
       const { error: updateError } = await supabase.auth.updateUser({
         data: {
           full_name: fullName.trim(),
         },
-      })
+      });
 
-      if (updateError) throw updateError
+      if (updateError) throw updateError;
 
-      setSuccess("Perfil actualizado correctamente")
-      setError(null)
+      setSuccess("Perfil actualizado correctamente");
+      setError(null);
 
       setTimeout(() => {
-        setSuccess(null)
-      }, 3000)
+        setSuccess(null);
+      }, 3000);
     } catch (err) {
-      console.error("Error al actualizar perfil:", err)
-      setError("No se pudo actualizar el perfil")
+      console.error("Error al actualizar perfil:", err);
+      setError("No se pudo actualizar el perfil");
     }
-  }
+  };
 
   const handleLogout = async () => {
-    setLoggingOut(true)
+    setLoggingOut(true);
     try {
-      const supabase = getSupabaseClient()
-      await supabase.auth.signOut()
+      const supabase = getSupabaseClient();
+      await supabase.auth.signOut();
 
-      localStorage.removeItem("juntify_username")
-      localStorage.removeItem("juntify_token")
+      localStorage.removeItem("juntify_username");
+      localStorage.removeItem("juntify_token");
 
-      router.push("/login")
+      router.push("/login");
     } catch (err) {
-      console.error("Error al cerrar sesión:", err)
-      setError("No se pudo cerrar la sesión")
-      setLoggingOut(false)
+      console.error("Error al cerrar sesión:", err);
+      setError("No se pudo cerrar la sesión");
+      setLoggingOut(false);
     }
-  }
+  };
 
   const renderContent = () => {
     switch (activeTab) {
@@ -208,12 +249,19 @@ export default function ProfilePage() {
         return (
           <div className="space-y-6">
             <div>
-              <h2 className="text-2xl font-bold text-white mb-2">Información de la cuenta</h2>
-              <p className="text-blue-300">Actualiza tu información personal y preferencias</p>
+              <h2 className="text-2xl font-bold text-white mb-2">
+                Información de la cuenta
+              </h2>
+              <p className="text-blue-300">
+                Actualiza tu información personal y preferencias
+              </p>
             </div>
 
             {error && (
-              <Alert variant="destructive" className="bg-red-900/50 border-red-800 text-white">
+              <Alert
+                variant="destructive"
+                className="bg-red-900/50 border-red-800 text-white"
+              >
                 <AlertCircle className="h-4 w-4" />
                 <AlertTitle>Error</AlertTitle>
                 <AlertDescription>{error}</AlertDescription>
@@ -247,7 +295,10 @@ export default function ProfilePage() {
                   <CardContent className="space-y-6">
                     <div className="grid md:grid-cols-2 gap-6">
                       <div className="space-y-2">
-                        <Label htmlFor="username" className="text-blue-200 flex items-center">
+                        <Label
+                          htmlFor="username"
+                          className="text-blue-200 flex items-center"
+                        >
                           <User className="h-4 w-4 mr-2" />
                           Nombre de usuario
                         </Label>
@@ -257,23 +308,30 @@ export default function ProfilePage() {
                           disabled
                           className="bg-blue-700/40 border border-blue-600/50 text-white opacity-70"
                         />
-                        <p className="text-xs text-blue-300/70">El nombre de usuario no se puede modificar</p>
+                        <p className="text-xs text-blue-300/70">
+                          El nombre de usuario no se puede modificar
+                        </p>
                       </div>
 
                       <div className="space-y-2">
                         <Label className="text-blue-200 flex items-center">
                           Rol
                         </Label>
-                        <div className={`inline-flex items-center px-4 py-2 rounded-full border text-sm font-semibold shadow-lg ${roleInfo[role]?.color || roleInfo["free"].color}`}>
-                          {roleInfo[role]?.icon }
-                          {roleInfo[role]?.label }
+                        <div
+                          className={`inline-flex items-center px-4 py-2 rounded-full border text-sm font-semibold shadow-lg ${roleInfo[role]?.color || roleInfo["free"].color}`}
+                        >
+                          {roleInfo[role]?.icon}
+                          {roleInfo[role]?.label}
                         </div>
                       </div>
                     </div>
 
                     <div className="grid md:grid-cols-2 gap-6">
                       <div className="space-y-2">
-                        <Label htmlFor="fullName" className="text-blue-200 flex items-center">
+                        <Label
+                          htmlFor="fullName"
+                          className="text-blue-200 flex items-center"
+                        >
                           <User className="h-4 w-4 mr-2" />
                           Nombre completo
                         </Label>
@@ -286,7 +344,10 @@ export default function ProfilePage() {
                       </div>
 
                       <div className="space-y-2">
-                        <Label htmlFor="email" className="text-blue-200 flex items-center">
+                        <Label
+                          htmlFor="email"
+                          className="text-blue-200 flex items-center"
+                        >
                           <Mail className="h-4 w-4 mr-2" />
                           Correo electrónico
                         </Label>
@@ -296,7 +357,9 @@ export default function ProfilePage() {
                           disabled
                           className="bg-blue-700/40 border border-blue-600/50 text-white opacity-70"
                         />
-                        <p className="text-xs text-blue-300/70">El correo electrónico no se puede modificar</p>
+                        <p className="text-xs text-blue-300/70">
+                          El correo electrónico no se puede modificar
+                        </p>
                       </div>
                     </div>
                   </CardContent>
@@ -331,25 +394,33 @@ export default function ProfilePage() {
               </div>
             )}
           </div>
-        )
+        );
 
       case "storage":
         return (
           <div className="space-y-6">
             <div>
-              <h2 className="text-2xl font-bold text-white mb-2">Almacenamiento</h2>
-              <p className="text-blue-300">Configura tu almacenamiento en la nube</p>
+              <h2 className="text-2xl font-bold text-white mb-2">
+                Almacenamiento
+              </h2>
+              <p className="text-blue-300">
+                Configura tu almacenamiento en la nube
+              </p>
             </div>
             <GoogleDriveSetup />
           </div>
-        )
+        );
 
       case "settings":
         return (
           <div className="space-y-6">
             <div>
-              <h2 className="text-2xl font-bold text-white mb-2">Configuración</h2>
-              <p className="text-blue-300">Personaliza tu experiencia en la aplicación</p>
+              <h2 className="text-2xl font-bold text-white mb-2">
+                Configuración
+              </h2>
+              <p className="text-blue-300">
+                Personaliza tu experiencia en la aplicación
+              </p>
             </div>
             <Card className="bg-blue-800/30 border border-blue-700/30">
               <CardHeader>
@@ -359,11 +430,13 @@ export default function ProfilePage() {
                 </CardTitle>
               </CardHeader>
               <CardContent>
-                <p className="text-blue-200">Próximamente más opciones de configuración...</p>
+                <p className="text-blue-200">
+                  Próximamente más opciones de configuración...
+                </p>
               </CardContent>
             </Card>
           </div>
-        )
+        );
 
       case "changes":
         return (
@@ -373,7 +446,10 @@ export default function ProfilePage() {
               <p className="text-blue-300">Listado de versiones y novedades</p>
             </div>
             {changesError && (
-              <Alert variant="destructive" className="bg-red-900/50 border-red-800 text-white">
+              <Alert
+                variant="destructive"
+                className="bg-red-900/50 border-red-800 text-white"
+              >
                 <AlertCircle className="h-4 w-4" />
                 <AlertTitle>Error</AlertTitle>
                 <AlertDescription>{changesError}</AlertDescription>
@@ -389,24 +465,29 @@ export default function ProfilePage() {
             ) : (
               <div className="space-y-6">
                 {changes.map((chg) => (
-                  <Card key={chg.id} className="bg-blue-800/30 border border-blue-700/30">
+                  <Card
+                    key={chg.id}
+                    className="bg-blue-800/30 border border-blue-700/30"
+                  >
                     <CardHeader>
-                      <CardTitle className="text-white">Versión {chg.version}</CardTitle>
+                      <CardTitle className="text-white">
+                        Versión {chg.version}
+                      </CardTitle>
                     </CardHeader>
                     <CardContent className="text-blue-200 whitespace-pre-wrap">
-                      {highlightNotes(chg.description)}
+                      {formatDescription(chg.description)}
                     </CardContent>
                   </Card>
                 ))}
               </div>
             )}
           </div>
-        )
+        );
 
       default:
-        return null
+        return null;
     }
-  }
+  };
 
   return (
     <div className="min-h-screen bg-blue-900">
@@ -414,7 +495,9 @@ export default function ProfilePage() {
         <div className="max-w-7xl mx-auto">
           {/* Header */}
           <div className="mb-8">
-            <h1 className="text-3xl font-bold text-white mb-2 glow-text">Perfil de Usuario</h1>
+            <h1 className="text-3xl font-bold text-white mb-2 glow-text">
+              Perfil de Usuario
+            </h1>
             <p className="text-blue-300">Gestiona tu cuenta y preferencias</p>
           </div>
 
@@ -423,13 +506,15 @@ export default function ProfilePage() {
             <div className="lg:col-span-1">
               <Card className="bg-blue-800/30 border border-blue-700/30 sticky top-8 flex flex-col h-full">
                 <CardHeader>
-                  <CardTitle className="text-white text-lg">Configuración</CardTitle>
+                  <CardTitle className="text-white text-lg">
+                    Configuración
+                  </CardTitle>
                 </CardHeader>
                 <CardContent className="p-0 flex-1 flex flex-col">
                   <nav className="space-y-1 flex-1">
                     {sidebarItems.map((item) => {
-                      const Icon = item.icon
-                      const isActive = activeTab === item.id
+                      const Icon = item.icon;
+                      const isActive = activeTab === item.id;
                       return (
                         <button
                           key={item.id}
@@ -446,7 +531,7 @@ export default function ProfilePage() {
                           </div>
                           {isActive && <ChevronRight className="h-4 w-4" />}
                         </button>
-                      )
+                      );
                     })}
                   </nav>
                   {/* Versión al final, centrada */}
@@ -461,9 +546,7 @@ export default function ProfilePage() {
 
             {/* Main Content */}
             <div className="lg:col-span-3">
-              <div className="min-h-[600px]">
-                {renderContent()}
-              </div>
+              <div className="min-h-[600px]">{renderContent()}</div>
             </div>
           </div>
         </div>
@@ -471,5 +554,5 @@ export default function ProfilePage() {
 
       <NewNavbar />
     </div>
-  )
+  );
 }
