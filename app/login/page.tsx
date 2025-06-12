@@ -3,7 +3,7 @@
 import type React from "react"
 import { useState, useEffect } from "react"
 import { motion } from "framer-motion"
-import { ArrowLeft, Mail, Lock, User, CheckCircle, AlertCircle, Eye, EyeOff, Users } from "lucide-react"
+import { ArrowLeft, Mail, Lock, User, CheckCircle, AlertCircle, Eye, EyeOff } from "lucide-react"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
 import { Label } from "@/components/ui/label"
@@ -22,7 +22,6 @@ export default function LoginPage() {
   const [success, setSuccess] = useState("")
   const [showPassword, setShowPassword] = useState(false)
   const [isMounted, setIsMounted] = useState(false)
-  const [groupCode, setGroupCode] = useState("")
 
   // Estado para los requisitos de contraseña
   const [passwordRequirements, setPasswordRequirements] = useState({
@@ -213,69 +212,9 @@ export default function LoginPage() {
 
           const data = await res.json()
 
-          // 3. Manejar el grupo
-          let groupId = null
-          let isAdmin = false
+          // El usuario ya fue guardado en MySQL desde el endpoint de registro
 
-            // Si se proporcionó un código de grupo, verificar si existe
-            if (groupCode.trim()) {
-              try {
-                const groupResponse = await fetch("/api/groups/verify", {
-                  method: "POST",
-                  headers: {
-                    "Content-Type": "application/json",
-                  },
-                  body: JSON.stringify({
-                    code: groupCode.trim(),
-                  }),
-                })
-
-                if (groupResponse.ok) {
-                  const groupData = await groupResponse.json()
-                  groupId = groupData.id
-                  isAdmin = false // No es administrador si se une a un grupo existente
-                } else {
-                  // Si el código no es válido, mostrar error
-                  const errorData = await groupResponse.json()
-                  setErrors({ groupCode: errorData.error || "Código de grupo inválido" })
-                  setIsSubmitting(false)
-                  return
-                }
-              } catch (groupError) {
-                console.error("Error al verificar código de grupo:", groupError)
-                setErrors({ groupCode: "Error al verificar el código de grupo" })
-                setIsSubmitting(false)
-                return
-              }
-            } else {
-              // Si no se proporcionó código, crear un nuevo grupo
-              try {
-                const groupResponse = await fetch("/api/groups", {
-                  method: "POST",
-                  headers: {
-                    "Content-Type": "application/json",
-                  },
-                  body: JSON.stringify({
-                    userId: data.id,
-                    username: username,
-                    fullName: name,
-                  }),
-                })
-
-                if (groupResponse.ok) {
-                  const groupData = await groupResponse.json()
-                  groupId = groupData.id
-                  isAdmin = true // Es administrador del nuevo grupo
-                }
-              } catch (groupError) {
-                console.error("Error al crear grupo:", groupError)
-                // Continuamos aunque falle la creación del grupo
-              }
-            }
-
-            // El usuario ya fue guardado en MySQL desde el endpoint de registro
-
-            // 5. Guardar el username en localStorage
+          // Guardar el username en localStorage
             localStorage.setItem("juntify_username", username)
             console.log("Username guardado en localStorage:", username)
             
@@ -297,7 +236,6 @@ export default function LoginPage() {
             setUsername("")
             setEmail("")
             setPassword("")
-            setGroupCode("")
             setIsLogin(true)
           }, 2000);
         } catch (error: any) {
@@ -324,7 +262,6 @@ export default function LoginPage() {
     setPassword("")
     setName("")
     setUsername("")
-    setGroupCode("")
     setErrors({})
     setSuccess("")
   }
@@ -638,26 +575,6 @@ export default function LoginPage() {
                   </div>
                 )}
 
-                {!isLogin && (
-                  <div className="space-y-2">
-                    <Label htmlFor="groupCode" className="text-blue-200 flex items-center">
-                      <Users className="h-4 w-4 mr-2" />
-                      Código de grupo (opcional)
-                    </Label>
-                    <Input
-                      id="groupCode"
-                      value={groupCode}
-                      onChange={(e) => setGroupCode(e.target.value)}
-                      className="bg-blue-700/40 border border-blue-600/50 text-white"
-                      placeholder="Deja en blanco para crear tu propio grupo"
-                    />
-                    {errors.groupCode && <p className="text-red-400 text-xs mt-1">{errors.groupCode}</p>}
-                    <p className="text-xs text-blue-300/70">
-                      Si tienes un código de grupo, ingrésalo aquí. Si lo dejas en blanco, se creará un nuevo grupo para
-                      ti.
-                    </p>
-                  </div>
-                )}
 
                 {/* Submit button */}
                 <motion.button
