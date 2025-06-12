@@ -152,7 +152,7 @@ export default function ProfilePage() {
           const data = await res.json();
           setEmail(data.email || "");
           setFullName(data.name || "");
-          setRole(data.role);
+          setRole(data.role || data.roles || "free");
         }
       } catch (err) {
         console.error("Error al cargar datos del usuario:", err);

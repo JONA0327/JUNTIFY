@@ -13,7 +13,7 @@ export async function GET(request: NextRequest) {
     }
 
     const userData = await queryOne(
-      "SELECT id, username, full_name, email, organization FROM users WHERE username = ? OR email = ?",
+      "SELECT id, username, full_name, email, roles, organization FROM users WHERE username = ? OR email = ?",
       [username, username],
     )
 
@@ -30,6 +30,7 @@ export async function GET(request: NextRequest) {
       id: userData.id,
       email: userData.email,
       name: userData.full_name || "",
+      role: userData.roles,
       organization: userData.organization || "",
     }
 
@@ -60,7 +61,7 @@ export async function PUT(request: NextRequest) {
     }
 
     const updated = await queryOne(
-      "SELECT id, username, full_name, email, organization FROM users WHERE username = ? OR email = ?",
+      "SELECT id, username, full_name, email, roles, organization FROM users WHERE username = ? OR email = ?",
       [username, username],
     )
 
@@ -68,6 +69,7 @@ export async function PUT(request: NextRequest) {
       id: updated?.id || "temp-id",
       name: updated?.full_name || username,
       email: updated?.email || username,
+      role: updated?.roles,
       organization: updated?.organization || "",
     })
   } catch (error) {
