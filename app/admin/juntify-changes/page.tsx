@@ -8,6 +8,14 @@ import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
 import { Edit, Trash2 } from "lucide-react"
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog"
 
 interface Change {
   id: number
@@ -21,6 +29,8 @@ export default function JuntifyChangesPage() {
   const [description, setDescription] = useState("")
   const [error, setError] = useState("")
   const [editingId, setEditingId] = useState<number | null>(null)
+  const [showDeleteModal, setShowDeleteModal] = useState(false)
+  const [deleteId, setDeleteId] = useState<number | null>(null)
 
   const fetchChanges = async () => {
     const res = await fetch("/api/juntify-changes")
@@ -80,12 +90,21 @@ export default function JuntifyChangesPage() {
     }
   }
 
-  const handleDelete = async (id: number) => {
-    if (!confirm("¿Eliminar cambio?")) return
-    const res = await fetch(`/api/juntify-changes/${id}`, { method: "DELETE" })
+  const confirmDelete = (id: number) => {
+    setDeleteId(id)
+    setShowDeleteModal(true)
+  }
+
+  const handleDelete = async () => {
+    if (deleteId === null) return
+    const res = await fetch(`/api/juntify-changes/${deleteId}`, {
+      method: "DELETE",
+    })
     if (res.ok) {
       fetchChanges()
     }
+    setShowDeleteModal(false)
+    setDeleteId(null)
   }
 
   const startEdit = (change: Change) => {
@@ -158,13 +177,25 @@ export default function JuntifyChangesPage() {
                   <tr key={chg.id} className="border-t border-blue-700/30">
                     <td className="py-2 align-top pr-2">{chg.version}</td>
                     <td className="py-2 align-top pr-2 whitespace-pre-wrap">{chg.description}</td>
-                    <td className="py-2 space-x-2">
-                      <Button variant="ghost" size="icon" onClick={() => startEdit(chg)} aria-label="Editar">
-                        <Edit className="h-4 w-4" />
-                      </Button>
-                      <Button variant="ghost" size="icon" onClick={() => handleDelete(chg.id)} aria-label="Eliminar">
-                        <Trash2 className="h-4 w-4" />
-                      </Button>
+                    <td className="py-2">
+                      <div className="flex items-center gap-2">
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          onClick={() => startEdit(chg)}
+                          aria-label="Editar"
+                        >
+                          <Edit className="h-4 w-4" />
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          onClick={() => confirmDelete(chg.id)}
+                          aria-label="Eliminar"
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      </div>
                     </td>
                   </tr>
                 ))}
@@ -173,6 +204,27 @@ export default function JuntifyChangesPage() {
           </div>
         </div>
       </main>
+      <Dialog open={showDeleteModal} onOpenChange={setShowDeleteModal}>
+        <DialogContent className="bg-blue-800/90 border border-blue-700/50">
+          <DialogHeader>
+            <DialogTitle>Eliminar Cambio</DialogTitle>
+            <DialogDescription>
+              ¿Estás seguro de que deseas eliminar este cambio?
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter className="mt-4">
+            <Button
+              variant="secondary"
+              onClick={() => setShowDeleteModal(false)}
+            >
+              Cancelar
+            </Button>
+            <Button variant="destructive" onClick={handleDelete}>
+              Eliminar
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
       <NewNavbar />
     </div>
   )
