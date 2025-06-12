@@ -299,8 +299,7 @@ export default function LoginPage() {
             setPassword("")
             setGroupCode("")
             setIsLogin(true)
-          }, 2000)
-          }
+          }, 2000);
         } catch (error: any) {
           // Verificar si el error es de username duplicado
           if (error.message?.includes("duplicate key") && error.message?.includes("username")) {
