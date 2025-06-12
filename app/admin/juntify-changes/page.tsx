@@ -56,10 +56,12 @@ function formatDescription(text: string) {
   const [editingId, setEditingId] = useState<number | null>(null);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [deleteId, setDeleteId] = useState<number | null>(null);
-    const res = await fetch("/api/juntify-changes");
+  useEffect(() => {
+    async function fetchChanges() {
+      const res = await fetch("/api/juntify-changes");
       const data = await res.json();
       setChanges(data);
-  };
+    }
     fetchChanges();
   }, []);
     e.preventDefault();
