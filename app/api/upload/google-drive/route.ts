@@ -4,13 +4,14 @@ import { query } from "@/utils/mysql"
 import { google } from "googleapis"
 import { Readable } from "stream"
 
+
 const GOOGLE_REDIRECT_URI =
   process.env.GOOGLE_REDIRECT_URI ??
-  process.env.GOOGLE_CALLBACK_URL ??
   "https://juntify.com/api/auth/google/callback"
 
 // Reemplazar la función verifyGoogleDriveCredentials para usar credenciales hardcodeadas
 async function verifyGoogleDriveCredentials() {
+
   // Leer credenciales desde variables de entorno
   const clientId = process.env.GOOGLE_CLIENT_ID
   const clientSecret = process.env.GOOGLE_CLIENT_SECRET
@@ -142,9 +143,11 @@ async function fixFolderPermissions(folderId: string, username: string): Promise
 
     // Configurar OAuth2 con los tokens del usuario
     const oauth2Client = new google.auth.OAuth2(
+
       process.env.GOOGLE_CLIENT_ID || "",
       process.env.GOOGLE_CLIENT_SECRET || "",
       GOOGLE_REDIRECT_URI,
+
     )
 
     oauth2Client.setCredentials({

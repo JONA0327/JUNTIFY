@@ -4,9 +4,9 @@ import { query } from "@/utils/mysql"
 import { google } from "googleapis"
 import type { NextRequest } from "next/server"
 
+
 const GOOGLE_REDIRECT_URI =
   process.env.GOOGLE_REDIRECT_URI ??
-  process.env.GOOGLE_CALLBACK_URL ??
   "https://juntify.com/api/auth/google/callback"
 
 export async function POST(request: NextRequest) {

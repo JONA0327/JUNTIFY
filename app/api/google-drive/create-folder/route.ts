@@ -3,9 +3,9 @@ import { getUsernameFromRequest } from "@/utils/user-helpers"
 import { query } from "@/utils/mysql"
 import { google } from "googleapis"
 
+
 const GOOGLE_REDIRECT_URI =
   process.env.GOOGLE_REDIRECT_URI ??
-  process.env.GOOGLE_CALLBACK_URL ??
   "https://juntify.com/api/auth/google/callback"
 
 export async function POST(request: Request) {

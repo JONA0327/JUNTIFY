@@ -5,7 +5,6 @@ import { getUsernameFromRequest } from "@/utils/user-helpers"
 
 const GOOGLE_REDIRECT_URI =
   process.env.GOOGLE_REDIRECT_URI ??
-  process.env.GOOGLE_CALLBACK_URL ??
   "https://juntify.com/api/auth/google/callback"
 
 // Cuenta de servicio de Juntify
@@ -33,6 +32,7 @@ export async function POST(request: Request) {
       process.env.GOOGLE_CLIENT_ID || "",
       process.env.GOOGLE_CLIENT_SECRET || "",
       GOOGLE_REDIRECT_URI,
+
     )
 
     oauth2Client.setCredentials({

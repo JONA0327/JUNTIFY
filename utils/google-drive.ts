@@ -5,11 +5,11 @@ import { Readable } from "stream"
 // Callback URL for Google OAuth
 const GOOGLE_REDIRECT_URI =
   process.env.GOOGLE_REDIRECT_URI ??
-  process.env.GOOGLE_CALLBACK_URL ??
   "https://juntify.com/api/auth/google/callback"
 
 // Configuración para la API de Google Drive
 const SCOPES = ["https://www.googleapis.com/auth/drive.file"]
+
 
 // Credenciales obtenidas desde variables de entorno
 const OAUTH_CREDENTIALS = {
@@ -18,6 +18,7 @@ const OAUTH_CREDENTIALS = {
   redirect_uri: GOOGLE_REDIRECT_URI,
   project_id: process.env.GOOGLE_SERVICE_ACCOUNT_PROJECT_ID,
   client_email: process.env.GOOGLE_SERVICE_ACCOUNT_CLIENT_EMAIL,
+
 }
 
 // Credenciales para la API de Google
@@ -253,7 +254,9 @@ export class GoogleDriveService {
 
 // Función para crear una instancia del servicio
 export function createGoogleDriveService(): GoogleDriveService {
+
   return new GoogleDriveService(OAUTH_CREDENTIALS)
+
 }
 
 // Función para obtener el cliente de Google Drive
@@ -270,9 +273,11 @@ export async function getGoogleDriveClient(username: string) {
 
     // Configurar OAuth2 con los tokens del usuario
     const oauth2Client = new google.auth.OAuth2(
+
       process.env.GOOGLE_CLIENT_ID || "",
       process.env.GOOGLE_CLIENT_SECRET || "",
       GOOGLE_REDIRECT_URI,
+
     )
 
     oauth2Client.setCredentials({
