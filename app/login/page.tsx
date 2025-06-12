@@ -6,7 +6,6 @@ import { motion } from "framer-motion"
 import { ArrowLeft, Mail, Lock, User, CheckCircle, AlertCircle, Eye, EyeOff, Users } from "lucide-react"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
-import { getSupabaseClient } from "@/utils/supabase"
 import { Label } from "@/components/ui/label"
 import { Input } from "@/components/ui/input"
 
@@ -43,19 +42,11 @@ export default function LoginPage() {
   useEffect(() => {
     setIsMounted(true)
 
-    // Verificar si el usuario ya está autenticado
-    const checkSession = async () => {
-      const supabase = getSupabaseClient()
-      const {
-        data: { session },
-      } = await supabase.auth.getSession()
-
-      if (session) {
-        router.push("/profile")
-      }
+    // Verificar si existe la cookie del token
+    const hasToken = document.cookie.includes("token=")
+    if (hasToken) {
+      router.push("/profile")
     }
-
-    checkSession()
   }, [router])
 
   // Actualizar requisitos de contraseña en tiempo real
@@ -161,8 +152,6 @@ export default function LoginPage() {
     setErrors({})
     setSuccess("")
 
-    const supabase = getSupabaseClient()
-
     if (isLogin) {
       // Proceso de inicio de sesión
       // <<< INICIO: Integración de Facebook Pixel al hacer clic en Login >>>
@@ -179,35 +168,24 @@ export default function LoginPage() {
       if (validateLoginForm()) {
 
         setIsSubmitting(true)
-
         try {
-          const { data, error } = await supabase.auth.signInWithPassword({
-            email,
-            password,
+          const res = await fetch("/api/auth/login", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ email, password }),
           })
 
-          if (error) {
-            throw error
+          if (!res.ok) {
+            const err = await res.json()
+            throw new Error(err.error || "Error al iniciar sesión")
           }
 
-          // Obtener el username del usuario que inicia sesión
-          const { data: profileData, error: profileError } = await supabase
-            .from("profiles")
-            .select("username")
-            .eq("id", data.user.id)
-            .single()
-
-          if (profileError) {
-            console.error("Error al obtener el perfil:", profileError)
-          } else if (profileData) {
-            // Guardar el username en localStorage
-            localStorage.setItem("juntify_username", profileData.username)
-            console.log("Username guardado en localStorage:", profileData.username)
-            // El pixel ya se disparó al hacer clic, por lo que se elimina de aquí.
+          const data = await res.json()
+          if (data.username) {
+            localStorage.setItem("juntify_username", data.username)
           }
 
           setSuccess("¡Inicio de sesión exitoso!")
-          // Redirección después de inicio de sesión exitoso
           setTimeout(() => {
             router.push("/profile")
           }, 1500)
@@ -222,51 +200,22 @@ export default function LoginPage() {
       if (validateRegisterForm()) {
         setIsSubmitting(true)
         try {
-          // ... (lógica de registro existente, incluyendo el pixel de registro si lo deseas)
-          // Primero verificamos si el username ya existe
-          const { data: existingUser, error: usernameCheckError } = await supabase
-            .from("profiles")
-            .select("username")
-            .eq("username", username)
-            .single()
-
-          if (existingUser) {
-            setErrors({ username: "Este nombre de usuario ya está en uso" })
-            setIsSubmitting(false)
-            return
-          }
-
-          // 1. Registrar usuario en Supabase Auth
-          const { data: authData, error: authError } = await supabase.auth.signUp({
-            email,
-            password,
-            options: {
-              data: {
-                full_name: name,
-                username: username, // Guardar el username en los metadatos del usuario
-              },
-            },
+          const res = await fetch("/api/auth/register", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ email, password, username, full_name: name }),
           })
 
-          if (authError) {
-            throw authError
+          if (!res.ok) {
+            const err = await res.json()
+            throw new Error(err.error || "Error al crear la cuenta")
           }
 
-          if (authData.user) {
-            // 2. Crear perfil en la tabla profiles
-            const { error: profileError } = await supabase.from("profiles").insert({
-              id: authData.user.id,
-              username,
-              full_name: name,
-            })
+          const data = await res.json()
 
-            if (profileError) {
-              throw profileError
-            }
-
-            // 3. Manejar el grupo
-            let groupId = null
-            let isAdmin = false
+          // 3. Manejar el grupo
+          let groupId = null
+          let isAdmin = false
 
             // Si se proporcionó un código de grupo, verificar si existe
             if (groupCode.trim()) {
@@ -307,7 +256,7 @@ export default function LoginPage() {
                     "Content-Type": "application/json",
                   },
                   body: JSON.stringify({
-                    userId: authData.user.id,
+                    userId: data.id,
                     username: username,
                     fullName: name,
                   }),
@@ -324,31 +273,7 @@ export default function LoginPage() {
               }
             }
 
-            // 4. Guardar el usuario en MySQL con el grupo
-            try {
-              const mysqlResponse = await fetch("/api/users", {
-                method: "POST",
-                headers: {
-                  "Content-Type": "application/json",
-                },
-                body: JSON.stringify({
-                  id: authData.user.id,
-                  username,
-                  full_name: name,
-                  email,
-                  organization: groupId, // Usar el ID del grupo como organización
-                }),
-              })
-
-              if (!mysqlResponse.ok) {
-                const errorData = await mysqlResponse.json()
-                console.error("Error al guardar en MySQL:", errorData)
-                // No interrumpimos el flujo si falla MySQL, solo lo registramos
-              }
-            } catch (mysqlError) {
-              console.error("Error al guardar en MySQL:", mysqlError)
-              // No interrumpimos el flujo si falla MySQL, solo lo registramos
-            }
+            // El usuario ya fue guardado en MySQL desde el endpoint de registro
 
             // 5. Guardar el username en localStorage
             localStorage.setItem("juntify_username", username)
