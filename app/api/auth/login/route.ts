@@ -1,23 +1,25 @@
-import { NextRequest, NextResponse } from "next/server"
+import { NextResponse } from "next/server"
 import { queryOne } from "@/utils/mysql"
-import bcrypt from "bcryptjs"
+import bcrypt from "bcrypt"
 import jwt from "jsonwebtoken"
 
-export async function POST(request: NextRequest) {
+export async function POST(request: Request) {
   try {
-    const { email, password } = await request.json()
+    const { username, password } = await request.json()
 
-    if (!email || !password) {
+    if (!username || !password) {
+
       return NextResponse.json({ error: "Faltan credenciales" }, { status: 400 })
     }
 
     const user = await queryOne(
-      "SELECT id, username, password, role FROM users WHERE email = ?",
-      [email],
+
+      "SELECT id, username, password, role FROM users WHERE username = ? OR email = ?",
+      [username, username],
     )
+
     if (!user) {
-      return NextResponse.json({ error: "Credenciales inválidas" }, { status: 401 })
-    }
+      return NextResponse.json({ error: "Usuario no encontrado" }, { status: 404 })
 
     const valid = await bcrypt.compare(password, user.password)
     if (!valid) {
@@ -25,20 +27,14 @@ export async function POST(request: NextRequest) {
     }
 
     const token = jwt.sign(
-      { id: user.id, username: user.username, role: user.role },
-      process.env.JWT_SECRET as string,
-      { expiresIn: "7d" },
+
+      { id: user.id, username: user.username, roles: user.role },
+      process.env.JWT_SECRET || "secret",
+      { expiresIn: "1h" },
     )
 
-    const response = NextResponse.json({ id: user.id, username: user.username })
-    response.cookies.set("token", token, {
-      httpOnly: true,
-      sameSite: "lax",
-      secure: process.env.NODE_ENV === "production",
-      path: "/",
-      maxAge: 60 * 60 * 24 * 7,
-    })
-    return response
+    return NextResponse.json({ token })
+
   } catch (error) {
     console.error("Error en login:", error)
     return NextResponse.json({ error: "Error al iniciar sesión" }, { status: 500 })

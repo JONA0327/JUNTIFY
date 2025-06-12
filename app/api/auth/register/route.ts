@@ -1,42 +1,34 @@
-import { NextRequest, NextResponse } from "next/server"
+
+import { NextResponse } from "next/server"
 import { query, queryOne } from "@/utils/mysql"
-import { v4 as uuidv4 } from "uuid"
-import bcrypt from "bcryptjs"
+import bcrypt from "bcrypt"
 
-export async function POST(request: NextRequest) {
+export async function POST(request: Request) {
   try {
-    const { email, password, username, full_name } = await request.json()
+    const { username, password, email, full_name } = await request.json()
 
-    if (!email || !password || !username || !full_name) {
-      return NextResponse.json({ error: "Faltan campos" }, { status: 400 })
+    if (!username || !password || !email || !full_name) {
+      return NextResponse.json({ error: "Faltan campos requeridos" }, { status: 400 })
     }
 
-    // Comprobar duplicados
     const existing = await queryOne(
-      "SELECT id FROM users WHERE email = ? OR username = ?",
-      [email, username],
+      "SELECT id FROM users WHERE username = ? OR email = ?",
+      [username, email],
     )
     if (existing) {
-      return NextResponse.json(
-        { error: "Usuario ya existe" },
-        { status: 409 },
-      )
+      return NextResponse.json({ error: "Usuario o email ya existe" }, { status: 409 })
     }
 
     const hashed = await bcrypt.hash(password, 10)
-    const id = uuidv4()
     await query(
-      `INSERT INTO users (id, username, full_name, email, password, role)
-       VALUES (?, ?, ?, ?, ?, 'free')`,
-      [id, username, full_name, email, hashed],
+      "INSERT INTO users (username, password, email, full_name, role) VALUES (?, ?, ?, ?, ?)",
+      [username, hashed, email, full_name, "free"],
     )
 
-    return NextResponse.json({ id, username, email })
+    return NextResponse.json({ message: "Usuario registrado" }, { status: 201 })
   } catch (error) {
     console.error("Error en registro:", error)
-    return NextResponse.json(
-      { error: "Error al registrar usuario" },
-      { status: 500 },
-    )
+    return NextResponse.json({ error: "Error al registrar usuario" }, { status: 500 })
+
   }
 }
