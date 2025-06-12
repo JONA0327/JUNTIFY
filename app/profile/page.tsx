@@ -17,6 +17,20 @@ import { getUsername, storeUsername } from "@/utils/user-helpers"
 import { getSupabaseClient } from "@/utils/supabase"
 import { UserBadge } from "@/components/user-badge"
 
+function highlightNotes(text: string) {
+  const parts = text.split(/(Notas?:)/gi)
+  return parts.map((part, idx) => {
+    if (/^Notas?:/i.test(part)) {
+      return (
+        <span key={idx} className="text-yellow-300">
+          {part}
+        </span>
+      )
+    }
+    return <span key={idx}>{part}</span>
+  })
+}
+
 const roleInfo: Record<string, { label: string; color: string; icon: JSX.Element }> = {
   free: {
     label: "Free",
@@ -79,6 +93,9 @@ export default function ProfilePage() {
   const [activeTab, setActiveTab] = useState("account")
   const [loading, setLoading] = useState(true)
   const [loggingOut, setLoggingOut] = useState(false)
+  const [changes, setChanges] = useState<{ id: number; version: string; description: string }[]>([])
+  const [changesLoading, setChangesLoading] = useState(false)
+  const [changesError, setChangesError] = useState<string | null>(null)
   const router = useRouter()
 
   useEffect(() => {
@@ -118,6 +135,25 @@ export default function ProfilePage() {
     }
 
     fetchUserData()
+  }, [])
+
+  useEffect(() => {
+    const loadChanges = async () => {
+      setChangesLoading(true)
+      setChangesError(null)
+      try {
+        const res = await fetch('/api/juntify-changes')
+        if (!res.ok) throw new Error('Error al obtener cambios')
+        const data = await res.json()
+        setChanges(data)
+      } catch (err) {
+        console.error('Error al cargar cambios:', err)
+        setChangesError('No se pudieron cargar los cambios')
+      } finally {
+        setChangesLoading(false)
+      }
+    }
+    loadChanges()
   }, [])
 
   const handleSaveProfile = async () => {
@@ -333,20 +369,37 @@ export default function ProfilePage() {
         return (
           <div className="space-y-6">
             <div>
-              <h2 className="text-2xl font-bold text-white mb-2">Cambios de la versión 0.1.1</h2>
-              <p className="text-blue-300">Resumen de las novedades más recientes</p>
+              <h2 className="text-2xl font-bold text-white mb-2">Cambios</h2>
+              <p className="text-blue-300">Listado de versiones y novedades</p>
             </div>
-            <Card className="bg-blue-800/30 border border-blue-700/30">
-              <CardContent className="text-blue-200 space-y-2">
-                <ul className="list-disc pl-5 space-y-1">
-                  <li>Se implementó un calendario global en la vista de tareas para visualizar tareas en proceso, pendientes, completadas y vencidas.</li>
-                  <li>Al seleccionar una tarea se abre la conversación asociada con un calendario exclusivo para esa reunión.</li>
-                  <li>En el asistente virtual ahora se pueden crear contenedores de conversaciones para mantener el contexto.</li>
-                  <li>Se añadió un buscador de conversaciones dentro de los contenedores y la opción para agregar o eliminar conversaciones.</li>
-                </ul>
-                <p className="text-yellow-300 mt-4">Nota: Actualmente la aplicación se encuentra en fase beta, si detectas algún error repórtalo en el botón amarillo de sugerencias.</p>
-              </CardContent>
-            </Card>
+            {changesError && (
+              <Alert variant="destructive" className="bg-red-900/50 border-red-800 text-white">
+                <AlertCircle className="h-4 w-4" />
+                <AlertTitle>Error</AlertTitle>
+                <AlertDescription>{changesError}</AlertDescription>
+              </Alert>
+            )}
+            {changesLoading ? (
+              <div className="text-center py-12">
+                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-white mx-auto"></div>
+                <p className="mt-4 text-blue-200">Cargando cambios...</p>
+              </div>
+            ) : changes.length === 0 ? (
+              <p className="text-blue-200">No se encontraron cambios.</p>
+            ) : (
+              <div className="space-y-6">
+                {changes.map((chg) => (
+                  <Card key={chg.id} className="bg-blue-800/30 border border-blue-700/30">
+                    <CardHeader>
+                      <CardTitle className="text-white">Versión {chg.version}</CardTitle>
+                    </CardHeader>
+                    <CardContent className="text-blue-200 whitespace-pre-wrap">
+                      {highlightNotes(chg.description)}
+                    </CardContent>
+                  </Card>
+                ))}
+              </div>
+            )}
           </div>
         )
 
