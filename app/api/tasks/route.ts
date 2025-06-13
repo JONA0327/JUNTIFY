@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server"
 import { query, queryOne } from "@/utils/mysql"
-import { parseRelativeDate } from "@/services/taskService"
+import { parseRelativeDate } from "@/utils/relative-date"
 
 export async function GET(request: Request) {
   try {
