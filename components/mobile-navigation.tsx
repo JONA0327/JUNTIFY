@@ -14,6 +14,7 @@ import {
   MessageSquare,
   CheckSquare,
   X,
+  Bell,
 } from "lucide-react"
 import { useVirtualKeyboard } from "@/hooks/use-virtual-keyboard"
 
@@ -27,6 +28,7 @@ export function MobileNavigation() {
     { name: "Inicio", href: "/", icon: <Home size={20} /> },
     { name: "Reuniones", href: "/dashboard", icon: <Calendar size={20} /> },
     { name: "Tareas", href: "/tasks", icon: <CheckSquare size={20} /> },
+    { name: "Notificaciones", href: "/notifications", icon: <Bell size={20} /> },
     { name: "Perfil", href: "/profile", icon: <User size={20} /> },
   ]
 

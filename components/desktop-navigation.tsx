@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react"
 import Link from "next/link"
 import { usePathname } from "next/navigation"
-import { Home, Calendar, FileText, User, PlusCircle, Download, MessageSquare, CheckSquare, Menu, X, Sparkles } from "lucide-react"
+import { Home, Calendar, FileText, User, PlusCircle, Download, MessageSquare, CheckSquare, Menu, X, Sparkles, Bell } from "lucide-react"
 import { getUsername } from "@/utils/user-helpers";
 export function DesktopNavigation() {
   const [scrolled, setScrolled] = useState(false)
@@ -28,6 +28,7 @@ export function DesktopNavigation() {
     //{ name: "Transcripciones", href: "/transcriptions", icon: <FileText size={20} /> },
     { name: "Nueva Reunión", href: "/new-meeting", icon: <PlusCircle size={20} /> },
     { name: "Tareas", href: "/tasks", icon: <CheckSquare size={20} /> },
+    { name: "Notificaciones", href: "/notifications", icon: <Bell size={20} /> },
     { name: "Exportar", href: "/export", icon: <Download size={20} /> },
     { name: "Asistente IA", href: "/ai-assistant", icon: <MessageSquare size={20} /> },
     { name: "Perfil", href: "/profile", icon: <User size={20} /> },

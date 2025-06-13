@@ -142,3 +142,11 @@ export type TaskComment = {
   text: string
   date: Date
 }
+
+export type Notification = {
+  id: number
+  username: string
+  message: string
+  read: boolean
+  created_at: Date
+}
