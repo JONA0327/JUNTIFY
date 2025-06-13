@@ -38,3 +38,30 @@ export async function sendWelcomeEmail(to: string, name: string): Promise<void> 
     console.error("Error sending welcome email:", err)
   }
 }
+
+export async function sendPasswordResetEmail(
+  to: string,
+  token: string,
+): Promise<void> {
+  try {
+    const transport = getTransporter()
+    const resetLink = `${process.env.NEXT_PUBLIC_BASE_URL || ''}/reset-password?token=${token}`
+    const html = `
+      <div style="font-family:sans-serif;color:#003d7a">
+        <h1 style="color:#0066cc">Juntify</h1>
+        <p>Recibimos una solicitud para restablecer tu contraseña.</p>
+        <p>Para cambiarla haz clic en el siguiente enlace:</p>
+        <p><a href="${resetLink}" style="color:#0066cc">Restablecer contraseña</a></p>
+        <p>Este enlace expira en 15 minutos.</p>
+      </div>
+    `
+    await transport.sendMail({
+      from: process.env.EMAIL_FROM,
+      to,
+      subject: 'Restablecer contraseña',
+      html,
+    })
+  } catch (err) {
+    console.error('Error sending password reset email:', err)
+  }
+}
