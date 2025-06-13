@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server"
 import { query, queryOne } from "@/utils/mysql"
+import { parseRelativeDate } from "@/services/taskService"
 
 export async function GET(request: Request) {
   try {
@@ -90,6 +91,11 @@ export async function POST(request: Request) {
     const body = await request.json()
     const { text, description, assignee, dueDate, priority, meetingId } = body
 
+    const parsedDueDate =
+      dueDate && dueDate !== "No definida" && dueDate !== "No especificada"
+        ? parseRelativeDate(dueDate)
+        : null
+
     if (!text) {
       return NextResponse.json({ error: "Task text is required" }, { status: 400 })
     }
@@ -104,7 +110,7 @@ export async function POST(request: Request) {
         text,
         description || null,
         assignee || fullName,
-        dueDate || null,
+        parsedDueDate || null,
         false,
         priority || "media",
         0,
