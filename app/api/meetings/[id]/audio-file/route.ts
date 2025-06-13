@@ -29,8 +29,16 @@ export async function GET(request: NextRequest, { params }: { params: { id: stri
 
     // Intentar obtener el ID de la carpeta de grabaciones de la reunión
     try {
-      const meetingResult = await query("SELECT recordings_folder_id FROM meetings WHERE id = ?", [meetingId])
-      if (meetingResult && meetingResult.length > 0 && meetingResult[0].recordings_folder_id) {
+      const meetingResult = await query(
+        "SELECT recordings_folder_id FROM meetings WHERE id = ? AND username = ?",
+        [meetingId, username],
+      )
+
+      if (!meetingResult || meetingResult.length === 0) {
+        return NextResponse.json({ error: "Reunión no encontrada" }, { status: 404 })
+      }
+
+      if (meetingResult[0].recordings_folder_id) {
         recordingsFolderId = meetingResult[0].recordings_folder_id
         console.log(`Usando ID de carpeta de grabaciones de la reunión: ${recordingsFolderId}`)
       }
