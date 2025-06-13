@@ -14,8 +14,8 @@ import {
   MessageSquare,
   CheckSquare,
   X,
-  Bell,
 } from "lucide-react"
+import { NotificationDropdown } from "@/components/notification-dropdown"
 import { useVirtualKeyboard } from "@/hooks/use-virtual-keyboard"
 
 export function MobileNavigation() {
@@ -28,7 +28,6 @@ export function MobileNavigation() {
     { name: "Inicio", href: "/", icon: <Home size={20} /> },
     { name: "Reuniones", href: "/dashboard", icon: <Calendar size={20} /> },
     { name: "Tareas", href: "/tasks", icon: <CheckSquare size={20} /> },
-    { name: "Notificaciones", href: "/notifications", icon: <Bell size={20} /> },
     { name: "Perfil", href: "/profile", icon: <User size={20} /> },
   ]
 
@@ -50,21 +49,41 @@ export function MobileNavigation() {
       {/* Barra de navegación fija en la parte inferior */}
       <nav className="fixed bottom-0 left-0 right-0 bg-blue-900 text-white z-50 shadow-lg border-t border-blue-800">
         <div className="flex justify-around items-center h-16">
-          {mainNavItems.map((item) => {
-            const isActive = pathname === item.href
-            return (
-              <Link
-                key={item.name}
-                href={item.href}
-                className={`flex flex-col items-center justify-center py-2 px-3 ${
-                  isActive ? "text-blue-300 border-t-2 border-blue-300 -mt-[2px] pt-[2px]" : "text-white"
-                }`}
-              >
-                {item.icon}
-                <span className="text-xs mt-1">{item.name}</span>
-              </Link>
-            )
-          })}
+          {mainNavItems
+            .filter((item) => item.name !== "Perfil")
+            .map((item) => {
+              const isActive = pathname === item.href
+              return (
+                <Link
+                  key={item.name}
+                  href={item.href}
+                  className={`flex flex-col items-center justify-center py-2 px-3 ${
+                    isActive ? "text-blue-300 border-t-2 border-blue-300 -mt-[2px] pt-[2px]" : "text-white"
+                  }`}
+                >
+                  {item.icon}
+                  <span className="text-xs mt-1">{item.name}</span>
+                </Link>
+              )
+            })}
+          <NotificationDropdown className="flex flex-col items-center justify-center py-2 px-3 text-white" />
+          {mainNavItems
+            .filter((item) => item.name === "Perfil")
+            .map((item) => {
+              const isActive = pathname === item.href
+              return (
+                <Link
+                  key={item.name}
+                  href={item.href}
+                  className={`flex flex-col items-center justify-center py-2 px-3 ${
+                    isActive ? "text-blue-300 border-t-2 border-blue-300 -mt-[2px] pt-[2px]" : "text-white"
+                  }`}
+                >
+                  {item.icon}
+                  <span className="text-xs mt-1">{item.name}</span>
+                </Link>
+              )
+            })}
           <button
             className={`flex flex-col items-center justify-center py-2 px-3 ${
               moreMenuOpen ? "text-blue-300 border-t-2 border-blue-300 -mt-[2px] pt-[2px]" : "text-white"

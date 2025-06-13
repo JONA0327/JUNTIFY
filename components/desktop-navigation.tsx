@@ -3,7 +3,8 @@
 import { useState, useEffect } from "react"
 import Link from "next/link"
 import { usePathname } from "next/navigation"
-import { Home, Calendar, FileText, User, PlusCircle, Download, MessageSquare, CheckSquare, Menu, X, Sparkles, Bell } from "lucide-react"
+import { Home, Calendar, FileText, User, PlusCircle, Download, MessageSquare, CheckSquare, Menu, X, Sparkles } from "lucide-react"
+import { NotificationDropdown } from "@/components/notification-dropdown"
 import { getUsername } from "@/utils/user-helpers";
 export function DesktopNavigation() {
   const [scrolled, setScrolled] = useState(false)
@@ -28,7 +29,6 @@ export function DesktopNavigation() {
     //{ name: "Transcripciones", href: "/transcriptions", icon: <FileText size={20} /> },
     { name: "Nueva Reunión", href: "/new-meeting", icon: <PlusCircle size={20} /> },
     { name: "Tareas", href: "/tasks", icon: <CheckSquare size={20} /> },
-    { name: "Notificaciones", href: "/notifications", icon: <Bell size={20} /> },
     { name: "Exportar", href: "/export", icon: <Download size={20} /> },
     { name: "Asistente IA", href: "/ai-assistant", icon: <MessageSquare size={20} /> },
     { name: "Perfil", href: "/profile", icon: <User size={20} /> },
@@ -58,21 +58,45 @@ export function DesktopNavigation() {
 
           {/* Desktop Navigation */}
           <nav className="hidden md:flex items-center space-x-4">
-            {filteredNavItems.map((item) => {
-              const isActive = pathname === item.href
-              return (
-                <Link
-                  key={item.name}
-                  href={item.href}
-                  className={`flex items-center space-x-1 px-2 py-1 rounded-md transition-colors ${
-                    isActive ? "text-blue-400 bg-blue-900/30" : "text-gray-300 hover:text-white hover:bg-gray-800/50"
-                  }`}
-                >
-                  {item.icon}
-                  <span>{item.name}</span>
-                </Link>
-              )
-            })}
+            {filteredNavItems
+              .filter((item) => item.name !== "Perfil")
+              .map((item) => {
+                const isActive = pathname === item.href
+                return (
+                  <Link
+                    key={item.name}
+                    href={item.href}
+                    className={`flex items-center space-x-1 px-2 py-1 rounded-md transition-colors ${
+                      isActive
+                        ? "text-blue-400 bg-blue-900/30"
+                        : "text-gray-300 hover:text-white hover:bg-gray-800/50"
+                    }`}
+                  >
+                    {item.icon}
+                    <span>{item.name}</span>
+                  </Link>
+                )
+              })}
+            <NotificationDropdown className="text-gray-300 hover:text-white" />
+            {filteredNavItems
+              .filter((item) => item.name === "Perfil")
+              .map((item) => {
+                const isActive = pathname === item.href
+                return (
+                  <Link
+                    key={item.name}
+                    href={item.href}
+                    className={`flex items-center space-x-1 px-2 py-1 rounded-md transition-colors ${
+                      isActive
+                        ? "text-blue-400 bg-blue-900/30"
+                        : "text-gray-300 hover:text-white hover:bg-gray-800/50"
+                    }`}
+                  >
+                    {item.icon}
+                    <span>{item.name}</span>
+                  </Link>
+                )
+              })}
           </nav>
 
           {/* Mobile Menu Button */}
@@ -86,22 +110,49 @@ export function DesktopNavigation() {
       {menuOpen && (
         <div className="md:hidden bg-gray-900 shadow-lg animate-slide-up">
           <nav className="px-4 py-3 space-y-2">
-            {navItems.map((item) => {
-              const isActive = pathname === item.href
-              return (
-                <Link
-                  key={item.name}
-                  href={item.href}
-                  className={`flex items-center space-x-3 px-3 py-2 rounded-md transition-colors ${
-                    isActive ? "text-blue-400 bg-blue-900/30" : "text-gray-300 hover:text-white hover:bg-gray-800/50"
-                  }`}
-                  onClick={() => setMenuOpen(false)}
-                >
-                  {item.icon}
-                  <span>{item.name}</span>
-                </Link>
-              )
-            })}
+            {navItems
+              .filter((item) => item.name !== "Perfil")
+              .map((item) => {
+                const isActive = pathname === item.href
+                return (
+                  <Link
+                    key={item.name}
+                    href={item.href}
+                    className={`flex items-center space-x-3 px-3 py-2 rounded-md transition-colors ${
+                      isActive
+                        ? "text-blue-400 bg-blue-900/30"
+                        : "text-gray-300 hover:text-white hover:bg-gray-800/50"
+                    }`}
+                    onClick={() => setMenuOpen(false)}
+                  >
+                    {item.icon}
+                    <span>{item.name}</span>
+                  </Link>
+                )
+              })}
+            <div className="px-3 py-2">
+              <NotificationDropdown className="text-gray-300 hover:text-white" />
+            </div>
+            {navItems
+              .filter((item) => item.name === "Perfil")
+              .map((item) => {
+                const isActive = pathname === item.href
+                return (
+                  <Link
+                    key={item.name}
+                    href={item.href}
+                    className={`flex items-center space-x-3 px-3 py-2 rounded-md transition-colors ${
+                      isActive
+                        ? "text-blue-400 bg-blue-900/30"
+                        : "text-gray-300 hover:text-white hover:bg-gray-800/50"
+                    }`}
+                    onClick={() => setMenuOpen(false)}
+                  >
+                    {item.icon}
+                    <span>{item.name}</span>
+                  </Link>
+                )
+              })}
           </nav>
         </div>
       )}
