@@ -105,10 +105,12 @@ export async function GET(request: NextRequest, { params }: { params: { id: stri
       const name = file.name || ""
       return (
         mimeType.includes("audio/") ||
+        mimeType === "video/webm" ||
         name.endsWith(".aac") ||
         name.endsWith(".mp3") ||
         name.endsWith(".wav") ||
-        name.endsWith(".m4a")
+        name.endsWith(".m4a") ||
+        name.endsWith(".webm")
       )
     })
 
