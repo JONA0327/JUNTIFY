@@ -3,13 +3,17 @@ import { jwtVerify } from "jose";
 
 export async function middleware(req: NextRequest) {
   const { pathname } = req.nextUrl;
+
   if (pathname.startsWith("/api/auth")) {
     return NextResponse.next();
   }
 
   const token = req.cookies.get("auth_token")?.value;
   if (!token) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    if (pathname.startsWith("/api/")) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+    return NextResponse.redirect(new URL("/login", req.url));
   }
 
   try {
@@ -23,12 +27,25 @@ export async function middleware(req: NextRequest) {
     }
   } catch (err) {
     console.error("JWT verification failed", err);
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    if (pathname.startsWith("/api/")) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+    return NextResponse.redirect(new URL("/login", req.url));
   }
 
   return NextResponse.next({ request: { headers: req.headers } });
 }
 
 export const config = {
-  matcher: ["/api/:path*"],
+  matcher: [
+    "/api/:path*",
+    "/dashboard/:path*",
+    "/new-meeting/:path*",
+    "/tasks/:path*",
+    "/profile/:path*",
+    "/admin/:path*",
+    "/ai-assistant/:path*",
+    "/export/:path*",
+    "/notifications/:path*",
+  ],
 };
