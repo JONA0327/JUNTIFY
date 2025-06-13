@@ -59,7 +59,7 @@ export function parseRelativeDate(input: string): string | null {
   if (match) return format(addWeeks(today, parseInt(match[1], 10)), "yyyy-MM-dd")
 
   match = text.match(
-    /(?:(?:la\s*)?(?:proxima|pr\u00f3xima)\s+semana|(?:la\s*)?semana que viene)(?:\s+para(?:\s+el)?\s+(lunes|martes|miercoles|mi\u00e9rcoles|jueves|viernes|sabado|s\u00e1bado|domingo))?/
+    /(?:(?:la\s*)?(?:semana\s+que\s+viene|semana\s+proxima|proxima\s+semana))(?:\s+(?:para|de)?(?:\s+el)?\s+(lunes|martes|miercoles|mi\u00e9rcoles|jueves|viernes|sabado|s\u00e1bado|domingo))?/
   )
   if (match) {
     const nextMonday = startOfWeek(addWeeks(today, 1), { weekStartsOn: 1 })
