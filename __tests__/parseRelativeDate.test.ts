@@ -1,4 +1,4 @@
-import { parseRelativeDate } from '../services/taskService'
+import { parseRelativeDate } from '@/utils/relative-date'
 import { format, startOfWeek, addWeeks, addDays } from 'date-fns'
 
 describe('parseRelativeDate', () => {

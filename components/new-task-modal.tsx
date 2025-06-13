@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button"
 import { X } from "lucide-react"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { format } from "date-fns"
-import { parseRelativeDate } from "@/services/taskService"
+import { parseRelativeDate } from "@/utils/relative-date"
 
 interface NewTaskModalProps {
   onCancel: () => void
