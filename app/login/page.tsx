@@ -178,8 +178,9 @@ export default function LoginPage() {
           }
 
           const data = await res.json()
-          if (data.username) {
-            localStorage.setItem("juntify_username", data.username)
+          const uname = data.user?.username
+          if (uname) {
+            localStorage.setItem("juntify_username", uname)
           }
 
           setSuccess("¡Inicio de sesión exitoso!")
