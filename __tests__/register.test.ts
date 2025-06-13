@@ -2,6 +2,10 @@ jest.mock('../utils/mysql', () => ({
   query: jest.fn().mockResolvedValue(null)
 }))
 
+jest.mock('../utils/email', () => ({
+  sendWelcomeEmail: jest.fn().mockResolvedValue(undefined)
+}))
+
 jest.mock('uuid', () => ({
   v4: jest.fn(() => 'test-uuid')
 }))
@@ -60,5 +64,8 @@ describe('register route', () => {
     })
     expect(typeof data.token).toBe('string')
     expect(data.token.length).toBeGreaterThan(0)
+
+    const { sendWelcomeEmail } = require('../utils/email')
+    expect(sendWelcomeEmail).toHaveBeenCalledWith(body.email, body.full_name)
   })
 })

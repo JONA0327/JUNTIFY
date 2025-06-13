@@ -564,13 +564,12 @@ export default function LoginPage() {
                         Recordarme
                       </label>
                     </div>
-                    <button
-                      type="button"
-                      onClick={() => alert("Funcionalidad en desarrollo")}
+                    <Link
+                      href="/forgot-password"
                       className="text-blue-300 hover:text-blue-200"
                     >
                       ¿Olvidaste tu contraseña?
-                    </button>
+                    </Link>
                   </div>
                 )}
 

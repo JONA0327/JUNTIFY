@@ -4,6 +4,7 @@ import { query } from "@/utils/mysql"
 import bcrypt from "bcryptjs"
 import { v4 as uuidv4 } from "uuid"
 import { SignJWT } from "jose"
+import { sendWelcomeEmail } from "@/utils/email"
 
 export async function POST(request: Request) {
   try {
@@ -36,6 +37,11 @@ export async function POST(request: Request) {
       roles: "free",
       organization: null,
     }
+
+    // Send welcome email but don't fail the request if sending fails
+    sendWelcomeEmail(email, full_name || username).catch((err) => {
+      console.error("Welcome email failed", err)
+    })
 
     const response = NextResponse.json({ token, user }, { status: 201 })
     response.cookies.set("auth_token", token, { httpOnly: true, path: "/" })
