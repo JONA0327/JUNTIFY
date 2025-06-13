@@ -218,7 +218,7 @@ export default function ProfilePage() {
   const handleLogout = async () => {
     setLoggingOut(true);
     try {
-      document.cookie = "auth_token=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT";
+      await fetch("/api/auth/logout", { method: "POST", credentials: "include" });
       localStorage.removeItem("juntify_username");
       localStorage.removeItem("juntify_token");
 
