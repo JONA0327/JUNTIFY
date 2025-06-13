@@ -407,12 +407,12 @@ export async function POST(request: Request) {
     if (meetingId) {
       try {
         await query(
-          `UPDATE meetings SET 
-           audio_url = ?, 
-           google_drive_id = ?, 
+          `UPDATE meetings SET
+           audio_url = ?,
+           google_drive_id = ?,
            google_drive_link = ?,
            recordings_folder_id = ?
-           WHERE id = ? AND username = ?`,
+          WHERE id = ? AND username = ?`,
           [downloadLink, fileId, webViewLink, userFolderId, meetingId, username],
         )
         console.log("Información de audio actualizada en la base de datos para la reunión:", meetingId)
