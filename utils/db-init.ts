@@ -32,7 +32,7 @@ DROP TABLE IF EXISTS meetings;
 -- Create the meetings table
 CREATE TABLE IF NOT EXISTS meetings (
   id INT AUTO_INCREMENT PRIMARY KEY,
-  supabase_user_id VARCHAR(255) NOT NULL,
+  user_id VARCHAR(255) NOT NULL,
   title VARCHAR(255) NOT NULL,
   date DATETIME NOT NULL,
   duration VARCHAR(50),
@@ -41,7 +41,7 @@ CREATE TABLE IF NOT EXISTS meetings (
   audio_url TEXT,
   created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
   updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-  INDEX idx_user_id (supabase_user_id),
+  INDEX idx_user_id (user_id),
   INDEX idx_date (date)
 );
 
@@ -82,7 +82,7 @@ CREATE TABLE IF NOT EXISTS meeting_keywords (
 -- Create the tasks table
 CREATE TABLE IF NOT EXISTS tasks (
   id INT AUTO_INCREMENT PRIMARY KEY,
-  supabase_user_id VARCHAR(255) NOT NULL,
+  user_id VARCHAR(255) NOT NULL,
   meeting_id INT,
   text VARCHAR(255) NOT NULL,
   description TEXT,
@@ -94,7 +94,7 @@ CREATE TABLE IF NOT EXISTS tasks (
   created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
   updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
   FOREIGN KEY (meeting_id) REFERENCES meetings(id) ON DELETE SET NULL,
-  INDEX idx_user_id (supabase_user_id),
+  INDEX idx_user_id (user_id),
   INDEX idx_meeting_id (meeting_id)
 );
 
