@@ -85,7 +85,7 @@ export const queryOne = async (sql: string, params: any[] = []): Promise<any> =>
 // Tipos para las entidades principales
 export type Meeting = {
   id: number
-  supabase_user_id: string
+  user_id: string
   title: string
   date: Date
   duration?: string
@@ -122,7 +122,7 @@ export type MeetingKeyword = {
 
 export type Task = {
   id: number
-  supabase_user_id: string
+  user_id: string
   meeting_id?: number
   text: string
   description?: string

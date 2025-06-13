@@ -348,10 +348,6 @@ Puedo ayudarte con preguntas como:
         "Content-Type": "application/json",
       })
 
-      const headersObj = headers instanceof Headers ? headers : new Headers(headers)
-        throw new Error("No hay usuario autenticado. Por favor, inicia sesión de nuevo.")
-      }
-
       // Preparar los mensajes para enviar a la API (solo los últimos 10 para mantener el contexto manejable)
       const recentMessages = [...currentMessages.slice(-10), userMessage]
 

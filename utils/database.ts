@@ -67,7 +67,7 @@ export async function transaction<T>(callback: (client: PoolClient) => Promise<T
 // Tipos para las entidades principales
 export type Meeting = {
   id: number
-  supabase_user_id: string
+  user_id: string
   title: string
   date: Date
   duration?: string
@@ -97,7 +97,7 @@ export type KeyPoint = {
 
 export type Task = {
   id: number
-  supabase_user_id: string
+  user_id: string
   meeting_id?: number
   text: string
   description?: string

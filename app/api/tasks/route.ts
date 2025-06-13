@@ -24,12 +24,12 @@ export async function GET(request: Request) {
       SELECT t.*, m.title as meeting_title
       FROM tasks t
       LEFT JOIN meetings m ON t.meeting_id = m.id
-      WHERE (m.username = ? OR t.assignee = ?`
-    `
-    const params: any[] = [username, fullName]
+      WHERE (m.username = ? OR t.assignee = ?
+    `;
+    const params: any[] = [username, fullName];
 
     if (userId) {
-      sql += " OR t.supabase_user_id = ?"
+      sql += " OR t.user_id = ?"
       params.push(userId)
     }
     sql += ")"
@@ -96,7 +96,7 @@ export async function POST(request: Request) {
 
     const result = await query(
       `INSERT INTO tasks
-       (supabase_user_id, meeting_id, text, description, assignee, due_date, completed, priority, progress, created_at, updated_at)
+       (user_id, meeting_id, text, description, assignee, due_date, completed, priority, progress, created_at, updated_at)
        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, NOW(), NOW())`,
       [
         userId || null,
