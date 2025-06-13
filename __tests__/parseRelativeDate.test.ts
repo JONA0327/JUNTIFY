@@ -16,4 +16,21 @@ describe('parseRelativeDate', () => {
       format(nextThursday, 'yyyy-MM-dd'),
     )
   })
+
+  it('handles "para la próxima semana"', () => {
+    const today = new Date()
+    const nextMonday = startOfWeek(addWeeks(today, 1), { weekStartsOn: 1 })
+    expect(parseRelativeDate('para la próxima semana')).toBe(
+      format(nextMonday, 'yyyy-MM-dd'),
+    )
+  })
+
+  it('handles "de la semana que viene para jueves"', () => {
+    const today = new Date()
+    const nextMonday = startOfWeek(addWeeks(today, 1), { weekStartsOn: 1 })
+    const nextThursday = addDays(nextMonday, 3)
+    expect(parseRelativeDate('de la semana que viene para jueves')).toBe(
+      format(nextThursday, 'yyyy-MM-dd'),
+    )
+  })
 })
