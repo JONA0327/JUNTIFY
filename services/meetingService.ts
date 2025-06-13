@@ -37,11 +37,19 @@ export const meetingService = {
 
       const organizationId = user?.organization_id || null
 
+      // Obtener el recordings_folder_id del usuario si está configurado
+      const folderRes = await query(
+        "SELECT recordings_folder_id FROM google_tokens WHERE username = ? AND recordings_folder_id IS NOT NULL",
+        [username],
+      )
+      const recordingsFolderId =
+        folderRes.length > 0 ? folderRes[0].recordings_folder_id : null
+
       // Insert the meeting
       const result = await query(
-        `INSERT INTO meetings 
-        (username, title, date, duration, participants, summary, audio_url, organization_id) 
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+        `INSERT INTO meetings
+        (username, title, date, duration, participants, summary, audio_url, organization_id, recordings_folder_id)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
         [
           username,
           data.title,
@@ -51,6 +59,7 @@ export const meetingService = {
           data.summary || null,
           data.audio_url || null,
           organizationId,
+          recordingsFolderId,
         ],
       )
 
@@ -64,6 +73,9 @@ export const meetingService = {
       if (!meeting) {
         throw new Error("Failed to retrieve created meeting")
       }
+
+      // Asegurar que el objeto de la reunión refleje el recordings_folder_id almacenado
+      ;(meeting as any).recordings_folder_id = recordingsFolderId
 
       // Si hay transcripción, insertarla
       if (data.transcription && data.transcription.length > 0) {

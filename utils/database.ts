@@ -74,6 +74,7 @@ export type Meeting = {
   participants?: number
   summary?: string
   audio_url?: string
+  recordings_folder_id?: string | null
   created_at: Date
   updated_at: Date
 }

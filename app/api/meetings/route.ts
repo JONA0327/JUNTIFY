@@ -188,11 +188,19 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "Date is required" }, { status: 400 })
     }
 
+    // Obtener recordings_folder_id para el usuario
+    const folderRes = await query(
+      "SELECT recordings_folder_id FROM google_tokens WHERE username = ? AND recordings_folder_id IS NOT NULL",
+      [username],
+    )
+    const recordingsFolderId =
+      folderRes.length > 0 ? folderRes[0].recordings_folder_id : null
+
     // Insertar solo los datos básicos de la reunión primero
     const insertQuery = `
-      INSERT INTO meetings 
-      (username, title, date, summary, duration, participants) 
-      VALUES (?, ?, ?, ?, ?, ?)
+      INSERT INTO meetings
+      (username, title, date, summary, duration, participants, recordings_folder_id)
+      VALUES (?, ?, ?, ?, ?, ?, ?)
     `
 
     const insertParams = [
@@ -202,6 +210,7 @@ export async function POST(request: Request) {
       data.summary || null,
       data.duration || null,
       data.participants || null,
+      recordingsFolderId,
     ]
 
     console.log("Ejecutando consulta:", { query: insertQuery, params: insertParams })
@@ -274,6 +283,7 @@ export async function POST(request: Request) {
     return NextResponse.json({
       success: true,
       meetingId,
+      recordingsFolderId,
       message: "Meeting created successfully",
     })
   } catch (error) {
