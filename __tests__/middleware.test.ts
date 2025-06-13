@@ -33,7 +33,7 @@ describe('middleware', () => {
     })
     const res = await middleware(req)
     expect(res.status).toBe(200)
-    expect(req.headers.get('X-Username')).toBe('alice')
+    expect(res.headers.get('x-middleware-request-x-username')).toBe('alice')
   })
 
   it('redirects to login for protected page without token', async () => {

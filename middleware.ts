@@ -3,6 +3,7 @@ import { jwtVerify } from "jose";
 
 export async function middleware(req: NextRequest) {
   const { pathname } = req.nextUrl;
+  const requestHeaders = new Headers(req.headers);
 
   if (pathname.startsWith("/api/auth")) {
     return NextResponse.next();
@@ -23,7 +24,7 @@ export async function middleware(req: NextRequest) {
     );
     const username = (payload as any).username;
     if (username) {
-      req.headers.set("X-Username", String(username));
+      requestHeaders.set("X-Username", String(username));
     }
   } catch (err) {
     console.error("JWT verification failed", err);
@@ -33,7 +34,7 @@ export async function middleware(req: NextRequest) {
     return NextResponse.redirect(new URL("/login", req.url));
   }
 
-  return NextResponse.next({ request: { headers: req.headers } });
+  return NextResponse.next({ request: { headers: requestHeaders } });
 }
 
 export const config = {
