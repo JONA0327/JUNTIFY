@@ -49,8 +49,10 @@ El JSON debe respetar esta forma EXACTA:
   ]
 }
     `.trim(),
-    userPromptTemplate: (transcription) => `
-A continuación tienes la transcripción completa de una reunión. 
+    userPromptTemplate: (transcription) => {
+      const today = new Date().toISOString().split("T")[0];
+      return `
+A continuación tienes la transcripción completa de una reunión.
 Analízala y devuelve SOLO el JSON EXACTO indicado en el systemPrompt. No agregues texto fuera del JSON.
 
 1) summary:
@@ -74,7 +76,7 @@ Analízala y devuelve SOLO el JSON EXACTO indicado en el systemPrompt. No agregu
      - id: identificador único (puede ser numérico o alfanumérico).
      - text: descripción detallada y concreta de la tarea (máximo 40–50 palabras).
      - assignee: nombre del responsable o “No asignado” si no se mencionó.
-    - dueDate: fecha límite en formato YYYY-MM-DD o “No definida” si no se especificó. Si se menciona “semana que viene” sin día, usa el lunes de esa semana. Si la frase es “de la semana que viene para [día]”, calcula esa fecha exacta según la fecha actual.
+    - dueDate: fecha límite en formato YYYY-MM-DD o “No definida” si no se especificó. Si se menciona “semana que viene” sin día, usa el lunes de esa semana. Si la frase es “de la semana que viene para [día]”, calcula esa fecha exacta según la fecha actual (${today}).
     - No inventes una fecha: si no se mencionó ningún plazo claro, usa exactamente "No definida".
      - context: contexto adicional, referencias a diapositivas, documentos o comentarios que motivan la tarea.
 
@@ -83,8 +85,9 @@ Transcripción:
 ${transcription}
 \"\"\"
 
-Repite: SOLO el JSON EXACTO. No incluyas explicaciones ni comillas invertidas.  
-`.trim(),
+Repite: SOLO el JSON EXACTO. No incluyas explicaciones ni comillas invertidas.
+`.trim();
+    },
     temperature: 0.3,
   },
 
@@ -129,7 +132,9 @@ RESPONDE SÓLO CON UN JSON VÁLIDO y NADA MÁS. El JSON debe seguir esta estruct
   ]
 }
 `.trim(),
-    userPromptTemplate: (transcription) => `
+    userPromptTemplate: (transcription) => {
+      const today = new Date().toISOString().split('T')[0];
+      return `
 Analiza esta transcripción de una reunión empresarial y construye el JSON EXACTO indicado en el systemPrompt:
 
 1) summary:
@@ -156,7 +161,7 @@ Analiza esta transcripción de una reunión empresarial y construye el JSON EXAC
      - id: número o cadena única.
      - text: descripción precisa y accionable (máximo 30–40 palabras).
      - assignee: nombre o cargo del responsable.
-    - dueDate: fecha límite exacta en formato YYYY-MM-DD. Si no se menciona una fecha, escribe "No definida". Si la transcripción menciona “semana que viene” sin día, utiliza el lunes de esa semana. Si indica “de la semana que viene para [día]”, calcula esa fecha exacta según la fecha actual.
+    - dueDate: fecha límite exacta en formato YYYY-MM-DD. Si no se menciona una fecha, escribe "No definida". Si la transcripción menciona “semana que viene” sin día, utiliza el lunes de esa semana. Si indica “de la semana que viene para [día]”, calcula esa fecha exacta según la fecha actual (${today}).
      - deliverables: entregable esperado (documento, informe, informe financiero).
      - dependencies: relación con otras tareas, equipos o áreas (p. ej. “Depende de informe de finanzas”).
 
@@ -165,8 +170,9 @@ Transcripción:
 ${transcription}
 \"\"\"
 
-IMPORTANTE: SOLO devuelve el JSON EXACTO sin texto adicional, sin markdown ni explicaciones fuera del JSON.  
-`.trim(),
+IMPORTANTE: SOLO devuelve el JSON EXACTO sin texto adicional, sin markdown ni explicaciones fuera del JSON.
+`.trim();
+    },
     temperature: 0.2,
     responseProcessor: (response) => {
       // Mapea el JSON de “business” a “standard” para compatibilidad
@@ -309,7 +315,9 @@ RESPONDE SÓLO CON UN JSON VÁLIDO, SIN TEXTO EXTRA NI MARKDOWN. Debe seguir EST
   }
 }
 `.trim(),
-    userPromptTemplate: (transcription) => `
+    userPromptTemplate: (transcription) => {
+      const today = new Date().toISOString().split('T')[0];
+      return `
 Analiza esta transcripción de una reunión legal y construye el JSON EXACTO indicado en el systemPrompt:
 
 1) summary:
@@ -333,7 +341,7 @@ Analiza esta transcripción de una reunión legal y construye el JSON EXACTO ind
      - id: identificador único (ej. "T1", "T2").
      - text: descripción concisa de la acción (máx. 20–30 palabras, ej. “Redactar contrato de confidencialidad”).
      - assignee: “Abogado <Nombre>” o “No asignado”.
-    - dueDate: fecha límite exacta (YYYY-MM-DD). Si no se mencionó fecha, escribe "No definida". Si la transcripción menciona “semana que viene” sin día, usa el lunes de esa semana. Si aparece “de la semana que viene para [día]”, calcula esa fecha exacta según la fecha actual.
+    - dueDate: fecha límite exacta (YYYY-MM-DD). Si no se mencionó fecha, escribe "No definida". Si la transcripción menciona “semana que viene” sin día, usa el lunes de esa semana. Si aparece “de la semana que viene para [día]”, calcula esa fecha exacta según la fecha actual (${today}).
      - legalContext: referencia a cláusulas o normativas específicas (ej. “Basado en cláusula 5.2 del contrato”).
 
 4) legalMetadata:
@@ -347,7 +355,8 @@ ${transcription}
 \"\"\"
 
 RECUERDA: SOLO devuelve el JSON EXACTO SIN TEXTO EXTRA, SIN MARCADORES DE CÓDIGO NI EXPLICACIONES.
-`.trim(),
+`.trim();
+    },
     temperature: 0.1,
   },
 
@@ -383,7 +392,9 @@ Tu tarea es devolver SÓLO un JSON VÁLIDO, SIN TEXTO ADICIONAL NI MARKDOWN, con
   }
 }
 `.trim(),
-    userPromptTemplate: (transcription) => `
+    userPromptTemplate: (transcription) => {
+      const today = new Date().toISOString().split('T')[0];
+      return `
 Analiza esta transcripción de una consulta o reunión médica y devuelve SÓLO el JSON EXACTO que indica el systemPrompt:
 
 1) summary:
@@ -411,7 +422,7 @@ Analiza esta transcripción de una consulta o reunión médica y devuelve SÓLO 
      - id: identificador único (ej. "M1", "M2").
      - text: descripción clara de la acción (máx. 20–30 palabras, ej. “Solicitar hemograma completo y función renal”).
      - assignee: “Paciente” o “Doctor <Nombre>” o “No asignado”.
-    - dueDate: fecha exacta (YYYY-MM-DD) o periodo (ej. “en 2 semanas”). Si no se mencionó una fecha, escribe "No definida". Si la transcripción menciona “semana que viene” sin día, utiliza el lunes de esa semana. Si se dice “de la semana que viene para [día]”, calcula esa fecha exacta según la fecha actual.
+    - dueDate: fecha exacta (YYYY-MM-DD) o periodo (ej. “en 2 semanas”). Si no se mencionó una fecha, escribe "No definida". Si la transcripción menciona “semana que viene” sin día, utiliza el lunes de esa semana. Si se dice “de la semana que viene para [día]”, calcula esa fecha exacta según la fecha actual (${today}).
      - medicalContext: contexto clínico adicional (ej. “Relacionado con historial de hipertensión”).
 
 4) medicalMetadata:
@@ -425,7 +436,8 @@ ${transcription}
 \"\"\"
 
 IMPORTANTE: TU RESPUESTA DEBE SER EXACTAMENTE EL JSON INDICADO. Sin explicaciones, sin texto extra y sin markdown.
-`.trim(),
+`.trim();
+    },
     temperature: 0.2,
   },
 
@@ -461,7 +473,9 @@ Debes responder SÓLO con un JSON VÁLIDO, SIN TEXTO ADICIONAL NI MARKDOWN. La E
   }
 }
 `.trim(),
-    userPromptTemplate: (transcription) => `
+    userPromptTemplate: (transcription) => {
+      const today = new Date().toISOString().split('T')[0];
+      return `
 Analiza esta transcripción que corresponde a una sesión con contenido psicológico o emocional. Devuelve SÓLO el JSON EXACTO indicado en el systemPrompt:
 
 1) summary:
@@ -488,7 +502,7 @@ Analiza esta transcripción que corresponde a una sesión con contenido psicoló
      - id: identificador único (ej. "P1", "P2").
      - text: descripción concreta de la intervención (máx. 20–30 palabras, ej. “Practicar ejercicio de respiración diafragmática diario”).
      - assignee: “Paciente” o “Terapeuta” o “No asignado”.
-    - dueDate: fecha sugerida en YYYY-MM-DD o “No definida” si no aplica. Si la transcripción menciona “semana que viene” sin día, usa el lunes de esa semana. Si se dice “de la semana que viene para [día]”, calcula esa fecha exacta con base en hoy. No inventes fechas que no se mencionaron.
+    - dueDate: fecha sugerida en YYYY-MM-DD o “No definida” si no aplica. Si la transcripción menciona “semana que viene” sin día, usa el lunes de esa semana. Si se dice “de la semana que viene para [día]”, calcula esa fecha exacta con base en hoy (${today}). No inventes fechas que no se mencionaron.
      - psychContext: contexto adicional (ej. “Relacionado con episodio de ansiedad en minuto 12”).
 
 4) psychMetadata:
@@ -502,7 +516,8 @@ ${transcription}
 \"\"\"
 
 IMPORTANTE: TU RESPUESTA DEBE SER EXACTAMENTE EL JSON INDICADO. No incluyas explicaciones adicionales, texto fuera del JSON ni marcadores de código.
-`.trim(),
+`.trim();
+    },
     temperature: 0.2,
   },
 };
