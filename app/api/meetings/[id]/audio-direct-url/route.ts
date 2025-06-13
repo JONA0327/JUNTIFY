@@ -5,15 +5,23 @@ import { createGoogleDriveService } from "@/utils/google-drive-service"
 export async function GET(request: NextRequest, { params }: { params: { id: string } }) {
   try {
     const meetingId = params.id
+    const username = request.headers.get("X-Username")
 
     if (!meetingId) {
       return NextResponse.json({ error: "Meeting ID is required" }, { status: 400 })
     }
 
+    if (!username) {
+      return NextResponse.json({ error: "Usuario no autenticado" }, { status: 401 })
+    }
+
     console.log(`Buscando audio para la reunión ${meetingId}`)
 
     // Obtener información de la reunión
-    const meetingResult = await query("SELECT * FROM meetings WHERE id = ?", [meetingId])
+    const meetingResult = await query(
+      "SELECT * FROM meetings WHERE id = ? AND username = ?",
+      [meetingId, username],
+    )
 
     if (!meetingResult || meetingResult.length === 0) {
       return NextResponse.json({ error: "Reunión no encontrada" }, { status: 404 })
