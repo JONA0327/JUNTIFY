@@ -10,6 +10,8 @@ export function PricingSection() {
   const [activeTab, setActiveTab] = useState<"plans" | "additional">("plans")
   const sectionRef = useRef<HTMLDivElement>(null)
 
+  const base = process.env.NEXT_PUBLIC_BASE_URL || "https://juntify.com"
+
   // Parallax effect on scroll
   const { scrollYProgress } = useScroll({
     target: sectionRef,
@@ -259,7 +261,7 @@ export function PricingSection() {
                       </Button>
                     ) : (
                       <a
-                        href="https://juntify.com/nueva-reunion/"
+                        href={`${base}/nueva-reunion/`}
                         target="_blank"
                         rel="noopener noreferrer"
                         className="w-full block"
@@ -333,7 +335,7 @@ export function PricingSection() {
             viewport={{ once: true, amount: 0.3 }}
             className="mt-8"
           >
-            <a href="https://juntify.com/nueva-reunion/" target="_blank" rel="noopener noreferrer">
+            <a href={`${base}/nueva-reunion/`} target="_blank" rel="noopener noreferrer">
               <Button className="bg-purple-600 hover:bg-purple-700 text-white px-8 py-6 rounded-full text-lg font-medium transition-all duration-300 hover:scale-105">
                 Regístrate ahora
               </Button>
