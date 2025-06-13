@@ -1583,6 +1583,7 @@ export default function NewMeetingPage() {
 
         const response = await fetch("/api/auth/google/status", {
           headers: {
+            "X-Username": username,
           },
         })
         const data = await response.json()

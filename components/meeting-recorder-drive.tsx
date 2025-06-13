@@ -39,7 +39,12 @@ export default function MeetingRecorderDrive({ onMeetingCreated, onRecordingComp
     const checkGoogleDriveStatus = async () => {
       try {
         setIsCheckingGoogleDrive(true)
-        const response = await fetch("/api/auth/google/status")
+        const username = localStorage.getItem("juntify_username") || ""
+        const response = await fetch("/api/auth/google/status", {
+          headers: {
+            "X-Username": username,
+          },
+        })
         const data = await response.json()
 
         setIsGoogleDriveConfigured(data.isConfigured && data.hasFolders)
