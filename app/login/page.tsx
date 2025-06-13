@@ -41,11 +41,9 @@ export default function LoginPage() {
   useEffect(() => {
     setIsMounted(true)
 
-    // Verificar si existe la cookie del token
-    const hasToken = document.cookie.includes("token=")
-    if (hasToken) {
-      router.push("/profile")
-    }
+    // Verificar si existe la cookie del auth token
+    const hasToken = document.cookie.includes("auth_token=")
+    if (hasToken) router.push("/profile")
   }, [router])
 
   // Actualizar requisitos de contraseña en tiempo real
