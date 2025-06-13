@@ -314,6 +314,7 @@ export default function BuildingTranscriptionPage() {
     try {
       const response = await fetch(`/api/meetings/${id}`, {
         headers: {
+          "X-Username": username,
         },
       })
 
