@@ -74,7 +74,7 @@ Analízala y devuelve SOLO el JSON EXACTO indicado en el systemPrompt. No agregu
      - id: identificador único (puede ser numérico o alfanumérico).
      - text: descripción detallada y concreta de la tarea (máximo 40–50 palabras).
      - assignee: nombre del responsable o “No asignado” si no se mencionó.
-    - dueDate: fecha límite en formato YYYY-MM-DD o “No definida” si no se especificó.
+    - dueDate: fecha límite en formato YYYY-MM-DD o “No definida” si no se especificó. Si se menciona “semana que viene” sin día, usa el lunes de esa semana. Si la frase es “de la semana que viene para [día]”, calcula esa fecha exacta según la fecha actual.
     - No inventes una fecha: si no se mencionó ningún plazo claro, usa exactamente "No definida".
      - context: contexto adicional, referencias a diapositivas, documentos o comentarios que motivan la tarea.
 
@@ -156,7 +156,7 @@ Analiza esta transcripción de una reunión empresarial y construye el JSON EXAC
      - id: número o cadena única.
      - text: descripción precisa y accionable (máximo 30–40 palabras).
      - assignee: nombre o cargo del responsable.
-    - dueDate: fecha límite exacta en formato YYYY-MM-DD. Si no se menciona una fecha, escribe "No definida".
+    - dueDate: fecha límite exacta en formato YYYY-MM-DD. Si no se menciona una fecha, escribe "No definida". Si la transcripción menciona “semana que viene” sin día, utiliza el lunes de esa semana. Si indica “de la semana que viene para [día]”, calcula esa fecha exacta según la fecha actual.
      - deliverables: entregable esperado (documento, informe, informe financiero).
      - dependencies: relación con otras tareas, equipos o áreas (p. ej. “Depende de informe de finanzas”).
 
@@ -252,7 +252,7 @@ Recibe esta transcripción que puede corresponder a:
      - id: identificador único (numérico o alfanumérico).
      - text: descripción completa de la tarea (máximo 40 palabras).
      - assignee: “Estudiante/Grupo” o “Toda la clase”.
-    - dueDate: fecha límite en formato YYYY-MM-DD; si menciona “próxima clase”, usa "${today}". Si no se indicó fecha, escribe "No definida".
+    - dueDate: fecha límite en formato YYYY-MM-DD; si menciona “próxima clase”, usa "${today}". Si se menciona “semana que viene” sin día, usa el lunes de esa semana. Si dice “de la semana que viene para [día]”, calcula esa fecha exacta con base en la fecha actual. Si no se indicó fecha, escribe "No definida".
      - (No agregues otros campos en tareas).
 
 5) metadata:
@@ -333,7 +333,7 @@ Analiza esta transcripción de una reunión legal y construye el JSON EXACTO ind
      - id: identificador único (ej. "T1", "T2").
      - text: descripción concisa de la acción (máx. 20–30 palabras, ej. “Redactar contrato de confidencialidad”).
      - assignee: “Abogado <Nombre>” o “No asignado”.
-    - dueDate: fecha límite exacta (YYYY-MM-DD). Si no se mencionó fecha, escribe "No definida".
+    - dueDate: fecha límite exacta (YYYY-MM-DD). Si no se mencionó fecha, escribe "No definida". Si la transcripción menciona “semana que viene” sin día, usa el lunes de esa semana. Si aparece “de la semana que viene para [día]”, calcula esa fecha exacta según la fecha actual.
      - legalContext: referencia a cláusulas o normativas específicas (ej. “Basado en cláusula 5.2 del contrato”).
 
 4) legalMetadata:
@@ -411,7 +411,7 @@ Analiza esta transcripción de una consulta o reunión médica y devuelve SÓLO 
      - id: identificador único (ej. "M1", "M2").
      - text: descripción clara de la acción (máx. 20–30 palabras, ej. “Solicitar hemograma completo y función renal”).
      - assignee: “Paciente” o “Doctor <Nombre>” o “No asignado”.
-    - dueDate: fecha exacta (YYYY-MM-DD) o periodo (ej. “en 2 semanas”). Si no se mencionó una fecha, escribe "No definida".
+    - dueDate: fecha exacta (YYYY-MM-DD) o periodo (ej. “en 2 semanas”). Si no se mencionó una fecha, escribe "No definida". Si la transcripción menciona “semana que viene” sin día, utiliza el lunes de esa semana. Si se dice “de la semana que viene para [día]”, calcula esa fecha exacta según la fecha actual.
      - medicalContext: contexto clínico adicional (ej. “Relacionado con historial de hipertensión”).
 
 4) medicalMetadata:
@@ -488,7 +488,7 @@ Analiza esta transcripción que corresponde a una sesión con contenido psicoló
      - id: identificador único (ej. "P1", "P2").
      - text: descripción concreta de la intervención (máx. 20–30 palabras, ej. “Practicar ejercicio de respiración diafragmática diario”).
      - assignee: “Paciente” o “Terapeuta” o “No asignado”.
-    - dueDate: fecha sugerida en YYYY-MM-DD o “No definida” si no aplica. No inventes fechas que no se mencionaron.
+    - dueDate: fecha sugerida en YYYY-MM-DD o “No definida” si no aplica. Si la transcripción menciona “semana que viene” sin día, usa el lunes de esa semana. Si se dice “de la semana que viene para [día]”, calcula esa fecha exacta con base en hoy. No inventes fechas que no se mencionaron.
      - psychContext: contexto adicional (ej. “Relacionado con episodio de ansiedad en minuto 12”).
 
 4) psychMetadata:
