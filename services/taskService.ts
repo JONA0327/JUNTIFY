@@ -1,5 +1,13 @@
 import { query, queryOne, type Task, type TaskComment } from "@/utils/mysql"
-import { format, addDays, addWeeks, parse, isValid, nextDay } from "date-fns"
+import {
+  format,
+  addDays,
+  addWeeks,
+  parse,
+  isValid,
+  nextDay,
+  startOfWeek,
+} from "date-fns"
 import { es } from "date-fns/locale"
 
 function normalize(text: string): string {
@@ -47,8 +55,21 @@ export function parseRelativeDate(input: string): string | null {
   let match = text.match(/en\s+(\d+)\s*d[ií]as?/) 
   if (match) return format(addDays(today, parseInt(match[1], 10)), "yyyy-MM-dd")
 
-  match = text.match(/en\s+(\d+)\s*semanas?/) 
+  match = text.match(/en\s+(\d+)\s*semanas?/)
   if (match) return format(addWeeks(today, parseInt(match[1], 10)), "yyyy-MM-dd")
+
+  match = text.match(
+    /(?:(?:la\s*)?(?:proxima|pr\u00f3xima)\s+semana|(?:la\s*)?semana que viene)(?:\s+para(?:\s+el)?\s+(lunes|martes|miercoles|mi\u00e9rcoles|jueves|viernes|sabado|s\u00e1bado|domingo))?/
+  )
+  if (match) {
+    const nextMonday = startOfWeek(addWeeks(today, 1), { weekStartsOn: 1 })
+    if (match[1]) {
+      const day = normalize(match[1])
+      const target = nextDay(addDays(nextMonday, -1), daysOfWeek[day])
+      return format(target, "yyyy-MM-dd")
+    }
+    return format(nextMonday, "yyyy-MM-dd")
+  }
 
   match = text.match(/(proximo|pr\u00f3ximo|siguiente)\s+(lunes|martes|miercoles|mi\u00e9rcoles|jueves|viernes|sabado|s\u00e1bado|domingo)/)
   if (match) {

@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button"
 import { X } from "lucide-react"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { format } from "date-fns"
+import { parseRelativeDate } from "@/services/taskService"
 
 interface NewTaskModalProps {
   onCancel: () => void
@@ -29,25 +30,10 @@ export function NewTaskModal({ onCancel, onSave, currentUserName, organizationMe
   const interpretDateReferences = (taskText: string) => {
     if (!taskText) return null
 
-    const today = new Date()
-    const tomorrow = new Date(today)
-    tomorrow.setDate(tomorrow.getDate() + 1)
-
-    const nextWeek = new Date(today)
-    nextWeek.setDate(nextWeek.getDate() + 7)
-
-    // Patrones comunes de fechas relativas en español
-    const patterns = [
-      { regex: /\bmañana\b/i, date: tomorrow },
-      { regex: /\bhoy\b/i, date: today },
-      { regex: /\bpróxima semana\b|la semana que viene\b/i, date: nextWeek },
-      // Se pueden añadir más patrones según sea necesario
-    ]
-
-    for (const pattern of patterns) {
-      if (pattern.regex.test(taskText)) {
-        return pattern.date
-      }
+    const parsed = parseRelativeDate(taskText)
+    if (parsed) {
+      const d = new Date(parsed)
+      if (!isNaN(d.getTime())) return d
     }
 
     return null
