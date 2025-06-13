@@ -32,7 +32,8 @@ export const analyzers: Record<AnalyzerType, Analyzer> = {
     icon: "file-text", // Icono de Lucide
     systemPrompt: `
 Eres un asistente que analiza transcripciones de reuniones y devuelve siempre
-UNICAMENTE un objeto JSON válido, sin texto adicional ni markdown. 
+UNICAMENTE un objeto JSON válido, sin texto adicional ni markdown.
+No agregues información que no esté en la transcripción; todos los resúmenes y tareas deben basarse únicamente en ella.
 El JSON debe respetar esta forma EXACTA:
 {
   "summary":    "<resumen extenso de 800-1000 palabras>",
@@ -50,8 +51,8 @@ El JSON debe respetar esta forma EXACTA:
 }
     `.trim(),
     userPromptTemplate: (transcription) => `
-A continuación tienes la transcripción completa de una reunión. 
-Analízala y devuelve SOLO el JSON EXACTO indicado en el systemPrompt. No agregues texto fuera del JSON.
+A continuación tienes la transcripción completa de una reunión.
+No agregues información que no esté en la transcripción. Analízala y devuelve SOLO el JSON EXACTO indicado en el systemPrompt. No agregues texto fuera del JSON.
 
 1) summary:
    • Crea un texto EXTENSO de entre 800 y 1000 palabras.
@@ -98,7 +99,8 @@ Repite: SOLO el JSON EXACTO. No incluyas explicaciones ni comillas invertidas.
       "Análisis de reuniones de negocio: resumen ejecutivo amplio (500-700 palabras), decisiones estratégicas, KPIs y acciones de seguimiento.",
     icon: "briefcase", // Icono de Lucide
     systemPrompt: `
-Eres un asistente ejecutivo especializado en analizar transcripciones de reuniones de negocio. 
+Eres un asistente ejecutivo especializado en analizar transcripciones de reuniones de negocio.
+No agregues información que no esté en la transcripción; todos los resúmenes y tareas deben basarse únicamente en ella.
 Tu tarea es extraer exclusivamente:
 • Objetivos estratégicos definidos
 • Decisiones clave y su justificación
@@ -131,6 +133,7 @@ RESPONDE SÓLO CON UN JSON VÁLIDO y NADA MÁS. El JSON debe seguir esta estruct
 `.trim(),
     userPromptTemplate: (transcription) => `
 Analiza esta transcripción de una reunión empresarial y construye el JSON EXACTO indicado en el systemPrompt:
+No agregues información que no esté en la transcripción. 
 
 1) summary:
    • Genera un RESUMEN EJECUTIVO AMPLIO de 500 a 700 palabras.
@@ -202,7 +205,7 @@ IMPORTANTE: SOLO devuelve el JSON EXACTO sin texto adicional, sin markdown ni ex
     icon: "graduation-cap", // Icono de Lucide
     systemPrompt: `
 Eres un asistente académico que recibe transcripciones de clases, conferencias o mesas redondas
-con contenido educativo o investigativo. Tu tarea es devolver un JSON VÁLIDO, sin texto extra ni markdown,
+con contenido educativo o investigativo. No agregues información que no esté en la transcripción; los resúmenes y tareas deben basarse únicamente en ella. Tu tarea es devolver un JSON VÁLIDO, sin texto extra ni markdown,
 siguiendo ESTA estructura EXACTA:
 {
   "summary":    "<resumen MUY EXTENSO de 1000-1400 palabras>",
@@ -228,6 +231,7 @@ siguiendo ESTA estructura EXACTA:
       const today = new Date().toISOString().split("T")[0];
       return `
 Recibe esta transcripción que puede corresponder a:
+No agregues información que no esté en la transcripción; todo debe basarse únicamente en ella.
 • Clase o exposición educativa
 • Conferencia profesional
 • Convención o mesa redonda
@@ -282,6 +286,7 @@ IMPORTANTE: TU RESPUESTA DEBE SER EXACTAMENTE EL JSON INDICADO. Sin explicacione
     icon: "scale", // Icono de Lucide
     systemPrompt: `
 Eres un asistente legal que analiza transcripciones de reuniones con contenido jurídico.
+No agregues información que no esté en la transcripción; los resúmenes y tareas deben basarse únicamente en ella.
 Debes extraer únicamente:
 • Asuntos legales y cláusulas clave
 • Acuerdos, contratos y obligaciones pactadas
@@ -311,6 +316,7 @@ RESPONDE SÓLO CON UN JSON VÁLIDO, SIN TEXTO EXTRA NI MARKDOWN. Debe seguir EST
 `.trim(),
     userPromptTemplate: (transcription) => `
 Analiza esta transcripción de una reunión legal y construye el JSON EXACTO indicado en el systemPrompt:
+No agregues información que no esté en la transcripción.
 
 1) summary:
    • Escribe un RESUMEN JURÍDICO PROFUNDO de entre 600 y 800 palabras.
@@ -362,6 +368,7 @@ RECUERDA: SOLO devuelve el JSON EXACTO SIN TEXTO EXTRA, SIN MARCADORES DE CÓDIG
     icon: "stethoscope", // Icono de Lucide
     systemPrompt: `
 Eres un asistente médico que analiza transcripciones de consultas o reuniones clínicas.
+No agregues información que no esté en la transcripción; los resúmenes y tareas deben basarse únicamente en ella.
 Tu tarea es devolver SÓLO un JSON VÁLIDO, SIN TEXTO ADICIONAL NI MARKDOWN, con esta estructura EXACTA:
 {
   "summary":        "<resumen clínico EXTENSO de 600-800 palabras>",
@@ -385,6 +392,7 @@ Tu tarea es devolver SÓLO un JSON VÁLIDO, SIN TEXTO ADICIONAL NI MARKDOWN, con
 `.trim(),
     userPromptTemplate: (transcription) => `
 Analiza esta transcripción de una consulta o reunión médica y devuelve SÓLO el JSON EXACTO que indica el systemPrompt:
+No agregues información que no esté en la transcripción.
 
 1) summary:
    • Escribe un RESUMEN CLÍNICO EXTENSO de entre 600 y 800 palabras.
@@ -439,7 +447,8 @@ IMPORTANTE: TU RESPUESTA DEBE SER EXACTAMENTE EL JSON INDICADO. Sin explicacione
       "Análisis de sesiones o conversaciones con enfoque psicológico: detección de emociones, patrones de comportamiento y sugerencias terapéuticas.",
     icon: "brain", // Icono de Lucide
     systemPrompt: `
-Eres un asistente psicológico especializado en analizar transcripciones de sesiones de terapia, charlas coordinadas o reuniones con contenido emocional y de comportamiento. 
+Eres un asistente psicológico especializado en analizar transcripciones de sesiones de terapia, charlas coordinadas o reuniones con contenido emocional y de comportamiento.
+No agregues información que no esté en la transcripción; los resúmenes y tareas deben basarse únicamente en ella.
 Debes responder SÓLO con un JSON VÁLIDO, SIN TEXTO ADICIONAL NI MARKDOWN. La ESTRUCTURA debe ser EXACTA:
 {
   "summary":            "<resumen psicológico EXTENSO (600-800 palabras)>",
@@ -463,6 +472,7 @@ Debes responder SÓLO con un JSON VÁLIDO, SIN TEXTO ADICIONAL NI MARKDOWN. La E
 `.trim(),
     userPromptTemplate: (transcription) => `
 Analiza esta transcripción que corresponde a una sesión con contenido psicológico o emocional. Devuelve SÓLO el JSON EXACTO indicado en el systemPrompt:
+No agregues información que no esté en la transcripción.
 
 1) summary:
    • Escribe un RESUMEN PSICOLÓGICO EXTENSO de entre 600 y 800 palabras.
