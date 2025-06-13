@@ -23,7 +23,10 @@ export async function GET(request: NextRequest, { params }: { params: { id: stri
 
     // Verificar si hay un ID de carpeta de grabaciones
     if (!meeting.recordings_folder_id) {
-      return NextResponse.json({ error: "Esta reunión no tiene una carpeta de grabaciones asociada" }, { status: 404 })
+      return NextResponse.json(
+        { error: "Esta reunión no tiene una carpeta de grabaciones asociada. Puede que Google Drive no esté configurado" },
+        { status: 404 },
+      )
     }
 
     // Buscar el archivo de audio en la carpeta de grabaciones
@@ -45,8 +48,9 @@ export async function GET(request: NextRequest, { params }: { params: { id: stri
       )
 
       if (audioFiles.length === 0) {
+        console.log(`No se encontraron archivos en la carpeta ${meeting.recordings_folder_id}`)
         return NextResponse.json(
-          { error: "No se encontraron archivos de audio en la carpeta de grabaciones" },
+          { error: "No se encontraron archivos", folderId: meeting.recordings_folder_id },
           { status: 404 },
         )
       }
