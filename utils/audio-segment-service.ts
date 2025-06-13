@@ -52,6 +52,7 @@ class AudioSegmentService {
 
         // Crear un elemento de audio con la URL en caché
         const audio = new Audio()
+        audio.crossOrigin = "anonymous"
 
         // Configurar eventos antes de asignar la fuente
         await new Promise<void>((resolve, reject) => {
@@ -64,7 +65,10 @@ class AudioSegmentService {
           const onError = (e: Event) => {
             audio.removeEventListener("canplaythrough", onCanPlay)
             audio.removeEventListener("error", onError)
-            reject(new Error("Error al cargar el audio desde caché"))
+            const detail =
+              audio.error?.message ??
+              (e instanceof ErrorEvent ? e.message : String(e))
+            reject(new Error(`Error al cargar el audio desde caché: ${detail}`))
           }
 
           audio.addEventListener("canplaythrough", onCanPlay)
@@ -188,6 +192,7 @@ class AudioSegmentService {
 
       // Crear un elemento de audio
       const audio = new Audio()
+      audio.crossOrigin = "anonymous"
 
       // Esperar a que el audio esté listo para reproducir
       await new Promise<void>((resolve, reject) => {
@@ -200,7 +205,10 @@ class AudioSegmentService {
         const onError = (e: Event) => {
           audio.removeEventListener("canplaythrough", onCanPlay)
           audio.removeEventListener("error", onError)
-          reject(new Error(`Error al cargar el audio: ${e}`))
+          const detail =
+            audio.error?.message ??
+            (e instanceof ErrorEvent ? e.message : String(e))
+          reject(new Error(`Error al cargar el audio: ${detail}`))
         }
 
         audio.addEventListener("canplaythrough", onCanPlay)
