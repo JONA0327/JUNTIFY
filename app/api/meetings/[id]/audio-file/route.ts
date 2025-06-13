@@ -51,12 +51,17 @@ export async function GET(request: NextRequest, { params }: { params: { id: stri
     // Si aún no tenemos un ID de carpeta, intentar obtenerlo de la configuración
     if (!recordingsFolderId) {
       try {
-        const folderResult = await query("SELECT folder_id FROM google_drive_config WHERE username = ? LIMIT 1", [
-          username,
-        ]).catch(() => null)
+        const folderResult = await query(
+          "SELECT recordings_folder_id FROM google_tokens WHERE username = ? AND recordings_folder_id IS NOT NULL",
+          [username],
+        ).catch(() => null)
 
-        if (folderResult && folderResult.length > 0 && folderResult[0].folder_id) {
-          recordingsFolderId = folderResult[0].folder_id
+        if (
+          folderResult &&
+          folderResult.length > 0 &&
+          folderResult[0].recordings_folder_id
+        ) {
+          recordingsFolderId = folderResult[0].recordings_folder_id
           console.log(`Usando ID de carpeta de la configuración: ${recordingsFolderId}`)
         }
       } catch (error) {
