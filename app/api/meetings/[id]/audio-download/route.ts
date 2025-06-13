@@ -17,12 +17,19 @@ export async function GET(request: NextRequest, { params }: { params: { id: stri
 
     console.log(`Descargando audio para la reunión ${meetingId} del usuario ${username}`)
 
+    // Obtener el token de autenticación de las cookies
+    const token = request.cookies.get("auth_token")?.value
+
     // Obtener información del archivo de audio
-    const infoResponse = await fetch(`${request.nextUrl.origin}/api/meetings/${meetingId}/audio-file`, {
-      headers: {
-        "X-Username": username,
+    const infoResponse = await fetch(
+      `${request.nextUrl.origin}/api/meetings/${meetingId}/audio-file`,
+      {
+        headers: {
+          "X-Username": username,
+          ...(token ? { Cookie: `auth_token=${token}` } : {}),
+        },
       },
-    })
+    )
 
     if (!infoResponse.ok) {
       const errorData = await infoResponse.json()
