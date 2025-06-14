@@ -410,6 +410,9 @@ class AudioSegmentService {
         }
         cache.audio.src = ""
       }
+      if (cache.url.startsWith("blob:")) {
+        URL.revokeObjectURL(cache.url)
+      }
     })
     this.audioCache.clear()
   }
