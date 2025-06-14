@@ -34,7 +34,7 @@ export function PricingSection() {
       features: ["5 reuniones mensuales", "Duración máxima: 30 minutos", "Funciones básicas", "Soporte por email"],
       popular: false,
       buttonText: "Comenzar Gratis",
-      disabled: false,
+      disabled: true,
     },
     {
       name: "Básico",
@@ -328,19 +328,6 @@ export function PricingSection() {
             gratis, para que experimentes por ti mismo el poder transformador de Juntify.
           </motion.p>
 
-          <motion.div
-            initial={{ opacity: 1, y: 0 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.4, delay: 0.6 }}
-            viewport={{ once: true, amount: 0.3 }}
-            className="mt-8"
-          >
-            <a href={`${base}/nueva-reunion/`} target="_blank" rel="noopener noreferrer">
-              <Button className="bg-purple-600 hover:bg-purple-700 text-white px-8 py-6 rounded-full text-lg font-medium transition-all duration-300 hover:scale-105">
-                Regístrate ahora
-              </Button>
-            </a>
-          </motion.div>
         </div>
       </div>
 
