@@ -19,6 +19,7 @@ class AudioSegmentService {
       audio: HTMLAudioElement | null
       isPlaying: boolean
       currentSegmentKey: string | null
+      timeUpdateHandler: ((e: Event) => void) | null
     }
   > = new Map()
 
@@ -107,6 +108,7 @@ class AudioSegmentService {
           audio: audio,
           isPlaying: false,
           currentSegmentKey: null,
+          timeUpdateHandler: null,
         })
 
         console.log(`Audio para reunión ${meetingId} preparado desde caché`)
@@ -247,6 +249,7 @@ class AudioSegmentService {
         audio: audio,
         isPlaying: false,
         currentSegmentKey: null,
+        timeUpdateHandler: null,
       })
 
       // Guardar en sessionStorage para persistencia entre recargas
@@ -291,17 +294,23 @@ class AudioSegmentService {
         if (cachedAudio.audio && cachedAudio.audio.currentTime >= segment.endSeconds) {
           cachedAudio.audio.pause()
           cachedAudio.audio.removeEventListener("timeupdate", handleTimeUpdate)
+          cachedAudio.timeUpdateHandler = null
           cachedAudio.isPlaying = false
           cachedAudio.currentSegmentKey = null
         }
       }
 
-      // Limpiar cualquier listener anterior
-      cachedAudio.audio.removeEventListener("timeupdate", handleTimeUpdate)
+      // Limpiar cualquier listener anterior almacenado
+      if (cachedAudio.timeUpdateHandler) {
+        cachedAudio.audio.removeEventListener("timeupdate", cachedAudio.timeUpdateHandler)
+      }
 
       // Añadir el nuevo listener si hay un tiempo de fin
       if (segment.endSeconds) {
         cachedAudio.audio.addEventListener("timeupdate", handleTimeUpdate)
+        cachedAudio.timeUpdateHandler = handleTimeUpdate
+      } else {
+        cachedAudio.timeUpdateHandler = null
       }
 
       // Actualizar el estado antes de reproducir
@@ -351,6 +360,10 @@ class AudioSegmentService {
 
     try {
       cachedAudio.audio.pause()
+      if (cachedAudio.timeUpdateHandler) {
+        cachedAudio.audio.removeEventListener("timeupdate", cachedAudio.timeUpdateHandler)
+        cachedAudio.timeUpdateHandler = null
+      }
       cachedAudio.isPlaying = false
       return true
     } catch (error) {
@@ -391,6 +404,10 @@ class AudioSegmentService {
     this.audioCache.forEach((cache) => {
       if (cache.audio) {
         cache.audio.pause()
+        if (cache.timeUpdateHandler) {
+          cache.audio.removeEventListener("timeupdate", cache.timeUpdateHandler)
+          cache.timeUpdateHandler = null
+        }
         cache.audio.src = ""
       }
     })
