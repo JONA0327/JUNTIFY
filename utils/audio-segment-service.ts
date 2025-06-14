@@ -123,67 +123,78 @@ class AudioSegmentService {
     try {
       console.log(`Descargando audio para la reunión ${meetingId}`)
 
-      // Intentar primero con la URL directa
-      let audioUrl = null
-      let errorMessage = null
+      let audioUrl: string | null = null
+      let errorMessage: string | null = null
 
+      // Primero intentamos descargar el archivo directamente, igual que en el dashboard
       try {
-        // Primero obtenemos la URL directa del audio
-        const directResponse = await fetch(`/api/meetings/${meetingId}/audio-direct-url`, {
+        console.log("Buscando información de audio...")
+        const infoResponse = await fetch(`/api/meetings/${meetingId}/audio-file`, {
           headers: {
             "X-Username": username,
           },
         })
 
-        if (directResponse.ok) {
-          const directData = await directResponse.json()
-          if (directData.directUrl) {
-            audioUrl = directData.directUrl
-            console.log("URL directa obtenida:", audioUrl)
+        if (infoResponse.ok) {
+          const infoData = await infoResponse.json()
+          if (infoData.success && infoData.fileId) {
+            console.log("Información de audio obtenida:", infoData.fileName)
+
+            const downloadResponse = await fetch(`/api/meetings/${meetingId}/audio-direct-download`, {
+              headers: {
+                "X-Username": username,
+              },
+            })
+
+            if (downloadResponse.ok) {
+              const blob = await downloadResponse.blob()
+
+              if (blob.size === 0) {
+                throw new Error("El archivo descargado está vacío")
+              }
+
+              console.log(`Archivo descargado: ${blob.size} bytes, tipo: ${blob.type}`)
+              audioUrl = URL.createObjectURL(blob)
+              console.log("URL de blob creada:", audioUrl)
+            } else {
+              throw new Error(`Error ${downloadResponse.status} al descargar audio`)
+            }
+          } else {
+            errorMessage = infoData.error || "No se encontró el archivo de audio"
           }
         } else {
-          errorMessage = `Error ${directResponse.status} al obtener URL directa`
-          console.warn(errorMessage)
+          errorMessage = `Error ${infoResponse.status} al obtener información del audio`
         }
-      } catch (directError) {
-        errorMessage = `Error al obtener URL directa: ${directError.message}`
-        console.warn(errorMessage)
+      } catch (downloadError) {
+        errorMessage = `Error al descargar audio: ${downloadError instanceof Error ? downloadError.message : String(downloadError)}`
+        console.error(errorMessage)
       }
 
-      // Si la URL directa falló, intentar con la URL de descarga
+      // Si la descarga falló, intentar obtener la URL directa como respaldo
       if (!audioUrl) {
         try {
-          console.log("Intentando obtener URL de descarga...")
-          const downloadResponse = await fetch(`/api/meetings/${meetingId}/audio-direct-download`, {
+          console.log("Intentando obtener URL directa...")
+          const directResponse = await fetch(`/api/meetings/${meetingId}/audio-direct-url`, {
             headers: {
               "X-Username": username,
             },
           })
 
-          if (downloadResponse.ok) {
-            // Convertir la respuesta a un blob
-            const blob = await downloadResponse.blob()
-
-            // Verificar que el blob tiene contenido
-            if (blob.size === 0) {
-              throw new Error("El archivo descargado está vacío")
+          if (directResponse.ok) {
+            const directData = await directResponse.json()
+            if (directData.directUrl) {
+              audioUrl = directData.directUrl
+              console.log("URL directa obtenida:", audioUrl)
             }
-
-            console.log(`Archivo descargado: ${blob.size} bytes, tipo: ${blob.type}`)
-
-            // Crear una URL temporal para el blob
-            audioUrl = URL.createObjectURL(blob)
-            console.log("URL de blob creada:", audioUrl)
           } else {
-            throw new Error(`Error ${downloadResponse.status} al descargar audio`)
+            const msg = `Error ${directResponse.status} al obtener URL directa`
+            errorMessage = errorMessage ? `${errorMessage} y ${msg}` : msg
+            console.warn(msg)
           }
-        } catch (downloadError) {
-          if (errorMessage) {
-            errorMessage += ` y error al descargar: ${downloadError.message}`
-          } else {
-            errorMessage = `Error al descargar audio: ${downloadError.message}`
-          }
-          console.error(errorMessage)
+        } catch (directError) {
+          const msg = `Error al obtener URL directa: ${directError instanceof Error ? directError.message : String(directError)}`
+          errorMessage = errorMessage ? `${errorMessage} y ${msg}` : msg
+          console.warn(msg)
         }
       }
 
