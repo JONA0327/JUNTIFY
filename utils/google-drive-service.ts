@@ -187,10 +187,10 @@ export class GoogleDriveService {
     // Por ahora, simplemente cambiamos la extensión y el tipo MIME
 
     // Cambiar la extensión del archivo
-    const newFileName = fileName.replace(/\.webm$/, ".aac")
+    let newFileName = fileName.replace(/\.webm$/, ".aac")
     if (newFileName === fileName) {
       // Si no tenía extensión .webm, añadir .aac
-      const newFileName = fileName + ".aac"
+      newFileName = fileName + ".aac"
     }
 
     return {
